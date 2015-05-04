@@ -50,15 +50,36 @@ class CGFeedStat {
         foreach ($cursor as $timestampRecord){
             $fbFeed = \MongoDBRef::get($col->db, $timestampRecord["fbFeed"]);
             $fbPage = \MongoDBRef::get($col->db, $timestampRecord["fbPage"]);
-            $updateTime = $timestampRecord["updateTime"];
-            $countArray[$fbPage["fbID"]][$fbFeed["fbID"]] = array(
+            $updateTime = new \DateTime();
+            $updateTime->setTimestamp($timestampRecord["updateTime"]->sec);
+            $countArray[$fbPage["fbID"]][$fbFeed["fbID"]][] = array(
                 "likes_total_count" => (isset($timestampRecord["likes_total_count"]) ? intval($timestampRecord["likes_total_count"]):0),
                 "comments_total_count" => (isset($timestampRecord["comments_total_count"]) ? intval($timestampRecord["comments_total_count"]):0),
-                "updateTime" => $updateTime->toDateTime(),
+                "updateTime" => $updateTime->format(\DateTime::ISO8601),
             );
+            $i++;
+            //if ($i > 10000){
+            //    break;
+            //}
         }
-        echo "done";
-        //print_r($countArray);
+        //echo "done";
+        $this->outputCountArray($countArray);
+    }
+    private function outputCountArray($countArray){
+        foreach ($countArray as $pageId => $page){
+            foreach ($page as $feedId => $feed){
+                echo $pageId.":".$feedId;
+                $updateTime = "";
+                $likeCount = "";
+                $commentCount = "";
+                foreach($feed as $timestampRecord){
+                    $updateTime .= $timestampRecord['updateTime'].",";
+                    $likeCount .= $timestampRecord['likes_total_count'].",";
+                    $commentCount .= $timestampRecord['comments_total_count'].",";
+                }
+                echo ",".$updateTime."\nlikeCount,".$likeCount."\ncommentCount,".$commentCount."\n";
+            }
+        }
     }
     private function getMongoCollection($colName){
         $m = new \MongoClient();
