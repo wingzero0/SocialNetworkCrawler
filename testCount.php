@@ -12,4 +12,4 @@ require_once(__DIR__ . '/CodingGuys/autoload.php');
 use CodingGuys\CGFeedStat;
 
 $obj = new CGFeedStat(new \DateTime());
-$obj->basicCount();
+$obj->timestampSeriesCount();

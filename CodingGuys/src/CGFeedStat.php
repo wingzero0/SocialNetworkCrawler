@@ -9,12 +9,12 @@ namespace CodingGuys;
 
 class CGFeedStat {
 	private $startDate;
+    private static $dbName = "directory";
 	public function __construct(\DateTime $startDate){
 		$this->startDate = new \MongoDate($startDate->getTimestamp());
 	}
     public function basicCount(){
-        $m = new \MongoClient();
-        $col = $m->selectCollection("directory", "FacebookFeed");
+        $col = $this->getMongoCollection("FacebookFeed");
         $cursor = $col->find();
         $likesCount = array();
 		$commentsCount = array();
@@ -37,13 +37,32 @@ class CGFeedStat {
         		$commentsCount[$feed['comments']['summary']['total_count']] += 1;
         		$commentsSum += $feed['comments']['summary']['total_count'];
         	}
-        	// $i++;
-        	// if ($i > 10){
-        	// 	break;
-        	// }
         }
         ksort($likesCount); ksort($commentsCount);
         print_r($likesCount);
         print_r($commentsCount);
+    }
+    public function timestampSeriesCount(){
+        $col = $this->getMongoCollection("FacebookTimestampRecord");
+        $cursor = $col->find();
+        $countArray = array();
+        $i = 0;
+        foreach ($cursor as $timestampRecord){
+            $fbFeed = \MongoDBRef::get($col->db, $timestampRecord["fbFeed"]);
+            $fbPage = \MongoDBRef::get($col->db, $timestampRecord["fbPage"]);
+            $updateTime = $timestampRecord["updateTime"];
+            $countArray[$fbPage["fbID"]][$fbFeed["fbID"]] = array(
+                "likes_total_count" => (isset($timestampRecord["likes_total_count"]) ? intval($timestampRecord["likes_total_count"]):0),
+                "comments_total_count" => (isset($timestampRecord["comments_total_count"]) ? intval($timestampRecord["comments_total_count"]):0),
+                "updateTime" => $updateTime->toDateTime(),
+            );
+        }
+        echo "done";
+        //print_r($countArray);
+    }
+    private function getMongoCollection($colName){
+        $m = new \MongoClient();
+        $col = $m->selectCollection(CGFeedStat::$dbName, $colName);
+        return $col;
     }
 }
