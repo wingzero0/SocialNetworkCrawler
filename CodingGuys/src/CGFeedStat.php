@@ -14,6 +14,7 @@ namespace CodingGuys;
 class CGFeedStat {
     private $startDate;
     private $endDate;
+    private $mongoClient;
     private static $dbName = "directory";
     public function __construct(\DateTime $startDate, \DateTime $endDate){
         $this->setDateRange($startDate, $endDate);
@@ -32,10 +33,9 @@ class CGFeedStat {
     }
     private function groupByFeedWithMaxValue(){
         $col = $this->getMongoCollection("FacebookTimestampRecord");
-        $cursor = $col->find($this->getDateRangeQuery());
+        $cursor = $col->find($this->getDateRangeQuery())->sort(array("updateTime" => 1));
         echo $cursor->count()."\n";
 
-        $i = 0;
         $maxLikeRecord = array();
         $maxCommentRecord = array();
         foreach ($cursor as $timestampRecord){
@@ -60,7 +60,6 @@ class CGFeedStat {
                     $maxCommentRecord[$fbFeed["fbID"]] = $timestampRecord;
                 }
             }
-            $i++;
         }
         return array('maxLikeRecord' => $maxLikeRecord, 'maxCommentRecord' => $maxCommentRecord);
     }
@@ -69,13 +68,42 @@ class CGFeedStat {
 
         $maxLike = array_values($maxRecord['maxLikeRecord']);
         usort($maxLike, array("CodingGuys\\CGFeedStat", "cmpLikeRecord"));
-        var_dump($maxLike[0]);
-        echo count($maxLike)."\n";
+        $topNLikes = $this->filterTopNLike($maxLike, $topN);
+        $col = $this->getMongoCollection("FacebookTimestampRecord");
+        $result['topNLikes'] = array();
+        foreach($topNLikes as $i => $v){
+            $fbFeed = \MongoDBRef::get($col->db, $v["fbFeed"]);
+            $updateTime = new \DateTime();
+            $updateTime->setTimestamp($v["updateTime"]->sec);
+            $result['topNLikes'][$i] = array(
+                'shortLink' => (isset($fbFeed["link"]) ? $fbFeed["link"] : "https://www.facebook.com/" . $fbFeed["fbID"]),
+                'likes_total_count' => $v['likes_total_count'],
+                'comments_total_count' => $v['comments_total_count'],
+                'message' => (isset($fbFeed["message"]) ? mb_substr($fbFeed["message"], 0, 20) . "..." : ""),
+                "updateTime" => $updateTime->format(\DateTime::ISO8601),
+            );
+        }
+        print_r(json_encode($result));
+        return ;
+        //return print_r($topNLikes);
+        //var_dump($topNLikes);
 
         $maxComment = array_values($maxRecord['maxCommentRecord']);
         usort($maxComment, array("CodingGuys\\CGFeedStat", "cmpCommentRecord"));
         var_dump($maxComment[0]);
         echo count($maxComment)."\n";
+    }
+    private function filterTopNLike($sortedLikeTimestamp, $topN){
+        if ($topN <= 0){
+            return array();
+        }
+        $ret = array_slice($sortedLikeTimestamp, 0, $topN);
+        for ($i = $topN; $i < count($sortedLikeTimestamp); $i++){
+            if ($sortedLikeTimestamp[$i - 1]["likes_total_count"] == $sortedLikeTimestamp[$i] ){
+                $ret[] = $sortedLikeTimestamp[$i];
+            }
+        }
+        return $ret;
     }
     public static function cmpLikeRecord($a, $b){
         if (isset($a["likes_total_count"]) )
@@ -154,9 +182,15 @@ class CGFeedStat {
         }
     }
     private function getMongoCollection($colName){
-        $m = new \MongoClient();
+        $m = $this->getMongoClient();
         $col = $m->selectCollection(CGFeedStat::$dbName, $colName);
         return $col;
+    }
+    private function getMongoClient(){
+        if ($this->mongoClient == null){
+            $this->mongoClient = new \MongoClient();
+        }
+        return $this->mongoClient;
     }
     private function getDateRangeQuery(){
         $dateRange = array();
