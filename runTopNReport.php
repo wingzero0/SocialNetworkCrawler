@@ -11,7 +11,9 @@ require_once(__DIR__ . '/CodingGuys/autoload.php');
 
 use CodingGuys\CGFeedStat;
 
-$startDate = new \DateTime();
-$endDate = $startDate->sub(new \DateInterval('P1D'));
+$endDate = new \DateTime();
+$startDate = clone $endDate;
+$startDate->sub(new \DateInterval('P1D'));
+
 $obj = new CGFeedStat($startDate, $endDate);
 $obj->topNResult(100);
