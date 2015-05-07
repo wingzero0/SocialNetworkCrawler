@@ -69,38 +69,45 @@ class CGFeedStat {
         $maxLike = array_values($maxRecord['maxLikeRecord']);
         usort($maxLike, array("CodingGuys\\CGFeedStat", "cmpLikeRecord"));
         $topNLikes = $this->filterTopNLike($maxLike, $topN);
-        $col = $this->getMongoCollection("FacebookTimestampRecord");
-        $result['topNLikes'] = array();
+        $result = array();
         foreach($topNLikes as $i => $v){
-            $fbFeed = \MongoDBRef::get($col->db, $v["fbFeed"]);
-            $updateTime = new \DateTime();
-            $updateTime->setTimestamp($v["updateTime"]->sec);
-            $result['topNLikes'][$i] = array(
-                'shortLink' => (isset($fbFeed["link"]) ? $fbFeed["link"] : "https://www.facebook.com/" . $fbFeed["fbID"]),
-                'likes_total_count' => $v['likes_total_count'],
-                'comments_total_count' => $v['comments_total_count'],
-                'message' => (isset($fbFeed["message"]) ? mb_substr($fbFeed["message"], 0, 20) . "..." : ""),
-                "updateTime" => $updateTime->format(\DateTime::ISO8601),
-            );
+            $result['topNLikes'][$i] = $this->extractTimestampNecessaryField($v);
+        }
+        $maxComment = array_values($maxRecord['maxCommentRecord']);
+        usort($maxComment, array("CodingGuys\\CGFeedStat", "cmpCommentRecord"));
+        $topNComments = $this->filterTopNComment($maxComment, $topN);
+        foreach($topNComments as $i => $v){
+            $result['topNComments'][$i] = $this->extractTimestampNecessaryField($v);
         }
         print_r(json_encode($result));
         return ;
-        //return print_r($topNLikes);
-        //var_dump($topNLikes);
-
-        $maxComment = array_values($maxRecord['maxCommentRecord']);
-        usort($maxComment, array("CodingGuys\\CGFeedStat", "cmpCommentRecord"));
-        var_dump($maxComment[0]);
-        echo count($maxComment)."\n";
+    }
+    private function extractTimestampNecessaryField($timestampRecord){
+        $fbFeed = \MongoDBRef::get($this->getMongoDB(), $timestampRecord["fbFeed"]);
+        $updateTime = new \DateTime();
+        $updateTime->setTimestamp($timestampRecord["updateTime"]->sec);
+        return array(
+            'shortLink' => (isset($fbFeed["link"]) ? $fbFeed["link"] : "https://www.facebook.com/" . $fbFeed["fbID"]),
+            'likes_total_count' => $timestampRecord['likes_total_count'],
+            'comments_total_count' => $timestampRecord['comments_total_count'],
+            'message' => (isset($fbFeed["message"]) ? mb_substr($fbFeed["message"], 0, 20) . "..." : ""),
+            "updateTime" => $updateTime->format(\DateTime::ISO8601),
+        );
+    }
+    private function filterTopNComment($sortedCommentTimestamp, $topN){
+        return $this->filterTopN("comments_total_count", $sortedCommentTimestamp, $topN);
     }
     private function filterTopNLike($sortedLikeTimestamp, $topN){
+        return $this->filterTopN("likes_total_count", $sortedLikeTimestamp, $topN);
+    }
+    private function filterTopN($fieldName, $sortedTimestamp, $topN){
         if ($topN <= 0){
             return array();
         }
-        $ret = array_slice($sortedLikeTimestamp, 0, $topN);
-        for ($i = $topN; $i < count($sortedLikeTimestamp); $i++){
-            if ($sortedLikeTimestamp[$i - 1]["likes_total_count"] == $sortedLikeTimestamp[$i] ){
-                $ret[] = $sortedLikeTimestamp[$i];
+        $ret = array_slice($sortedTimestamp, 0, $topN);
+        for ($i = $topN; $i < count($sortedTimestamp); $i++){
+            if ($sortedTimestamp[$i - 1][$fieldName] == $sortedTimestamp[$i][$fieldName] ){
+                $ret[] = $sortedTimestamp[$i];
             }
         }
         return $ret;
@@ -181,11 +188,29 @@ class CGFeedStat {
             }
         }
     }
+
+    /**
+     * @param $colName
+     * @return \MongoCollection
+     */
     private function getMongoCollection($colName){
         $m = $this->getMongoClient();
         $col = $m->selectCollection(CGFeedStat::$dbName, $colName);
         return $col;
     }
+
+    /**
+     * @return \MongoDB
+     */
+    private function getMongoDB(){
+        $m = $this->getMongoClient();
+        $col = $m->selectDB(CGFeedStat::$dbName);
+        return $col;
+    }
+
+    /**
+     * @return \MongoClient
+     */
     private function getMongoClient(){
         if ($this->mongoClient == null){
             $this->mongoClient = new \MongoClient();
