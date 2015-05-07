@@ -7,12 +7,84 @@
 
 namespace CodingGuys;
 
+// function cmpLikeRecord($a, $b){
+//     return $a["likes_total_count"] > $b["likes_total_count"];
+// }
+
 class CGFeedStat {
-	private $startDate;
+    private $startDate;
+    private $endDate;
     private static $dbName = "directory";
-	public function __construct(\DateTime $startDate){
-		$this->startDate = new \MongoDate($startDate->getTimestamp());
-	}
+    public function __construct(\DateTime $startDate, \DateTime $endDate){
+        $this->setDateRange($startDate, $endDate);
+    }
+    public function setDateRange(\DateTime $startDate, \DateTime $endDate){
+        if ($startDate != null){
+            $this->startDate = new \MongoDate($startDate->getTimestamp());
+        }else{
+            $this->startDate = null;
+        }
+        if ($endDate != null){
+            $this->endDate = new \MongoDate($endDate->getTimestamp());
+        }else{
+            $this->endDate = null;
+        }
+    }
+    private function groupByFeedWithMaxValue(){
+        $col = $this->getMongoCollection("FacebookTimestampRecord");
+        $cursor = $col->find($this->getDateRangeQuery());
+        echo $cursor->count()."\n";
+
+        $i = 0;
+        $maxLikeRecord = array();
+        $maxCommentRecord = array();
+        foreach ($cursor as $timestampRecord){
+            $fbFeed = \MongoDBRef::get($col->db, $timestampRecord["fbFeed"]);
+            if (!isset($timestampRecord["likes_total_count"])){
+                $timestampRecord["likes_total_count"] = 0;
+            }
+            if (!isset($maxLikeRecord[$fbFeed["fbID"]])){
+                $maxLikeRecord[$fbFeed["fbID"]] = $timestampRecord;
+            }else {
+                if ($maxLikeRecord[$fbFeed["fbID"]]["likes_total_count"] < $timestampRecord["likes_total_count"]){
+                    $maxLikeRecord[$fbFeed["fbID"]] = $timestampRecord;
+                }
+            }
+            if (!isset($timestampRecord["comments_total_count"])){
+                $timestampRecord["comments_total_count"] = 0;
+            }
+            if (!isset($maxCommentRecord[$fbFeed["fbID"]])){
+                $maxCommentRecord[$fbFeed["fbID"]] = $timestampRecord;
+            }else {
+                if ($maxCommentRecord[$fbFeed["fbID"]]["comments_total_count"] < $timestampRecord["comments_total_count"]){
+                    $maxCommentRecord[$fbFeed["fbID"]] = $timestampRecord;
+                }
+            }
+            $i++;
+        }
+        return array('maxLikeRecord' => $maxLikeRecord, 'maxCommentRecord' => $maxCommentRecord);
+    }
+    public function topNResult($topN){
+        $maxRecord = $this->groupByFeedWithMaxValue();
+
+        $maxLike = array_values($maxRecord['maxLikeRecord']);
+        usort($maxLike, array("CodingGuys\\CGFeedStat", "cmpLikeRecord"));
+        var_dump($maxLike[0]);
+        echo count($maxLike)."\n";
+
+        $maxComment = array_values($maxRecord['maxCommentRecord']);
+        usort($maxComment, array("CodingGuys\\CGFeedStat", "cmpCommentRecord"));
+        var_dump($maxComment[0]);
+        echo count($maxComment)."\n";
+    }
+    public static function cmpLikeRecord($a, $b){
+        if (isset($a["likes_total_count"]) )
+        return $a["likes_total_count"] < $b["likes_total_count"];
+    }
+    public static function cmpCommentRecord($a, $b){
+        if (isset($a["comments_total_count"]) )
+        return $a["comments_total_count"] < $b["comments_total_count"];
+    }
     public function basicCount(){
         $col = $this->getMongoCollection("FacebookFeed");
         $cursor = $col->find();
@@ -85,5 +157,18 @@ class CGFeedStat {
         $m = new \MongoClient();
         $col = $m->selectCollection(CGFeedStat::$dbName, $colName);
         return $col;
+    }
+    private function getDateRangeQuery(){
+        $dateRange = array();
+        if ($this->startDate != null){
+            $dateRange["\$gte"] = $this->startDate;
+        }
+        if ($this->endDate != null){
+            $dateRange["\$lte"] = $this->endDate;
+        }
+        if (empty($dateRange)){
+            return array();
+        }
+        return array("updateTime" => $dateRange);
     }
 }

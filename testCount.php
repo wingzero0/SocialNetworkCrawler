@@ -11,5 +11,12 @@ require_once(__DIR__ . '/CodingGuys/autoload.php');
 
 use CodingGuys\CGFeedStat;
 
-$obj = new CGFeedStat(new \DateTime());
-$obj->timestampSeriesCount();
+$startDate = new \DateTime();
+$startDate->setDate(2015, 4, 25);
+$startDate->setTime(0,0,0);
+$endDate = new \DateTime();
+$endDate->setDate(2015, 4, 27);
+$endDate->setTime(0,0,0);
+$obj = new CGFeedStat($startDate, $endDate);
+$obj->topNResult(100);
+//$obj->timestampSeriesCount();
