@@ -7,12 +7,119 @@
 
 namespace CodingGuys;
 
+// function cmpLikeRecord($a, $b){
+//     return $a["likes_total_count"] > $b["likes_total_count"];
+// }
+
 class CGFeedStat {
-	private $startDate;
+    private $startDate;
+    private $endDate;
+    private $mongoClient;
     private static $dbName = "directory";
-	public function __construct(\DateTime $startDate){
-		$this->startDate = new \MongoDate($startDate->getTimestamp());
-	}
+    public function __construct(\DateTime $startDate, \DateTime $endDate){
+        $this->setDateRange($startDate, $endDate);
+    }
+    public function setDateRange(\DateTime $startDate, \DateTime $endDate){
+        if ($startDate != null){
+            $this->startDate = new \MongoDate($startDate->getTimestamp());
+        }else{
+            $this->startDate = null;
+        }
+        if ($endDate != null){
+            $this->endDate = new \MongoDate($endDate->getTimestamp());
+        }else{
+            $this->endDate = null;
+        }
+    }
+    private function groupByFeedWithMaxValue(){
+        $col = $this->getMongoCollection("FacebookTimestampRecord");
+        $cursor = $col->find($this->getDateRangeQuery())->sort(array("updateTime" => 1));
+        echo $cursor->count()."\n";
+
+        $maxLikeRecord = array();
+        $maxCommentRecord = array();
+        foreach ($cursor as $timestampRecord){
+            $fbFeed = \MongoDBRef::get($col->db, $timestampRecord["fbFeed"]);
+            if (!isset($timestampRecord["likes_total_count"])){
+                $timestampRecord["likes_total_count"] = 0;
+            }
+            if (!isset($maxLikeRecord[$fbFeed["fbID"]])){
+                $maxLikeRecord[$fbFeed["fbID"]] = $timestampRecord;
+            }else {
+                if ($maxLikeRecord[$fbFeed["fbID"]]["likes_total_count"] < $timestampRecord["likes_total_count"]){
+                    $maxLikeRecord[$fbFeed["fbID"]] = $timestampRecord;
+                }
+            }
+            if (!isset($timestampRecord["comments_total_count"])){
+                $timestampRecord["comments_total_count"] = 0;
+            }
+            if (!isset($maxCommentRecord[$fbFeed["fbID"]])){
+                $maxCommentRecord[$fbFeed["fbID"]] = $timestampRecord;
+            }else {
+                if ($maxCommentRecord[$fbFeed["fbID"]]["comments_total_count"] < $timestampRecord["comments_total_count"]){
+                    $maxCommentRecord[$fbFeed["fbID"]] = $timestampRecord;
+                }
+            }
+        }
+        return array('maxLikeRecord' => $maxLikeRecord, 'maxCommentRecord' => $maxCommentRecord);
+    }
+    public function topNResult($topN){
+        $maxRecord = $this->groupByFeedWithMaxValue();
+
+        $maxLike = array_values($maxRecord['maxLikeRecord']);
+        usort($maxLike, array("CodingGuys\\CGFeedStat", "cmpLikeRecord"));
+        $topNLikes = $this->filterTopNLike($maxLike, $topN);
+        $result = array();
+        foreach($topNLikes as $i => $v){
+            $result['topNLikes'][$i] = $this->extractTimestampNecessaryField($v);
+        }
+        $maxComment = array_values($maxRecord['maxCommentRecord']);
+        usort($maxComment, array("CodingGuys\\CGFeedStat", "cmpCommentRecord"));
+        $topNComments = $this->filterTopNComment($maxComment, $topN);
+        foreach($topNComments as $i => $v){
+            $result['topNComments'][$i] = $this->extractTimestampNecessaryField($v);
+        }
+        print_r(json_encode($result));
+        return ;
+    }
+    private function extractTimestampNecessaryField($timestampRecord){
+        $fbFeed = \MongoDBRef::get($this->getMongoDB(), $timestampRecord["fbFeed"]);
+        $updateTime = new \DateTime();
+        $updateTime->setTimestamp($timestampRecord["updateTime"]->sec);
+        return array(
+            'shortLink' => (isset($fbFeed["link"]) ? $fbFeed["link"] : "https://www.facebook.com/" . $fbFeed["fbID"]),
+            'likes_total_count' => $timestampRecord['likes_total_count'],
+            'comments_total_count' => $timestampRecord['comments_total_count'],
+            'message' => (isset($fbFeed["message"]) ? mb_substr($fbFeed["message"], 0, 20) . "..." : ""),
+            "updateTime" => $updateTime->format(\DateTime::ISO8601),
+        );
+    }
+    private function filterTopNComment($sortedCommentTimestamp, $topN){
+        return $this->filterTopN("comments_total_count", $sortedCommentTimestamp, $topN);
+    }
+    private function filterTopNLike($sortedLikeTimestamp, $topN){
+        return $this->filterTopN("likes_total_count", $sortedLikeTimestamp, $topN);
+    }
+    private function filterTopN($fieldName, $sortedTimestamp, $topN){
+        if ($topN <= 0){
+            return array();
+        }
+        $ret = array_slice($sortedTimestamp, 0, $topN);
+        for ($i = $topN; $i < count($sortedTimestamp); $i++){
+            if ($sortedTimestamp[$i - 1][$fieldName] == $sortedTimestamp[$i][$fieldName] ){
+                $ret[] = $sortedTimestamp[$i];
+            }
+        }
+        return $ret;
+    }
+    public static function cmpLikeRecord($a, $b){
+        if (isset($a["likes_total_count"]) )
+        return $a["likes_total_count"] < $b["likes_total_count"];
+    }
+    public static function cmpCommentRecord($a, $b){
+        if (isset($a["comments_total_count"]) )
+        return $a["comments_total_count"] < $b["comments_total_count"];
+    }
     public function basicCount(){
         $col = $this->getMongoCollection("FacebookFeed");
         $cursor = $col->find();
@@ -81,9 +188,46 @@ class CGFeedStat {
             }
         }
     }
+
+    /**
+     * @param $colName
+     * @return \MongoCollection
+     */
     private function getMongoCollection($colName){
-        $m = new \MongoClient();
+        $m = $this->getMongoClient();
         $col = $m->selectCollection(CGFeedStat::$dbName, $colName);
         return $col;
+    }
+
+    /**
+     * @return \MongoDB
+     */
+    private function getMongoDB(){
+        $m = $this->getMongoClient();
+        $col = $m->selectDB(CGFeedStat::$dbName);
+        return $col;
+    }
+
+    /**
+     * @return \MongoClient
+     */
+    private function getMongoClient(){
+        if ($this->mongoClient == null){
+            $this->mongoClient = new \MongoClient();
+        }
+        return $this->mongoClient;
+    }
+    private function getDateRangeQuery(){
+        $dateRange = array();
+        if ($this->startDate != null){
+            $dateRange["\$gte"] = $this->startDate;
+        }
+        if ($this->endDate != null){
+            $dateRange["\$lte"] = $this->endDate;
+        }
+        if (empty($dateRange)){
+            return array();
+        }
+        return array("updateTime" => $dateRange);
     }
 }
