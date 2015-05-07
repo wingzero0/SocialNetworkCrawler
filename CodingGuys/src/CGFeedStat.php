@@ -43,15 +43,16 @@ class CGFeedStat {
             if (!isset($timestampRecord["likes_total_count"])){
                 $timestampRecord["likes_total_count"] = 0;
             }
+            if (!isset($timestampRecord["comments_total_count"])){
+                $timestampRecord["comments_total_count"] = 0;
+            }
+
             if (!isset($maxLikeRecord[$fbFeed["fbID"]])){
                 $maxLikeRecord[$fbFeed["fbID"]] = $timestampRecord;
             }else {
                 if ($maxLikeRecord[$fbFeed["fbID"]]["likes_total_count"] < $timestampRecord["likes_total_count"]){
                     $maxLikeRecord[$fbFeed["fbID"]] = $timestampRecord;
                 }
-            }
-            if (!isset($timestampRecord["comments_total_count"])){
-                $timestampRecord["comments_total_count"] = 0;
             }
             if (!isset($maxCommentRecord[$fbFeed["fbID"]])){
                 $maxCommentRecord[$fbFeed["fbID"]] = $timestampRecord;
@@ -64,22 +65,40 @@ class CGFeedStat {
         return array('maxLikeRecord' => $maxLikeRecord, 'maxCommentRecord' => $maxCommentRecord);
     }
     public function topNResult($topN){
+        mb_internal_encoding("UTF-8");
         $maxRecord = $this->groupByFeedWithMaxValue();
 
         $maxLike = array_values($maxRecord['maxLikeRecord']);
         usort($maxLike, array("CodingGuys\\CGFeedStat", "cmpLikeRecord"));
         $topNLikes = $this->filterTopNLike($maxLike, $topN);
         $result = array();
+        echo "{'topNLikes':[";
+        $first = true;
         foreach($topNLikes as $i => $v){
             $result['topNLikes'][$i] = $this->extractTimestampNecessaryField($v);
+            if ($first){
+                echo json_encode($result['topNLikes'][$i]);
+                $first = false;
+            }else{
+                echo "," . json_encode($result['topNLikes'][$i]);
+            }
         }
+        echo "],'topNComments':[";
+        $first = true;
         $maxComment = array_values($maxRecord['maxCommentRecord']);
         usort($maxComment, array("CodingGuys\\CGFeedStat", "cmpCommentRecord"));
         $topNComments = $this->filterTopNComment($maxComment, $topN);
         foreach($topNComments as $i => $v){
             $result['topNComments'][$i] = $this->extractTimestampNecessaryField($v);
+            if ($first){
+                echo json_encode($result['topNComments'][$i]);
+                $first = false;
+            }else{
+                echo "," . json_encode($result['topNComments'][$i]);
+            }
         }
-        print_r(json_encode($result));
+        echo "]}";
+        //print_r(json_encode($result));
         return ;
     }
     private function extractTimestampNecessaryField($timestampRecord){
@@ -106,8 +125,12 @@ class CGFeedStat {
         }
         $ret = array_slice($sortedTimestamp, 0, $topN);
         for ($i = $topN; $i < count($sortedTimestamp); $i++){
-            if ($sortedTimestamp[$i - 1][$fieldName] == $sortedTimestamp[$i][$fieldName] ){
+            if ($sortedTimestamp[$i - 1][$fieldName] == $sortedTimestamp[$i][$fieldName]
+                //&& $sortedTimestamp[$i - 1][$fieldName] >= 100
+            ){
                 $ret[] = $sortedTimestamp[$i];
+            }else{
+                break;
             }
         }
         return $ret;
