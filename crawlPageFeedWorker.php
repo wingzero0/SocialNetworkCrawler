@@ -36,7 +36,7 @@ function fbCrawler_fn(GearmanJob $job) {
 	echo "Workload: \n";
 	var_dump($workload);
 	$crawler = new CGFeedCrawler($workload->fbID, $mID);
-	$crawler->crawl(0,0);
+	echo "crawling:" . $crawler->crawl();
 	
 	return "Finish";
 }

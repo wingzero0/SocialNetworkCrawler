@@ -31,42 +31,50 @@ class CGFeedStat {
             $this->endDate = null;
         }
     }
-    private function groupByFeedWithMaxValue(){
-        $col = $this->getMongoCollection("FacebookTimestampRecord");
-        $cursor = $col->find($this->getDateRangeQuery())->sort(array("updateTime" => 1));
-        echo $cursor->count()."\n";
-
+    private function queryTimestampMaxValue(){
+        $col = $this->getMongoCollection("FacebookFeed");
+        $cursor = $col->find($this->getFacebookFeedDateRangeQuery());
         $maxLikeRecord = array();
         $maxCommentRecord = array();
-        foreach ($cursor as $timestampRecord){
-            $fbFeed = \MongoDBRef::get($col->db, $timestampRecord["fbFeed"]);
-            if (!isset($timestampRecord["likes_total_count"])){
-                $timestampRecord["likes_total_count"] = 0;
-            }
-            if (!isset($timestampRecord["comments_total_count"])){
-                $timestampRecord["comments_total_count"] = 0;
-            }
-
-            if (!isset($maxLikeRecord[$fbFeed["fbID"]])){
-                $maxLikeRecord[$fbFeed["fbID"]] = $timestampRecord;
-            }else {
-                if ($maxLikeRecord[$fbFeed["fbID"]]["likes_total_count"] < $timestampRecord["likes_total_count"]){
-                    $maxLikeRecord[$fbFeed["fbID"]] = $timestampRecord;
+        foreach ($cursor as $feed){
+            $timestampRecords = $this->queryTimestampByFeed($feed["_id"]);
+            $maxLike = 0; $maxComment = 0;
+            foreach ($timestampRecords as $record){
+                if (!isset($record["likes_total_count"])){
+                    $record["likes_total_count"] = 0;
                 }
-            }
-            if (!isset($maxCommentRecord[$fbFeed["fbID"]])){
-                $maxCommentRecord[$fbFeed["fbID"]] = $timestampRecord;
-            }else {
-                if ($maxCommentRecord[$fbFeed["fbID"]]["comments_total_count"] < $timestampRecord["comments_total_count"]){
-                    $maxCommentRecord[$fbFeed["fbID"]] = $timestampRecord;
+                if (!isset($record["comments_total_count"])){
+                    $record["comments_total_count"] = 0;
+                }
+                if ($maxLike < $record["likes_total_count"]) {
+                    $maxLikeRecord[$feed["fbID"]] = $record;
+                }
+                if ($maxComment < $record["comments_total_count"]){
+                    $maxCommentRecord[$feed["fbID"]] = $record;
                 }
             }
         }
         return array('maxLikeRecord' => $maxLikeRecord, 'maxCommentRecord' => $maxCommentRecord);
     }
+
+    /**
+     * @param $feedId
+     * @return array
+     */
+    private function queryTimestampByFeed($feedId){
+        $col = $this->getMongoCollection("FacebookTimestampRecord");
+        $cursor = $col->find(
+            array('fbFeed.$id' => $feedId)
+        )->sort(array("updateTime" => 1));
+        $ret = array();
+        foreach($cursor as $feedTimestamp){
+            $ret[] = $feedTimestamp;
+        }
+        return $ret;
+    }
     public function topNResult($topN){
         mb_internal_encoding("UTF-8");
-        $maxRecord = $this->groupByFeedWithMaxValue();
+        $maxRecord = $this->queryTimestampMaxValue();
 
         $maxLike = array_values($maxRecord['maxLikeRecord']);
         usort($maxLike, array("CodingGuys\\CGFeedStat", "cmpLikeRecord"));
@@ -106,12 +114,16 @@ class CGFeedStat {
         $updateTime = new \DateTime();
         $updateTime->setTimestamp($timestampRecord["updateTime"]->sec);
         return array(
-            'shortLink' => (isset($fbFeed["link"]) ? $fbFeed["link"] : "https://www.facebook.com/" . $fbFeed["fbID"]),
+            'shortLink' => (isset($fbFeed["link"]) && $this->isFbInternalLink($fbFeed["link"]) ?
+                $fbFeed["link"] : "https://www.facebook.com/" . $fbFeed["fbID"]),
             'likes_total_count' => $timestampRecord['likes_total_count'],
             'comments_total_count' => $timestampRecord['comments_total_count'],
             'message' => (isset($fbFeed["message"]) ? mb_substr($fbFeed["message"], 0, 20) . "..." : ""),
             "updateTime" => $updateTime->format(\DateTime::ISO8601),
         );
+    }
+    private function isFbInternalLink($link){
+        return preg_match('/www\.facebook\.com/', $link) > 0;
     }
     private function filterTopNComment($sortedCommentTimestamp, $topN){
         return $this->filterTopN("comments_total_count", $sortedCommentTimestamp, $topN);
@@ -240,7 +252,11 @@ class CGFeedStat {
         }
         return $this->mongoClient;
     }
-    private function getDateRangeQuery(){
+
+    /**
+     * @return array mongo date query with range of $this->startDate and $this->endDate
+     */
+    private function getFacebookTimestampDateRangeQuery(){
         $dateRange = array();
         if ($this->startDate != null){
             $dateRange["\$gte"] = $this->startDate;
@@ -252,5 +268,21 @@ class CGFeedStat {
             return array();
         }
         return array("updateTime" => $dateRange);
+    }
+    /**
+     * @return array mongo date query with range of $this->startDate and $this->endDate
+     */
+    private function getFacebookFeedDateRangeQuery(){
+        $dateRange = array();
+        if ($this->startDate != null){
+            $dateRange["\$gte"] = date(\DateTime::ISO8601, $this->startDate->sec);
+        }
+        if ($this->endDate != null){
+            $dateRange["\$lte"] = date(\DateTime::ISO8601, $this->endDate->sec);
+        }
+        if (empty($dateRange)){
+            return array();
+        }
+        return array("created_time" => $dateRange);
     }
 }
