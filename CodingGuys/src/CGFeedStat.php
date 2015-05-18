@@ -223,18 +223,30 @@ class CGFeedStat {
         $this->outputCountArray($countArray, $batchTimeIndex);
     }
     private function outputCountArray($countArray, $batchTimeIndex){
+        echo "feed,";
+        ksort($batchTimeIndex);
+        foreach($batchTimeIndex as $batchTimeString => $value){
+            echo $batchTimeString.",,,";
+        }
+        echo "\n,";
+        foreach($batchTimeIndex as $batchTimeString => $value){
+            echo "updateTime,likes_total_count,comments_total_count,";
+        }
+        echo "\n";
         foreach ($countArray as $pageId => $page){
             foreach ($page as $feedId => $feed){
-                echo $pageId.":".$feedId;
-                $updateTime = "";
-                $likeCount = "";
-                $commentCount = "";
-                foreach($feed as $batchTimeString => $timestampRecord){
-                    $updateTime .= $timestampRecord['updateTime'].",";
-                    $likeCount .= $timestampRecord['likes_total_count'].",";
-                    $commentCount .= $timestampRecord['comments_total_count'].",";
+                echo $pageId . ":" . $feedId . ",";
+                foreach($batchTimeIndex as $batchTimeString => $value){
+                    if (isset($feed[$batchTimeString])){
+                        $timestampRecord = $feed[$batchTimeString];
+                        echo $timestampRecord['updateTime'].",";
+                        echo $timestampRecord['likes_total_count'].",";
+                        echo $timestampRecord['comments_total_count'].",";
+                    }else{
+                        echo ",,,";
+                    }
                 }
-                echo ",".$updateTime."\nlikeCount,".$likeCount."\ncommentCount,".$commentCount."\n";
+                echo "\n";
             }
         }
     }
