@@ -195,39 +195,45 @@ class CGFeedStat {
         $col = $this->getMongoCollection("FacebookFeed");
         $cursor = $col->find($this->getFacebookFeedDateRangeQuery());
         $countArray = array();
+        $feedRaw = array();
+        $pageRaw = array();
         $i = 0;
         $batchTimeIndex = array();
         foreach ($cursor as $feed){
+            $page = \MongoDBRef::get($col->db, $feed["fbPage"]);
+            $feedRaw[$feed["fbID"]] = $feed;
+            if (!isset($pageRaw[$page["fbID"]])){
+                $pageRaw[$page["fbID"]] = array();
+                $pageRaw[$page["fbID"]]["page"] = $page;
+                $pageRaw[$page["fbID"]]["feedCount"] = 0;
+            }
+            $pageRaw[$page["fbID"]]["feedCount"] += 1;
+
             $timestampRecords = $this->queryTimestampByFeed($feed["_id"]);
             foreach ($timestampRecords as $timestampRecord){
-                $fbFeed = \MongoDBRef::get($col->db, $timestampRecord["fbFeed"]);
-                $fbPage = \MongoDBRef::get($col->db, $timestampRecord["fbPage"]);
-
                 $batchTimeString = $this->convertMongoDateToISODate($timestampRecord["batchTime"]);
                 $batchTimeIndex[$batchTimeString] = 1;
-                $countArray[$fbPage["fbID"]][$fbFeed["fbID"]]['pageRawData'] = $fbPage;
-                $countArray[$fbPage["fbID"]][$fbFeed["fbID"]]['feedRawData'] = $fbFeed;
-                $countArray[$fbPage["fbID"]][$fbFeed["fbID"]][$batchTimeString] = array(
+                $countArray[$page["fbID"]][$feed["fbID"]][$batchTimeString] = array(
                     "likes_total_count" => (isset($timestampRecord["likes_total_count"]) ? intval($timestampRecord["likes_total_count"]):0),
                     "comments_total_count" => (isset($timestampRecord["comments_total_count"]) ? intval($timestampRecord["comments_total_count"]):0),
                     "updateTime" => $this->convertMongoDateToISODate($timestampRecord["updateTime"]),
                 );
                 $i++;
             }
-            /*if ($i > 100){
-                break;
-            }*/
+            //if ($i > 100){
+            //    break;
+            //}
         }
         //echo "done";
-        $this->outputCountArray($countArray, $batchTimeIndex);
+        $this->outputCountArray($countArray, $batchTimeIndex, $feedRaw, $pageRaw);
     }
-    private function outputCountArray($countArray, $batchTimeIndex){
-        echo "fbpage,feed,feed_created_time,page_likes,";
+    private function outputCountArray($countArray, $batchTimeIndex, $feedRaw, $pageRaw){
+        echo "fbpage,feed,feed_created_time,page_likes,page_feeds,";
         ksort($batchTimeIndex);
         foreach($batchTimeIndex as $batchTimeString => $value){
             echo $batchTimeString.",,";
         }
-        echo "\n,,,,";
+        echo "\n,,,,,";
         foreach($batchTimeIndex as $batchTimeString => $value){
             echo "likes_total_count,comments_total_count,";
         }
@@ -235,12 +241,13 @@ class CGFeedStat {
         foreach ($countArray as $pageId => $page){
             foreach ($page as $feedId => $feed){
                 echo "'" . $pageId . "," . $feedId . ",";
-                echo $feed["feedRawData"]["created_time"] . ",";
-                if (isset($feed["pageRawData"]["likes"])){
-                    echo $feed["pageRawData"]["likes"] . ",";
+                echo $feedRaw[$feedId]["created_time"] . ",";
+                if (isset($pageRaw[$pageId]["page"]["likes"])){
+                    echo $pageRaw[$pageId]["page"]["likes"] . ",";
                 }else{
                     echo ",";
                 }
+                echo $pageRaw[$pageId]["feedCount"] . ",";
                 foreach($batchTimeIndex as $batchTimeString => $value){
                     if (isset($feed[$batchTimeString])){
                         $timestampRecord = $feed[$batchTimeString];
