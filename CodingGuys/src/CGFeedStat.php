@@ -31,6 +31,12 @@ class CGFeedStat {
             $this->endDate = null;
         }
     }
+    /**
+     * query feed's timestamp record in the pre-set date range. 
+     * feed's timestamp record could change with time. 
+     * this function will return only the timestamp with max like and max comment for a feed
+     * @return array it contains two indexes, 'maxLikeRecord' link to the timestamp record with max value of like. 'maxCommentRecord' link to the timestamp record with max value of comment.
+     */
     private function queryTimestampMaxValue(){
         $col = $this->getMongoCollection("FacebookFeed");
         $cursor = $col->find($this->getFacebookFeedDateRangeQuery());
@@ -72,6 +78,7 @@ class CGFeedStat {
         }
         return $ret;
     }
+    // TODO refine output format
     public function topNResult($topN){
         mb_internal_encoding("UTF-8");
         $maxRecord = $this->queryTimestampMaxValue();
@@ -185,36 +192,44 @@ class CGFeedStat {
         print_r($commentsCount);
     }
     public function timestampSeriesCount(){
-        $col = $this->getMongoCollection("FacebookTimestampRecord");
-        $cursor = $col->find();
+        $col = $this->getMongoCollection("FacebookFeed");
+        $cursor = $col->find($this->getFacebookFeedDateRangeQuery());
         $countArray = array();
         $i = 0;
-        foreach ($cursor as $timestampRecord){
-            $fbFeed = \MongoDBRef::get($col->db, $timestampRecord["fbFeed"]);
-            $fbPage = \MongoDBRef::get($col->db, $timestampRecord["fbPage"]);
-            $updateTime = new \DateTime();
-            $updateTime->setTimestamp($timestampRecord["updateTime"]->sec);
-            $countArray[$fbPage["fbID"]][$fbFeed["fbID"]][] = array(
-                "likes_total_count" => (isset($timestampRecord["likes_total_count"]) ? intval($timestampRecord["likes_total_count"]):0),
-                "comments_total_count" => (isset($timestampRecord["comments_total_count"]) ? intval($timestampRecord["comments_total_count"]):0),
-                "updateTime" => $updateTime->format(\DateTime::ISO8601),
-            );
-            $i++;
-            //if ($i > 10000){
-            //    break;
-            //}
+        $batchTimeIndex = array();
+        foreach ($cursor as $feed){
+            $timestampRecords = $this->queryTimestampByFeed($feed["_id"]);
+            foreach ($timestampRecords as $timestampRecord){
+                $fbFeed = \MongoDBRef::get($col->db, $timestampRecord["fbFeed"]);
+                $fbPage = \MongoDBRef::get($col->db, $timestampRecord["fbPage"]);
+                $updateTime = new \DateTime();
+                $updateTime->setTimestamp($timestampRecord["updateTime"]->sec);
+                $batchTime = new \DateTime();
+                $batchTime->setTimestamp($timestampRecord["batchTime"]->sec);
+                $batchTimeString = $batchTime->format(\DateTime::ISO8601);
+                $batchTimeIndex[$batchTimeString] = 1;
+                $countArray[$fbPage["fbID"]][$fbFeed["fbID"]][$batchTimeString] = array(
+                    "likes_total_count" => (isset($timestampRecord["likes_total_count"]) ? intval($timestampRecord["likes_total_count"]):0),
+                    "comments_total_count" => (isset($timestampRecord["comments_total_count"]) ? intval($timestampRecord["comments_total_count"]):0),
+                    "updateTime" => $updateTime->format(\DateTime::ISO8601),
+                );
+                $i++;
+            }
+            if ($i > 100){
+                break;
+            }
         }
         //echo "done";
-        $this->outputCountArray($countArray);
+        $this->outputCountArray($countArray, $batchTimeIndex);
     }
-    private function outputCountArray($countArray){
+    private function outputCountArray($countArray, $batchTimeIndex){
         foreach ($countArray as $pageId => $page){
             foreach ($page as $feedId => $feed){
                 echo $pageId.":".$feedId;
                 $updateTime = "";
                 $likeCount = "";
                 $commentCount = "";
-                foreach($feed as $timestampRecord){
+                foreach($feed as $batchTimeString => $timestampRecord){
                     $updateTime .= $timestampRecord['updateTime'].",";
                     $likeCount .= $timestampRecord['likes_total_count'].",";
                     $commentCount .= $timestampRecord['comments_total_count'].",";
