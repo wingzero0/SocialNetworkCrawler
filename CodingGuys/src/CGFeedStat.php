@@ -202,53 +202,62 @@ class CGFeedStat {
             foreach ($timestampRecords as $timestampRecord){
                 $fbFeed = \MongoDBRef::get($col->db, $timestampRecord["fbFeed"]);
                 $fbPage = \MongoDBRef::get($col->db, $timestampRecord["fbPage"]);
-                $updateTime = new \DateTime();
-                $updateTime->setTimestamp($timestampRecord["updateTime"]->sec);
-                $batchTime = new \DateTime();
-                $batchTime->setTimestamp($timestampRecord["batchTime"]->sec);
-                $batchTimeString = $batchTime->format(\DateTime::ISO8601);
+
+                $batchTimeString = $this->convertMongoDateToISODate($timestampRecord["batchTime"]);
                 $batchTimeIndex[$batchTimeString] = 1;
+                $countArray[$fbPage["fbID"]][$fbFeed["fbID"]]['pageRawData'] = $fbPage;
+                $countArray[$fbPage["fbID"]][$fbFeed["fbID"]]['feedRawData'] = $fbFeed;
                 $countArray[$fbPage["fbID"]][$fbFeed["fbID"]][$batchTimeString] = array(
                     "likes_total_count" => (isset($timestampRecord["likes_total_count"]) ? intval($timestampRecord["likes_total_count"]):0),
                     "comments_total_count" => (isset($timestampRecord["comments_total_count"]) ? intval($timestampRecord["comments_total_count"]):0),
-                    "updateTime" => $updateTime->format(\DateTime::ISO8601),
+                    "updateTime" => $this->convertMongoDateToISODate($timestampRecord["updateTime"]),
                 );
                 $i++;
             }
-            if ($i > 100){
+            /*if ($i > 100){
                 break;
-            }
+            }*/
         }
         //echo "done";
         $this->outputCountArray($countArray, $batchTimeIndex);
     }
     private function outputCountArray($countArray, $batchTimeIndex){
-        echo "feed,";
+        echo "fbpage,feed,feed_created_time,page_likes,";
         ksort($batchTimeIndex);
         foreach($batchTimeIndex as $batchTimeString => $value){
-            echo $batchTimeString.",,,";
+            echo $batchTimeString.",,";
         }
-        echo "\n,";
+        echo "\n,,,,";
         foreach($batchTimeIndex as $batchTimeString => $value){
-            echo "updateTime,likes_total_count,comments_total_count,";
+            echo "likes_total_count,comments_total_count,";
         }
         echo "\n";
         foreach ($countArray as $pageId => $page){
             foreach ($page as $feedId => $feed){
-                echo $pageId . ":" . $feedId . ",";
+                echo "'" . $pageId . "," . $feedId . ",";
+                echo $feed["feedRawData"]["created_time"] . ",";
+                if (isset($feed["pageRawData"]["likes"])){
+                    echo $feed["pageRawData"]["likes"] . ",";
+                }else{
+                    echo ",";
+                }
                 foreach($batchTimeIndex as $batchTimeString => $value){
                     if (isset($feed[$batchTimeString])){
                         $timestampRecord = $feed[$batchTimeString];
-                        echo $timestampRecord['updateTime'].",";
                         echo $timestampRecord['likes_total_count'].",";
                         echo $timestampRecord['comments_total_count'].",";
                     }else{
-                        echo ",,,";
+                        echo ",,";
                     }
                 }
                 echo "\n";
             }
         }
+    }
+    private function convertMongoDateToISODate(\MongoDate $mongoDate){
+        $batchTime = new \DateTime();
+        $batchTime->setTimestamp($mongoDate->sec);
+        return $batchTime->format(\DateTime::ISO8601);
     }
 
     /**
