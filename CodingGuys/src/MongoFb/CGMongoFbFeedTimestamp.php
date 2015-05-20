@@ -24,4 +24,11 @@ class CGMongoFbFeedTimestamp extends CGMongoFb{
     		return 0;
     	}
     }
+    public function getCommentsTotalCount(){
+        if (isset($this->rawDataFromMongo["comments_total_count"])){
+            return $this->rawDataFromMongo["comments_total_count"];
+        }else{
+            return 0;
+        }
+    }
 } 

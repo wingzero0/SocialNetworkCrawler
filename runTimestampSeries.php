@@ -15,17 +15,17 @@ $endDate = DateTime::createFromFormat(\DateTime::ISO8601,"2015-05-17T06:00:00+00
 $startDate = clone $endDate;
 $startDate->sub(new \DateInterval('P7D'));
 
-$m = new \MongoClient();
-$col = $m->selectCollection("directory", "Facebook");
-$cursor = $col->find(array("fbID" => "963585093655755"));
+// $m = new \MongoClient();
+// $col = $m->selectCollection("directory", "Facebook");
+// $cursor = $col->find(array("fbID" => "963585093655755"));
 
-$cgMongoFbPage = new CGMongoFbPage($cursor->next());
-$obj = $cgMongoFbPage->getFeedTimestampByBatch($cgMongoFbPage->getLatestBatchTimeWithInWindow(
-		$startDate,
-		$endDate
-	));
-print_r($obj);
+// $cgMongoFbPage = new CGMongoFbPage($cursor->next());
+// $obj = $cgMongoFbPage->getAverageFeedLikesBeforeTheBatch($cgMongoFbPage->getFirstBatchTimeWithInWindow(
+// 		$startDate,
+// 		$endDate
+// 	));
+// print_r($obj);
 
-//$obj = new CGFeedStat($startDate, $endDate);
-//$obj->timestampSeriesCount();
-//$obj->getLatestFeedTimestampOfPage($cursor->next(), new \MongoDate(1431842400));
+$obj = new CGFeedStat($startDate, $endDate);
+$obj->timestampSeriesCount();
+

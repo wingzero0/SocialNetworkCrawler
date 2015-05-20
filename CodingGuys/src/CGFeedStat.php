@@ -263,30 +263,48 @@ class CGFeedStat {
         //echo "done";
         $this->outputCountArray($countArray, $batchTimeIndex, $feedRaw, $pageRaw);
     }
-    public function getLatestFeedTimestampOfPage($pageRaw, \MongoDate $batchTime){
+    private function getPreviousAverageFeedLikes($pageRaw){
         $cgMongoFbPage = new CGMongoFbPage($pageRaw);
-        $cgMongoFbPage->getFeedTimestamp($batchTime);
+        $batchTime = $cgMongoFbPage->getFirstBatchTimeWithInWindow($this->startDate,$this->endDate);
+        return $cgMongoFbPage->getAverageFeedLikesBeforeTheBatch($batchTime);
+    }
+    private function getPreviousAverageFeedComments($pageRaw){
+        $cgMongoFbPage = new CGMongoFbPage($pageRaw);
+        $batchTime = $cgMongoFbPage->getFirstBatchTimeWithInWindow($this->startDate,$this->endDate);
+        return $cgMongoFbPage->getAverageFeedCommentsBeforeTheBatch($batchTime);
+    }
+    private function skipNColumn($n){
+        $ret = "";
+        for($i = 0;$i<$n;$i++){
+            $ret .= ",";
+        }
+        return $ret;
     }
     private function outputCountArray($countArray, $batchTimeIndex, $feedRaw, $pageRaw){
-        echo "fbpage,feed,feedCreatedTime,pageLikeCount,pageFeedCount,pageFeedAvargeLike,pageFeedAvargeComment,";
+        echo "fbpage,fbPageId,feed,feedId,feedCreatedTime,pageLikeCount,previousAverageFeedLikes,previousAverageFeedComments,pageFeedCount,pageFeedAvargeLike,pageFeedAvargeComment,";
         ksort($batchTimeIndex);
         foreach($batchTimeIndex as $batchTimeString => $value){
-            echo $batchTimeString.",,";
+            echo $batchTimeString . "," . $this->skipNColumn(1);
         }
-        echo "\n,,,,,,,";
+        echo "\n" . $this->skipNColumn(11);
         foreach($batchTimeIndex as $batchTimeString => $value){
             echo "deltaLike,deltaComment,";
         }
         echo "\n";
         foreach ($countArray as $pageId => $page){
+            $previousAvgLikes = $this->getPreviousAverageFeedLikes($pageRaw[$pageId]);
+            $previousAvgComments = $this->getPreviousAverageFeedComments($pageRaw[$pageId]);
             foreach ($page as $feedId => $feed){
-                echo $this->extractShortLink($pageRaw[$pageId]) . "," . $this->extractShortLink($feedRaw[$feedId]) . ",";
+                echo $this->extractShortLink($pageRaw[$pageId]) . "," . $pageId . ",";
+                echo $this->extractShortLink($feedRaw[$feedId]) . "," . $feedId . ",";
                 echo $feedRaw[$feedId]["created_time"] . ",";
                 if (isset($pageRaw[$pageId]["likes"])){
                     echo $pageRaw[$pageId]["likes"] . ",";
                 }else{
-                    echo ",";
+                    echo $this->skipNColumn(1);
                 }
+                echo $previousAvgLikes. ",";
+                echo $previousAvgComments . ",";
                 echo $pageRaw[$pageId]["feedCount"] . ",";
                 echo $pageRaw[$pageId]["feedAverageLike"] . ",";
                 echo $pageRaw[$pageId]["feedAverageComment"] . ",";
