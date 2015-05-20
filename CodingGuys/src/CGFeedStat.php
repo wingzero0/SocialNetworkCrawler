@@ -6,10 +6,7 @@
  */
 
 namespace CodingGuys;
-
-// function cmpLikeRecord($a, $b){
-//     return $a["likes_total_count"] > $b["likes_total_count"];
-// }
+use CodingGuys\MongoFb\CGMongoFbPage;
 
 class CGFeedStat {
     private $startDate;
@@ -265,6 +262,10 @@ class CGFeedStat {
         }
         //echo "done";
         $this->outputCountArray($countArray, $batchTimeIndex, $feedRaw, $pageRaw);
+    }
+    public function getLatestFeedTimestampOfPage($pageRaw, \MongoDate $batchTime){
+        $cgMongoFbPage = new CGMongoFbPage($pageRaw);
+        $cgMongoFbPage->getFeedTimestamp($batchTime);
     }
     private function outputCountArray($countArray, $batchTimeIndex, $feedRaw, $pageRaw){
         echo "fbpage,feed,feedCreatedTime,pageLikeCount,pageFeedCount,pageFeedAvargeLike,pageFeedAvargeComment,";
