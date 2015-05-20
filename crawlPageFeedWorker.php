@@ -30,13 +30,14 @@ while (1) {
 
 // A much simple reverse function
 function fbCrawler_fn(GearmanJob $job) {
-	$workload = json_decode($job->workload());
-	$mID = new \MongoID($workload->_id);
+	$workload = unserialize($job->workload());
+	$mID = new \MongoID($workload["_id"]);
+    $batchTime = $workload["batchTime"];
 	echo "Received job: " . $job->handle() . "\n";
 	echo "Workload: \n";
 	var_dump($workload);
-	$crawler = new CGFeedCrawler($workload->fbID, $mID);
-	$crawler->crawl(0,0);
+	$crawler = new CGFeedCrawler($workload["fbID"], $mID, $batchTime);
+	echo "crawling:" . $crawler->crawl();
 	
 	return "Finish";
 }
