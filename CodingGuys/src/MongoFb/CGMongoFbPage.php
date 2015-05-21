@@ -35,7 +35,7 @@ class CGMongoFbPage extends CGMongoFb{
         $col = $this->getMongoCollection("FacebookTimestampRecord");
         $cursor = $col->find($query)->limit(1)->sort(array("updateTime"=>1));
         if ($cursor->hasNext()){
-            $v = $cursor->next();
+            $v = $cursor->getNext();
             return $v["batchTime"];
         }
         return null;
@@ -43,9 +43,9 @@ class CGMongoFbPage extends CGMongoFb{
     public function getLastBatchTimeWithInWindow($start, $end){
         $query = $this->createQuery($start,$end);
         $col = $this->getMongoCollection("FacebookTimestampRecord");
-        $cursor = $col->find($queryArray)->limit(1)->sort(array("updateTime"=>-1));
+        $cursor = $col->find($query)->limit(1)->sort(array("updateTime"=>-1));
         if ($cursor->hasNext()){
-            $v = $cursor->next();
+            $v = $cursor->getNext();
             return $v["batchTime"];
         }
         return null;
