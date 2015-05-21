@@ -281,7 +281,7 @@ class CGFeedStat {
         return $ret;
     }
     private function outputCountArray($countArray, $batchTimeIndex, $feedRaw, $pageRaw){
-        echo "fbpage,fbPageId,feed,feedId,feedCreatedTime,pageLikeCount,previousAverageFeedLikes,previousAverageFeedComments,pageFeedCount,pageFeedAvargeLike,pageFeedAvargeComment,";
+        echo "fbpage,fbPageId,feed,feedId,feedCreatedTime,pageLikeCount,LastBatchBeforeCurrentWindowAverageLikes,LastBatchBeforeCurrentWindowAverageComments,pageFeedCount,CurrentWindowAverageLikes,CurrentWindowAverageComments,";
         ksort($batchTimeIndex);
         foreach($batchTimeIndex as $batchTimeString => $value){
             echo $batchTimeString . "," . $this->skipNColumn(1);
