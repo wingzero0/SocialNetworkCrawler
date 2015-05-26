@@ -134,11 +134,11 @@ class CGFeedStat {
         );
     }
     private function extractShortLink($fb){
-        return (isset($fb["link"]) && $this->isFbInternalLink($fb["link"]) ?
+        return (isset($fb["link"]) && $this->isFbPhotoLink($fb["link"]) ?
                 $fb["link"] : "https://www.facebook.com/" . $fb["fbID"]);
     }
-    private function isFbInternalLink($link){
-        return preg_match('/www\.facebook\.com/', $link) > 0;
+    private function isFbPhotoLink($link){
+        return preg_match('/www\.facebook\.com(.*)photos/', $link) > 0;
     }
     private function filterTopNComment($sortedCommentTimestamp, $topN){
         return $this->filterTopN("comments_total_count", $sortedCommentTimestamp, $topN);
