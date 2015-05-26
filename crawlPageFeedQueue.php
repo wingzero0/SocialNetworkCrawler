@@ -2,7 +2,10 @@
 
 $m = new \MongoClient();
 $col = $m->selectCollection("directory", "Facebook");
-$cursor = $col->find();
+$cursor = $col->find(array( "\$or" => array(
+    array("exception" => array("\$exists" => false)),
+    array("exception" => false),
+)));
 
 // Create our client object
 $client = new GearmanClient();
