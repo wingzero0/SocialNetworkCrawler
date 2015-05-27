@@ -412,6 +412,9 @@ class CGFeedStat {
      * @return array
      */
     private function queryTimestampByFeed($feedId){
-        return $this->fbTimestamps[(string)$feedId];
+        if (isset($this->fbTimestamps[(string)$feedId])){
+            return $this->fbTimestamps[(string)$feedId];
+        }
+        return array();
     }
 }
