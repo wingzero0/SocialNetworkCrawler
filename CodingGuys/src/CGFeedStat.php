@@ -395,15 +395,21 @@ class CGFeedStat {
     }
     private function queryTimestamp(){
         $col = $this->getMongoCollection("FacebookTimestampRecord");
-        $cursor = $col->find(
-            $this->getFacebookTimestampDateRangeQuery()
-        );
         $ret = array();
         $mongoDB = $this->getMongoDB();
-        foreach($cursor as $feedTimestamp){
-            $feed = \MongoDBRef::get($mongoDB, $feedTimestamp["fbFeed"]);
-            $feedId = (string)$feed["_id"];
-            $ret[$feedId][] = $feedTimestamp;
+        $dayRange = $this->getFacebookTimestampDateRangeQuery();
+        $i = 1;
+        $skip = 0;
+        while ($i > 0){
+            $cursor = $col->find($dayRange)->sort(array("batchTime"=>1))->skip($skip)->limit(5000);
+            $i = 0;
+            foreach($cursor as $feedTimestamp){
+                $i++;
+                $feed = \MongoDBRef::get($mongoDB, $feedTimestamp["fbFeed"]);
+                $feedId = (string)$feed["_id"];
+                $ret[$feedId][] = $feedTimestamp;
+            }
+            $skip += $i;
         }
         return $ret;
     }
