@@ -1,5 +1,6 @@
 #!/bin/bash
-
+BASEDIR=$(dirname $0)
+cd $BASEDIR
 for windowSize in 1 3 7
 do
 	echo "php -d memory_limit=1500M runTimestampSeries.php $windowSize > fbReport$windowSize.csv"
