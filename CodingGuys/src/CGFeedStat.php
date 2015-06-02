@@ -21,7 +21,7 @@ class CGFeedStat {
     public function __construct(\DateTime $startDate, \DateTime $endDate){
         $this->setDateRange($startDate, $endDate);
         $this->STDERR = fopen('php://stderr', 'w+');
-        $this->fbTimestamps = $this->queryTimestamp();
+        //$this->fbTimestamps = $this->queryTimestamp();
     }
     public function setDateRange(\DateTime $startDate, \DateTime $endDate){
         if ($startDate != null){
@@ -197,7 +197,8 @@ class CGFeedStat {
         $pageRaw = array();
         $i = 0;
         $batchTimeIndex = array();
-        $STDERR = fopen('php://stderr', 'w+');
+
+        //$this->checkTime(true, "start timer");
 
         $col = $this->getMongoCollection("FacebookFeed");
         while (1){
@@ -205,6 +206,7 @@ class CGFeedStat {
             if (!$cursor->hasNext()){
                 break;
             }else{
+                //$this->checkTime(false, "working on feed:" . $i . "\n");
                 fprintf($this->STDERR, "working on feed:" . $i . "\n");
             }
             foreach ($cursor as $feed){
@@ -246,7 +248,7 @@ class CGFeedStat {
                 $i++;
             }
         }
-        $this->releaseTimestampMemory();
+        //$this->releaseTimestampMemory();
         
         
         foreach ($pageRaw as $pageId => $page){
@@ -363,7 +365,7 @@ class CGFeedStat {
         if (empty($dateRange)){
             return array();
         }
-        return array("batchTime" => $dateRange);
+        return $dateRange;
     }
     /**
      * @return array mongo date query with range of $this->startDate and $this->endDate
@@ -397,7 +399,7 @@ class CGFeedStat {
         $col = $this->getMongoCollection("FacebookTimestampRecord");
         $ret = array();
         $mongoDB = $this->getMongoDB();
-        $dayRange = $this->getFacebookTimestampDateRangeQuery();
+        $dayRange = array("batchTime" => $this->getFacebookTimestampDateRangeQuery());
         $i = 1;
         $skip = 0;
         while ($i > 0){
@@ -414,13 +416,24 @@ class CGFeedStat {
         return $ret;
     }
     /**
-     * @param $feedId
+     * @param \MongoId $feedId
      * @return array
      */
-    private function queryTimestampByFeed($feedId){
-        if (isset($this->fbTimestamps[(string)$feedId])){
-            return $this->fbTimestamps[(string)$feedId];
+    private function queryTimestampByFeed(\MongoId $feedId){
+        //if (isset($this->fbTimestamps[(string)$feedId])){
+        //     return $this->fbTimestamps[(string)$feedId];
+        // }
+        // return array();
+        $col = $this->getMongoCollection("FacebookTimestampRecord");
+        $query = array(
+            "batchTime" => $this->getFacebookTimestampDateRangeQuery(),
+            "fbFeed.\$id" => $feedId
+        );
+        $cursor = $col->find($query)->sort(array("batchTime"=>1));
+        $ret = array();
+        foreach($cursor as $feedTimestamp){
+            $ret[] = $feedTimestamp;
         }
-        return array();
+        return $ret;
     }
 }
