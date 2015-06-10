@@ -21,6 +21,8 @@ if ($fbPage == null){
 }
 
 $timestampCol = $m->selectCollection("directory", "FacebookTimestampRecord");
+
+// TODO check ret["ok"]
 $ret = $timestampCol->remove(array("fbPage.\$id" => $fbPage["_id"]));
 
 print_r($ret);
