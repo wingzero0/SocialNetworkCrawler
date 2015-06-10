@@ -276,12 +276,12 @@ class CGFeedStat {
         return $ret;
     }
     private function outputCountArray($countArray, $batchTimeIndex, $feedRaw, $pageRaw){
-        echo "fbpage,fbPageId,feed,feedId,feedCreatedTime,pageLikeCount,LastBatchBeforeCurrentWindowAverageLikes,LastBatchBeforeCurrentWindowAverageComments,pageFeedCount,CurrentWindowAverageLikes,CurrentWindowAverageComments,";
+        echo "fbpage,fbPageId,feed,feedId,feedCreatedTime,mnemonoCategory,pageLikeCount,LastBatchBeforeCurrentWindowAverageLikes,LastBatchBeforeCurrentWindowAverageComments,pageFeedCount,CurrentWindowAverageLikes,CurrentWindowAverageComments,";
         ksort($batchTimeIndex);
         foreach($batchTimeIndex as $batchTimeString => $value){
             echo $batchTimeString . "," . $this->skipNColumn(1);
         }
-        echo "\n" . $this->skipNColumn(11);
+        echo "\n" . $this->skipNColumn(12);
         foreach($batchTimeIndex as $batchTimeString => $value){
             echo "deltaLike,deltaComment,";
         }
@@ -293,6 +293,7 @@ class CGFeedStat {
                 echo $this->extractShortLink($pageRaw[$pageId]) . "," . $pageId . ",";
                 echo $this->extractShortLink($feedRaw[$feedId]) . "," . $feedId . ",";
                 echo $feedRaw[$feedId]["created_time"] . ",";
+                echo $pageRaw[$pageId]["mnemonoCat"]. ",";
                 if (isset($pageRaw[$pageId]["likes"])){
                     echo $pageRaw[$pageId]["likes"] . ",";
                 }else{
