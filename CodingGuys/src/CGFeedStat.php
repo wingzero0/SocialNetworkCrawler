@@ -261,12 +261,12 @@ class CGFeedStat {
     private function getPreviousAverageFeedLikes($pageRaw){
         $cgMongoFbPage = new CGMongoFbPage($pageRaw);
         $batchTime = $cgMongoFbPage->getFirstBatchTimeWithInWindow($this->startDate,$this->endDate);
-        return $cgMongoFbPage->getAverageFeedLikesBeforeTheBatch($batchTime);
+        return $cgMongoFbPage->getAverageFeedLikesInTheBatch($batchTime);
     }
     private function getPreviousAverageFeedComments($pageRaw){
         $cgMongoFbPage = new CGMongoFbPage($pageRaw);
         $batchTime = $cgMongoFbPage->getFirstBatchTimeWithInWindow($this->startDate,$this->endDate);
-        return $cgMongoFbPage->getAverageFeedCommentsBeforeTheBatch($batchTime);
+        return $cgMongoFbPage->getAverageFeedCommentsInTheBatch($batchTime);
     }
     private function skipNColumn($n){
         $ret = "";

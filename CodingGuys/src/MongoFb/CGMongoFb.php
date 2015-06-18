@@ -10,9 +10,15 @@ namespace CodingGuys\MongoFb;
 class CGMongoFb{
 	private $dbName;
 	private $mongoClient;
+    protected $pageCollectionName = "FacebookPage"; // origin is 'Facebook'
+    protected $feedCollectionName = "FacebookFeed"; // origin is 'FacebookFeed'
+    protected $feedTimestampCollectionName = "FacebookFeedTimestamp"; // origin is 'FacebookTimestampRecord'
+    const DEFAULT_DB_NAME = 'Mnemono';
+
 	public function __construct($dbName = null){
 		if ($dbName == null){
-			$this->dbName = "directory";
+            // TODO move db location manually
+			$this->dbName = DEFAULT_DB_NAME;
 		}else{
 			$this->dbName = $dbName;
 		}
