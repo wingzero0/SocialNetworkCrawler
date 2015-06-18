@@ -18,10 +18,12 @@ class CGFeedStat {
     private $watchDelta;
     private $STDERR;
     private $fbTimestamps;
-    public function __construct(\DateTime $startDate, \DateTime $endDate){
+    private $filename;
+    private $fp;
+    public function __construct(\DateTime $startDate, \DateTime $endDate, $filename){
         $this->setDateRange($startDate, $endDate);
         $this->STDERR = fopen('php://stderr', 'w+');
-        //$this->fbTimestamps = $this->queryTimestamp();
+        $this->filename = $filename;
     }
     public function setDateRange(\DateTime $startDate, \DateTime $endDate){
         if ($startDate != null){
@@ -275,47 +277,62 @@ class CGFeedStat {
         }
         return $ret;
     }
+    private function outputString($str, $closeAfterWrite = false){
+        if ($this->fp == null){
+            $this->fp = fopen($this->filename,"w");
+            if ($this->fp == null){
+                fprintf($this->STDERR, "output file: " . $this->filename . " can't be written, redirect output to STDOUT\n");
+                $this->fp = fopen('php://stdout', 'w+');
+            }
+        }
+        fprintf($this->fp, $str);
+        if ($closeAfterWrite){
+            fclose($this->fp);
+            $this->fp = null;
+        }
+    }
     private function outputCountArray($countArray, $batchTimeIndex, $feedRaw, $pageRaw){
-        echo "fbpage,fbPageId,feed,feedId,feedCreatedTime,mnemonoCategory,pageLikeCount,LastBatchBeforeCurrentWindowAverageLikes,LastBatchBeforeCurrentWindowAverageComments,pageFeedCount,CurrentWindowAverageLikes,CurrentWindowAverageComments,";
+        $this->outputString("fbpage,fbPageId,feed,feedId,feedCreatedTime,mnemonoCategory,pageLikeCount,LastBatchBeforeCurrentWindowAverageLikes,LastBatchBeforeCurrentWindowAverageComments,pageFeedCount,CurrentWindowAverageLikes,CurrentWindowAverageComments,");
         ksort($batchTimeIndex);
         foreach($batchTimeIndex as $batchTimeString => $value){
-            echo $batchTimeString . "," . $this->skipNColumn(1);
+            $this->outputString($batchTimeString . "," . $this->skipNColumn(1));
         }
-        echo "\n" . $this->skipNColumn(12);
+        $this->outputString("\n" . $this->skipNColumn(12));
         foreach($batchTimeIndex as $batchTimeString => $value){
-            echo "deltaLike,deltaComment,";
+            $this->outputString("deltaLike,deltaComment,");
         }
-        echo "\n";
+        $this->outputString("\n");
         foreach ($countArray as $pageId => $page){
             $previousAvgLikes = $this->getPreviousAverageFeedLikes($pageRaw[$pageId]);
             $previousAvgComments = $this->getPreviousAverageFeedComments($pageRaw[$pageId]);
             foreach ($page as $feedId => $feed){
-                echo $this->extractShortLink($pageRaw[$pageId]) . "," . $pageId . ",";
-                echo $this->extractShortLink($feedRaw[$feedId]) . "," . $feedId . ",";
-                echo $feedRaw[$feedId]["created_time"] . ",";
-                echo $pageRaw[$pageId]["mnemonoCat"]. ",";
+                $this->outputString($this->extractShortLink($pageRaw[$pageId]) . "," . $pageId . ",");
+                $this->outputString($this->extractShortLink($feedRaw[$feedId]) . "," . $feedId . ",");
+                $this->outputString($feedRaw[$feedId]["created_time"] . ",");
+                $this->outputString($pageRaw[$pageId]["mnemonoCat"]. ",");
                 if (isset($pageRaw[$pageId]["likes"])){
-                    echo $pageRaw[$pageId]["likes"] . ",";
+                    $this->outputString($pageRaw[$pageId]["likes"] . ",");
                 }else{
-                    echo $this->skipNColumn(1);
+                    $this->outputString($this->skipNColumn(1));
                 }
-                echo $previousAvgLikes. ",";
-                echo $previousAvgComments . ",";
-                echo $pageRaw[$pageId]["feedCount"] . ",";
-                echo $pageRaw[$pageId]["feedAverageLike"] . ",";
-                echo $pageRaw[$pageId]["feedAverageComment"] . ",";
+                $this->outputString($previousAvgLikes. ",");
+                $this->outputString($previousAvgComments . ",");
+                $this->outputString($pageRaw[$pageId]["feedCount"] . ",");
+                $this->outputString($pageRaw[$pageId]["feedAverageLike"] . ",");
+                $this->outputString($pageRaw[$pageId]["feedAverageComment"] . ",");
                 foreach($batchTimeIndex as $batchTimeString => $value){
                     if (isset($feed[$batchTimeString])){
                         $timestampRecord = $feed[$batchTimeString];
-                        echo $timestampRecord['deltaLike'].",";
-                        echo $timestampRecord['deltaComment'].",";
+                        $this->outputString($timestampRecord['deltaLike'].",");
+                        $this->outputString($timestampRecord['deltaComment'].",");
                     }else{
-                        echo ",,";
+                        $this->outputString($this->skipNColumn(2));
                     }
                 }
-                echo "\n";
+                $this->outputString("\n");
             }
         }
+        $this->outputString("", true);
     }
     private function convertMongoDateToISODate(\MongoDate $mongoDate){
         $batchTime = new \DateTime();
