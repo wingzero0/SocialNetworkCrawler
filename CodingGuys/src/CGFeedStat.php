@@ -7,12 +7,12 @@
 
 namespace CodingGuys;
 use CodingGuys\MongoFb\CGMongoFbPage;
+use CodingGuys\MongoFb\CGMongoFb;
 
 class CGFeedStat {
     private $startDate;
     private $endDate;
-    private $mongoClient;
-    private static $dbName = "directory";
+    private $mongoFb;
     private $watchStartTime;
     private $watchEndTime;
     private $watchDelta;
@@ -44,7 +44,7 @@ class CGFeedStat {
      * @return array it contains two indexes, 'maxLikeRecord' link to the timestamp record with max value of like. 'maxCommentRecord' link to the timestamp record with max value of comment.
      */
     private function queryTimestampMaxValue(){
-        $col = $this->getMongoCollection("FacebookFeed");
+        $col = $this->getMongoCollection($this->getMongoFb()->getFeedCollectionName());
         $cursor = $col->find($this->getFacebookFeedDateRangeQuery());
         // TODO rename maxLikeRecord to maxLikeRecords, maxCommentRecord to maxCommentRecords
         $maxLikeRecord = array();
@@ -165,7 +165,7 @@ class CGFeedStat {
         return $a["comments_total_count"] < $b["comments_total_count"];
     }
     public function basicCount(){
-        $col = $this->getMongoCollection("FacebookFeed");
+        $col = $this->getMongoCollection($this->getMongoFb()->getFeedCollectionName());
         $cursor = $col->find();
         $likesCount = array();
 		$commentsCount = array();
@@ -202,7 +202,7 @@ class CGFeedStat {
 
         //$this->checkTime(true, "start timer");
 
-        $col = $this->getMongoCollection("FacebookFeed");
+        $col = $this->getMongoCollection($this->getMongoFb()->getFeedCollectionName());
         while (1){
             $cursor = $col->find($this->getFacebookFeedDateRangeQuery())->skip($i)->limit(100);
             if (!$cursor->hasNext()){
@@ -341,35 +341,6 @@ class CGFeedStat {
     }
 
     /**
-     * @param $colName
-     * @return \MongoCollection
-     */
-    private function getMongoCollection($colName){
-        $m = $this->getMongoClient();
-        $col = $m->selectCollection(CGFeedStat::$dbName, $colName);
-        return $col;
-    }
-
-    /**
-     * @return \MongoDB
-     */
-    private function getMongoDB(){
-        $m = $this->getMongoClient();
-        $col = $m->selectDB(CGFeedStat::$dbName);
-        return $col;
-    }
-
-    /**
-     * @return \MongoClient
-     */
-    private function getMongoClient(){
-        if ($this->mongoClient == null){
-            $this->mongoClient = new \MongoClient();
-        }
-        return $this->mongoClient;
-    }
-
-    /**
      * @return array mongo date query with range of $this->startDate and $this->endDate
      */
     private function getFacebookTimestampDateRangeQuery(){
@@ -414,7 +385,7 @@ class CGFeedStat {
         $this->fbTimestamps = null;
     }
     private function queryTimestamp(){
-        $col = $this->getMongoCollection("FacebookTimestampRecord");
+        $col = $this->getMongoCollection($this->getMongoFb()->getFeedTimestampCollectionName());
         $ret = array();
         $mongoDB = $this->getMongoDB();
         $dayRange = array("batchTime" => $this->getFacebookTimestampDateRangeQuery());
@@ -438,11 +409,7 @@ class CGFeedStat {
      * @return array
      */
     private function queryTimestampByFeed(\MongoId $feedId){
-        //if (isset($this->fbTimestamps[(string)$feedId])){
-        //     return $this->fbTimestamps[(string)$feedId];
-        // }
-        // return array();
-        $col = $this->getMongoCollection("FacebookTimestampRecord");
+        $col = $this->getMongoCollection($this->getMongoFb()->getFeedTimestampCollectionName());
         $query = array(
             "batchTime" => $this->getFacebookTimestampDateRangeQuery(),
             "fbFeed.\$id" => $feedId
@@ -453,5 +420,35 @@ class CGFeedStat {
             $ret[] = $feedTimestamp;
         }
         return $ret;
+    }
+    /**
+     * @param $colName
+     * @return \MongoCollection
+     */
+    private function getMongoCollection($colName){
+        return $this->getMongoFb()->getMongoCollection($colName);
+    }
+
+    /**
+     * @return \MongoDB
+     */
+    private function getMongoDB(){
+        return $this->getMongoFb()->getMongoDB();
+    }
+
+    /**
+     * @return \MongoClient
+     */
+    private function getMongoClient(){
+        return $this->getMongoFb()->getMongoClient();
+    }
+    /**
+     * @return CGMongoFb
+     */
+    private function getMongoFb(){
+        if ($this->mongoFb == null){
+            $this->mongoFb = new CGMongoFb();
+        }
+        return $this->mongoFb;
     }
 }
