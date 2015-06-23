@@ -216,7 +216,10 @@ class CGFeedStat {
             foreach ($cursor as $feed){
                 $page = \MongoDBRef::get($feedCol->db, $feed["fbPage"]);
                 $timestampRecords = $this->queryTimestampByFeed($feed["_id"]);
-                $countArray[$page["fbID"]][$feed["fbID"]] = $this->reformulateTimestampSeries($page, $feed, $timestampRecords, $batchTimeIndex);
+                $reformedSeries = $this->reformulateTimestampSeries($page, $feed, $timestampRecords, $batchTimeIndex);
+                if (!empty($reformedSeries)){
+                    $countArray[$page["fbID"]][$feed["fbID"]] = $reformedSeries;
+                }
                 $i++;
             }
         }
