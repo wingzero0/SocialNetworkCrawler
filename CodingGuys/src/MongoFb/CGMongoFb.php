@@ -100,4 +100,21 @@ class CGMongoFb{
         }
         return $this->mongoClient;
     }
+
+
+    /**
+     * @param \MongoId $mongoId
+     * @return \MongoDBRef|array
+     */
+    public function createPageRef(\MongoId $mongoId){
+        return \MongoDBRef::create($this->getPageCollectionName(), $mongoId);
+    }
+
+    /**
+     * @param \MongoId $mongoId
+     * @return \MongoDBRef|array
+     */
+    public function createFeedRef(\MongoId $mongoId){
+        return \MongoDBRef::create($this->getFeedCollectionName(), $mongoId);
+    }
 } 
