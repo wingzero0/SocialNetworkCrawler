@@ -6,7 +6,7 @@
  * Time: 12:27
  */
 
-namespace CodingGuys;
+namespace CodingGuys\FbWrapper;
 
 use Facebook\GraphPage;
 use Facebook\GraphLocation;

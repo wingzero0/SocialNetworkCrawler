@@ -19,18 +19,33 @@ class dailyReport extends PHPUnit_Framework_TestCase{
 
         $obj = new CGFeedStat($startDate, $endDate, __DIR__ . "/testReport7.csv" );
         $obj->timestampSeriesCount();
-        $fpAns = fopen(__DIR__ . "/fbReport7.csv", "r" );
-        $this->assertNotEquals(null,$fpAns);
-        $fp = fopen(__DIR__ . "/testReport7.csv", "r" );
-        $this->assertNotEquals(null,$fpAns);
-        $ansStr = null;
-        $testStr = null;
-        do{
-            $this->assertEquals($ansStr, $testStr);
-            $ansStr = fgets($fpAns);
-            $testStr = fgets($fp);
-        }while($ansStr != null && $testStr != null);
-        $this->assertEquals($ansStr, $testStr);
-        //$obj->timestampSeriesCount();
+        $ansArr = $this->fileToArray(__DIR__ . "/fbReport7.csv");
+        $testArr = $this->fileToArray(__DIR__ . "/testReport7.csv");
+
+        foreach ($ansArr as $str => $v){
+            $exsitsInTest = isset($testArr[$str]);
+            if (!$exsitsInTest){
+                echo $str . " not exists in test csv\n";
+            }
+            $this->assertEquals(true,$exsitsInTest);
+        }
+        foreach ($testArr as $str => $v){
+            $exsitsInAns = isset($ansArr[$str]);
+            if (!$exsitsInAns){
+                echo $str . " not exists in Ans csv\n";
+            }
+            $this->assertEquals(true,$exsitsInAns);
+        }
+    }
+    private function fileToArray($filename){
+        $fp = fopen($filename, "r");
+        $this->assertNotEquals(null,$fp);
+        $ret = array();
+        while ($line = fgets($fp)){
+            $line = trim($line);
+            $ret[$line] = 1;
+        }
+        fclose($fp);
+        return $ret;
     }
 }

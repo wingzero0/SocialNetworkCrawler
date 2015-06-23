@@ -6,7 +6,7 @@
  * Time: 16:04
  */
 
-namespace CodingGuys;
+namespace CodingGuys\FbWrapper;
 use Facebook\GraphObject;
 
 class CGPaging extends GraphObject{
