@@ -5,8 +5,8 @@
  * Time: 14:03
  */
 
-require_once(__DIR__ . '/facebook-php-sdk-v4/autoload.php');
-require_once(__DIR__ . '/CodingGuys/autoload.php');
+require_once(__DIR__ . '/../facebook-php-sdk-v4/autoload.php');
+require_once(__DIR__ . '/../CodingGuys/autoload.php');
 
 $m = new MongoClient();
 $col = $m->selectCollection("directory", "Facebook");

@@ -16,13 +16,17 @@ if (isset($argv[1])){
     $windowSize = 7;
 }
 
+if (isset($argv[2])){
+    $filename = $argv[2];
+}else{
+    $filename = "fbReport".$windowSize.".csv";
+}
 
-//$endDate = DateTime::createFromFormat(\DateTime::ISO8601,"2015-05-17T06:00:00+0000");
 $endDate = new \DateTime();
 $startDate = clone $endDate;
 $startDate->sub(new \DateInterval('P'.$windowSize.'D'));
 
 
-$obj = new CGFeedStat($startDate, $endDate);
+$obj = new CGFeedStat($startDate, $endDate, $filename);
 $obj->timestampSeriesCount();
 

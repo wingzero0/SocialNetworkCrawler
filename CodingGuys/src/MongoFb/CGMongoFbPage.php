@@ -13,10 +13,14 @@ use CodingGuys\MongoFb\CGMongoFbFeedTimestamp;
 class CGMongoFbPage extends CGMongoFb{
     private $rawDataFromMongo;
     private $_id;
-    public function __construct($rawDataFromMongo){
+    public function __construct($rawDataFromMongo, $dbName = null){
         $this->rawDataFromMongo = $rawDataFromMongo;
+        if (!isset($rawDataFromMongo["_id"])){
+            var_dump($rawDataFromMongo);
+            exit(-1);
+        }
         $this->_id = $rawDataFromMongo["_id"];
-        parent::__construct();
+        parent::__construct($dbName);
     }
     private function createQuery($start, $end){
         $query = array(
@@ -32,7 +36,7 @@ class CGMongoFbPage extends CGMongoFb{
     }
     public function getFirstBatchTimeWithInWindow($start, $end){
         $query = $this->createQuery($start,$end);
-        $col = $this->getMongoCollection("FacebookTimestampRecord");
+        $col = $this->getMongoCollection($this->feedTimestampCollectionName);
         $cursor = $col->find($query)->limit(1)->sort(array("updateTime"=>1));
         if ($cursor->hasNext()){
             $v = $cursor->getNext();
@@ -42,7 +46,7 @@ class CGMongoFbPage extends CGMongoFb{
     }
     public function getLastBatchTimeWithInWindow($start, $end){
         $query = $this->createQuery($start,$end);
-        $col = $this->getMongoCollection("FacebookTimestampRecord");
+        $col = $this->getMongoCollection($this->feedTimestampCollectionName);
         $cursor = $col->find($query)->limit(1)->sort(array("updateTime"=>-1));
         if ($cursor->hasNext()){
             $v = $cursor->getNext();
@@ -53,8 +57,8 @@ class CGMongoFbPage extends CGMongoFb{
     public function getLatestBatchTime(){
         return $this->getLatestBatchTimeWithInWindow(null, null);
     }
-    public function getAverageFeedCommentsBeforeTheBatch(\MongoDate $batchTime){
-        $col = $this->getMongoCollection("FacebookTimestampRecord");
+    public function getAverageFeedCommentsInTheBatch(\MongoDate $batchTime){
+        $col = $this->getMongoCollection($this->feedTimestampCollectionName);
         $cursor = $col->find(array(
             "fbPage.\$id" => $this->_id,
             "batchTime" => $batchTime
@@ -68,8 +72,8 @@ class CGMongoFbPage extends CGMongoFb{
         }
         return $total / $numOfRecord;
     }
-    public function getAverageFeedLikesBeforeTheBatch(\MongoDate $batchTime){
-        $col = $this->getMongoCollection("FacebookTimestampRecord");
+    public function getAverageFeedLikesInTheBatch(\MongoDate $batchTime){
+        $col = $this->getMongoCollection($this->feedTimestampCollectionName);
         $cursor = $col->find(array(
             "fbPage.\$id" => $this->_id,
             "batchTime" => $batchTime
@@ -121,11 +125,11 @@ class CGMongoFbPage extends CGMongoFb{
         return $dateRange;
     }
     /**
-     * @param $queryArray the mongo query
+     * @param array $queryArray the mongo query array
      * @return \MongoCursor
      */
     private function queryFacebookFeed($queryArray){
-        $col = $this->getMongoCollection("FacebookFeed");
+        $col = $this->getMongoCollection($this->feedCollectionName);
         $cursor = $col->find($queryArray);
         return $cursor;
     }

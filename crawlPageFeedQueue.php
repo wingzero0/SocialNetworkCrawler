@@ -1,8 +1,12 @@
 <?php
 
-$m = new \MongoClient();
-$col = $m->selectCollection("directory", "Facebook");
-$cursor = $col->find(array( "\$or" => array(
+
+require_once(__DIR__ . '/CodingGuys/autoload.php');
+use CodingGuys\MongoFb\CGMongoFb;
+
+$mongoFb = new CGMongoFb();
+$pageCol = $mongoFb->getMongoCollection($mongoFb->getPageCollectionName());
+$cursor = $pageCol->find(array( "\$or" => array(
     array("exception" => array("\$exists" => false)),
     array("exception" => false),
 )));
