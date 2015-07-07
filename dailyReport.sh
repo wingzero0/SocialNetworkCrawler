@@ -2,6 +2,9 @@
 BASEDIR=$(dirname $0)
 cd $BASEDIR
 
+echo "rm fbReport*.csv fbReport*.zip"
+rm fbReport*.csv fbReport*.zip
+
 DateStr=$(date +"%F")
 for windowSize in 1 3 7
 do
