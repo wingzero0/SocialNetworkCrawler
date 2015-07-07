@@ -203,7 +203,7 @@ class CGFeedStat {
         $batchTimeIndex = array();
 
         //$this->checkTime(true, "start timer");
-
+        $debugFlag = false;
         $feedCol = $this->getMongoCollection($this->getMongoFb()->getFeedCollectionName());
         while (1){
             $cursor = $feedCol->find($this->getFacebookFeedDateRangeQuery())->skip($i)->limit(100);
@@ -214,6 +214,9 @@ class CGFeedStat {
                 fprintf($this->STDERR, "working on feed:" . $i . "\n");
             }
             foreach ($cursor as $feed){
+                if ($feed["fbID"] == "856793521011381_980660645291334"){
+                    $debugFlag = true;
+                }
                 $page = \MongoDBRef::get($feedCol->db, $feed["fbPage"]);
                 $timestampRecords = $this->queryTimestampByFeed($feed["_id"]);
                 $reformedSeries = $this->reformulateTimestampSeries($page, $feed, $timestampRecords, $batchTimeIndex);
@@ -222,6 +225,13 @@ class CGFeedStat {
                 }
                 $i++;
             }
+        }
+
+        if ($debugFlag == false){
+            fprintf($this->STDERR, "fail to get 856793521011381_980660645291334\n");
+            $query = $this->getFacebookFeedDateRangeQuery();
+            fprintf($this->STDERR, (string)$query["created_time"]["\$gte"]."\n");
+            fprintf($this->STDERR, \DateTime::ISO8601."\n");
         }
         
         $this->avgPageLikeAndComment();
@@ -244,20 +254,6 @@ class CGFeedStat {
             $ret .= ",";
         }
         return $ret;
-    }
-    private function outputString($str, $closeAfterWrite = false){
-        if ($this->fp == null){
-            $this->fp = fopen($this->filename,"w");
-            if ($this->fp == null){
-                fprintf($this->STDERR, "output file: " . $this->filename . " can't be written, redirect output to STDOUT\n");
-                $this->fp = fopen('php://stdout', 'w+');
-            }
-        }
-        fprintf($this->fp, $str);
-        if ($closeAfterWrite){
-            fclose($this->fp);
-            $this->fp = null;
-        }
     }
     private function outputCountArray($countArray, $batchTimeIndex, $feedRaw, $pageRaw){
         $this->outputString("fbpage,fbPageId,feed,feedId,feedCreatedTime,mnemonoCategory,pageLikeCount,LastBatchBeforeCurrentWindowAverageLikes,LastBatchBeforeCurrentWindowAverageComments,pageFeedCount,CurrentWindowAverageLikes,CurrentWindowAverageComments,");
@@ -377,10 +373,10 @@ class CGFeedStat {
     private function getFacebookFeedDateRangeQuery(){
         $dateRange = array();
         if ($this->startDate != null){
-            $dateRange["\$gte"] = date(\DateTime::ISO8601, $this->startDate->sec);
+            $dateRange["\$gte"] = gmdate(\DateTime::ISO8601, $this->startDate->sec);
         }
         if ($this->endDate != null){
-            $dateRange["\$lte"] = date(\DateTime::ISO8601, $this->endDate->sec);
+            $dateRange["\$lte"] = gmdate(\DateTime::ISO8601, $this->endDate->sec);
         }
         if (empty($dateRange)){
             return array();
@@ -465,5 +461,20 @@ class CGFeedStat {
             $this->mongoFb = new CGMongoFb();
         }
         return $this->mongoFb;
+    }
+
+    private function outputString($str, $closeAfterWrite = false){
+        if ($this->fp == null){
+            $this->fp = fopen($this->filename,"w");
+            if ($this->fp == null){
+                fprintf($this->STDERR, "output file: " . $this->filename . " can't be written, redirect output to STDOUT\n");
+                $this->fp = fopen('php://stdout', 'w+');
+            }
+        }
+        fprintf($this->fp, $str);
+        if ($closeAfterWrite){
+            fclose($this->fp);
+            $this->fp = null;
+        }
     }
 }
