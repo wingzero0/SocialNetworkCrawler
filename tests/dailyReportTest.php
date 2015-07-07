@@ -12,7 +12,7 @@ class dailyReport extends PHPUnit_Framework_TestCase{
         $windowSize = 7;
 
 
-        $endDate = DateTime::createFromFormat(\DateTime::ISO8601,"2015-06-01T06:00:00+0000");
+        $endDate = DateTime::createFromFormat(\DateTime::ISO8601,"2015-06-01T08:00:00+0000");
         $startDate = clone $endDate;
         $startDate->sub(new \DateInterval('P'.$windowSize.'D'));
 
