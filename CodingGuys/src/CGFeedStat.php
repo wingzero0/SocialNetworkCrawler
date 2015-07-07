@@ -203,7 +203,7 @@ class CGFeedStat {
         $batchTimeIndex = array();
 
         //$this->checkTime(true, "start timer");
-        $debugFlag = false;
+
         $feedCol = $this->getMongoCollection($this->getMongoFb()->getFeedCollectionName());
         while (1){
             $cursor = $feedCol->find($this->getFacebookFeedDateRangeQuery())->skip($i)->limit(100);
@@ -214,9 +214,6 @@ class CGFeedStat {
                 fprintf($this->STDERR, "working on feed:" . $i . "\n");
             }
             foreach ($cursor as $feed){
-                if ($feed["fbID"] == "856793521011381_980660645291334"){
-                    $debugFlag = true;
-                }
                 $page = \MongoDBRef::get($feedCol->db, $feed["fbPage"]);
                 $timestampRecords = $this->queryTimestampByFeed($feed["_id"]);
                 $reformedSeries = $this->reformulateTimestampSeries($page, $feed, $timestampRecords, $batchTimeIndex);
@@ -225,13 +222,6 @@ class CGFeedStat {
                 }
                 $i++;
             }
-        }
-
-        if ($debugFlag == false){
-            fprintf($this->STDERR, "fail to get 856793521011381_980660645291334\n");
-            $query = $this->getFacebookFeedDateRangeQuery();
-            fprintf($this->STDERR, (string)$query["created_time"]["\$gte"]."\n");
-            fprintf($this->STDERR, \DateTime::ISO8601."\n");
         }
         
         $this->avgPageLikeAndComment();
