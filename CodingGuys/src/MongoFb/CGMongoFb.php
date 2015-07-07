@@ -11,8 +11,10 @@ class CGMongoFb{
 	private $dbName;
 	private $mongoClient;
     protected $pageCollectionName = "FacebookPage"; // origin is 'Facebook'
+    protected $exceptionPageCollectionName = "FacebookExceptionPage";
     protected $feedCollectionName = "FacebookFeed"; // origin is 'FacebookFeed'
     protected $feedTimestampCollectionName = "FacebookFeedTimestamp"; // origin is 'FacebookTimestampRecord'
+
     const DEFAULT_DB_NAME = 'Mnemono';
 
     public function __construct($dbName = null){
@@ -38,6 +40,21 @@ class CGMongoFb{
     public function setPageCollectionName($pageCollectionName)
     {
         $this->pageCollectionName = $pageCollectionName;
+    }
+
+
+    /**
+     * @return string
+     */
+    public function getExceptionPageCollectionName(){
+        return $this->exceptionPageCollectionName;
+    }
+
+    /**
+     * @param $collectionName
+     */
+    public function setExceptionPageCollectionName($collectionName){
+        $this->exceptionPageCollectionName = $collectionName;
     }
 
     /**
