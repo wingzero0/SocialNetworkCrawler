@@ -8,9 +8,14 @@
 require_once(__DIR__ . '/../facebook-php-sdk-v4/autoload.php');
 require_once(__DIR__ . '/../CodingGuys/autoload.php');
 
-$m = new MongoClient();
-$col = $m->selectCollection("directory", "Facebook");
-$cursor = $col->find();
+use CodingGuys\MongoFb\CGMongoFb;
+
+$fbMongo = new CGMongoFb();
+$col = $fbMongo->getMongoCollection($fbMongo->getPageCollectionName());
+$cursor = $col->find(array( "\$or" => array(
+    array("exception" => array("\$exists" => false)),
+    array("exception" => false),
+)));
 
 echo "fbID,name,likes,link,checkins,were_here_count,category,category_list\n";
 foreach ($cursor as $pageRaw){
