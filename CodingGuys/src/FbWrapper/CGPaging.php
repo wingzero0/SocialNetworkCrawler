@@ -1,13 +1,13 @@
 <?php
 /**
- * Created by PhpStorm.
- * User: macbookpro
+ * User: kit
  * Date: 01/01/15
  * Time: 16:04
  */
 
 namespace CodingGuys\FbWrapper;
 use Facebook\GraphObject;
+use CodingGuys\FbWrapper\CGCursor;
 
 class CGPaging extends GraphObject{
     /**
@@ -22,5 +22,18 @@ class CGPaging extends GraphObject{
      */
     public function getPrevious(){
         return $this->getProperty('previous');
+    }
+
+    /**
+     * @return string | null
+     */
+    public function getAfter(){
+        $cgCursor = $this->getProperty("cursor", CGCursor::className());
+        if ($cgCursor instanceof CGCursor){
+            echo $cgCursor->getAfter();
+            return $cgCursor->getAfter();
+        }else{
+            return null;
+        }
     }
 } 

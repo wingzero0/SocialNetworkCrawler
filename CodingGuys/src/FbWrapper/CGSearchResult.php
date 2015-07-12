@@ -26,6 +26,9 @@ class CGSearchResult extends GraphObject{
     public function getPages(){
         return $this->getPropertyAsArray('data',GraphPage::className());
     }
+    /**
+     * @return boolean
+     */
     public function hasNext(){
         $paging = $this->getPaging();
         if ($paging != null) {
@@ -33,5 +36,22 @@ class CGSearchResult extends GraphObject{
         }else {
             return false;
         }
+    }
+    /**
+     * get next page cursor offset
+     * @return array | null
+     */
+    public function getAfter(){
+        $paging = $this->getPaging();
+        if ($paging instanceof CGPaging){
+            echo "pass search result successful.\n";
+            echo $paging->getAfter();
+            return $paging->getAfter();
+        }else{
+            echo "can't pass search result.\n";
+            return null;
+        }
+        echo $paging->getAfter();
+        return $paging->getAfter();
     }
 } 
