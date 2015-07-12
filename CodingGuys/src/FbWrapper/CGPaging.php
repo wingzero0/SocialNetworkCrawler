@@ -28,9 +28,8 @@ class CGPaging extends GraphObject{
      * @return string | null
      */
     public function getAfter(){
-        $cgCursor = $this->getProperty("cursor", CGCursor::className());
+        $cgCursor = $this->getProperty("cursors", CGCursor::className());
         if ($cgCursor instanceof CGCursor){
-            echo $cgCursor->getAfter();
             return $cgCursor->getAfter();
         }else{
             return null;

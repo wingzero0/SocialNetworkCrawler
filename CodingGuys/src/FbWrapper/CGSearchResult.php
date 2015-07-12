@@ -44,14 +44,9 @@ class CGSearchResult extends GraphObject{
     public function getAfter(){
         $paging = $this->getPaging();
         if ($paging instanceof CGPaging){
-            echo "pass search result successful.\n";
-            echo $paging->getAfter();
             return $paging->getAfter();
         }else{
-            echo "can't pass search result.\n";
             return null;
         }
-        echo $paging->getAfter();
-        return $paging->getAfter();
     }
 } 

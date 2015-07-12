@@ -13,7 +13,6 @@ class CGCursor extends GraphObject{
      * @return string | null
      */
     public function getAfter(){
-        echo $this->getProperty('after');
         return $this->getProperty('after');
     }
 }
