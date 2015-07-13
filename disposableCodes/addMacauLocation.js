@@ -1,6 +1,14 @@
 use Mnemono;
-db.FacebookPage.find({mnemonoLocation:{$exists:false}}).limit(10).forEach(function(e){
+db.FacebookPage.find(
+    {mnemono:{$exists:false}}
+).limit(10).forEach(function(e){
     print(e._id);
-    e.mnemonoLocation = {"city":"mo", "country":"cn"};
+    e.mnemono = {
+        "category": e.mnemonoCat,
+        "location": {"city":"mo", "country":"cn"}
+    };
+    delete e.mnemonoCat;
+    delete e.mnemonoLocation;
     db.FacebookPage.save(e);
 });
+
