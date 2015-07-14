@@ -1,0 +1,2 @@
+0 */1 * * * php /home/webmaster/backend/crawler/fbCrawler/crawlPageFeedQueue.php 2>> /home/webmaster/backend/crawler/fbCrawler/stderr.err
+0 13  *  *  * sh /home/webmaster/backend/crawler/fbCrawler/dailyReport.sh 1>> /home/webmaster/backend/crawler/fbCrawler/dailyReport.log 2>> /home/webmaster/backend/crawler/fbCrawler/dailyReport.err
