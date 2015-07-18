@@ -263,7 +263,7 @@ class CGFeedStat {
                 $this->outputString($this->extractShortLink($pageRaw[$pageId]) . "," . $pageId . ",");
                 $this->outputString($this->extractShortLink($feedRaw[$feedId]) . "," . $feedId . ",");
                 $this->outputString($feedRaw[$feedId]["created_time"] . ",");
-                $this->outputString($pageRaw[$pageId]["mnemonoCat"]. ",");
+                $this->outputString($pageRaw[$pageId]["mnemono"]["category"]. ",");
                 if (isset($pageRaw[$pageId]["likes"])){
                     $this->outputString($pageRaw[$pageId]["likes"] . ",");
                 }else{
