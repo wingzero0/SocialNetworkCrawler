@@ -7,30 +7,38 @@ require_once(__DIR__ . '/CodingGuys/autoload.php');
 
 use CodingGuys\CGDumpFbCollection;
 
-$originClient = new \MongoClient();
-$originCol = $originClient->selectCollection("Mnemono","FacebookFeedTimestamp");
+$options = getopt("s:e:");
 
-$newClient = new \MongoClient();
-$newFeedTimestampCol = $newClient->selectCollection("MnemonoDump", "FacebookFeedTimestamp");
+$dumper = new CGDumpFbCollection();
 
-$cursor = $originCol->find(
-        array("batchTime" =>
-            array("\$lte" => new \MongoDate()))
+$originFeedTimestampCol = $dumper->getMongoCollection($dumper->getFeedTimestampCollectionName());
+$newFeedTimestampCol = $dumper->getTmpCollection($dumper->getFeedTimestampCollectionName());
+$newPageCol = $dumper->getTmpCollection($dumper->getPageCollectionName());
+$newFeedCol = $dumper->getTmpCollection($dumper->getFeedCollectionName());
+
+//$startDate = \DateTime::createFromFormat(\DateTime::ISO8601, "2015-07-22T00:00:00+0000");
+$startDate = \DateTime::createFromFormat(\DateTime::ISO8601, $options["s"]);
+$endDate = \DateTime::createFromFormat(\DateTime::ISO8601, $options["e"]);
+
+$cursor = $originFeedTimestampCol->find(
+        array(
+            "batchTime" => array(
+                "\$gte" => new \MongoDate($startDate->getTimestamp()),
+                "\$lte" => new \MongoDate($endDate->getTimestamp())
+            )
+        )
     );
 
-$originDB = $originClient->selectDB("Mnemono");
-$newDB = $newClient->selectDB("MnemonoDump");
+$originDB = $dumper->getMongoDB();
 foreach($cursor as $feedTimestamp){
     $page = MongoDBRef::get($originDB, $feedTimestamp["fbPage"]);
-    $newClient->selectCollection("MnemonoDump", "FacebookPage")
-        ->update(
+    $newPageCol->update(
             array("_id" => $page["_id"]),
             $page,
             array("upsert" => true));
 
     $feed = MongoDBRef::get($originDB, $feedTimestamp["fbFeed"]);
-    $newClient->selectCollection("MnemonoDump", "FacebookFeed")
-        ->update(
+    $newFeedCol->update(
             array("_id" => $feed["_id"]),
             $feed,
             array("upsert" => true));
