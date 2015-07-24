@@ -17,7 +17,7 @@ $cursor = $col->find(array( "\$or" => array(
     array("exception" => false),
 )));
 
-echo "fbID,name,likes,link,checkins,were_here_count,category,category_list\n";
+echo "fbID,name,likes,link,checkins,were_here_count,mnemonoCat,fbCategory,fbCategory_list,\n";
 foreach ($cursor as $pageRaw){
 	echo $pageRaw["fbID"].",";
 	echo toString($pageRaw, "name").",";
@@ -25,6 +25,11 @@ foreach ($cursor as $pageRaw){
 	echo toString($pageRaw, "link").",";
 	echo toString($pageRaw, "checkins").",";
 	echo toString($pageRaw, "were_here_count").",";
+    if (isset($pageRaw["mnemono"]) && isset($pageRaw["mnemono"]["category"])){
+        echo $pageRaw["mnemono"]["category"] .",";
+    }else{
+        echo "NULL,";
+    }
 	echo toString($pageRaw, "category").",";
 	if (isset($pageRaw["category_list"])){
 		foreach ($pageRaw["category_list"] as $category){
@@ -33,6 +38,7 @@ foreach ($cursor as $pageRaw){
 	}else {
 		echo "NULL,";
 	}
+
 	echo "\n";
 }
 
