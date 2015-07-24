@@ -16,7 +16,6 @@ $newFeedTimestampCol = $dumper->getTmpCollection($dumper->getFeedTimestampCollec
 $newPageCol = $dumper->getTmpCollection($dumper->getPageCollectionName());
 $newFeedCol = $dumper->getTmpCollection($dumper->getFeedCollectionName());
 
-//$startDate = \DateTime::createFromFormat(\DateTime::ISO8601, "2015-07-22T00:00:00+0000");
 $startDate = \DateTime::createFromFormat(\DateTime::ISO8601, $options["s"]);
 $endDate = \DateTime::createFromFormat(\DateTime::ISO8601, $options["e"]);
 
