@@ -11,6 +11,9 @@ $options = getopt("s:e:");
 
 $dumper = new CGDumpFbCollection();
 
+$tmpDb = $dumper->getTmpDB();
+$tmpDb->drop();
+
 $originFeedTimestampCol = $dumper->getMongoCollection($dumper->getFeedTimestampCollectionName());
 $newFeedTimestampCol = $dumper->getTmpCollection($dumper->getFeedTimestampCollectionName());
 $newPageCol = $dumper->getTmpCollection($dumper->getPageCollectionName());
@@ -29,6 +32,12 @@ $cursor = $originFeedTimestampCol->find(
     );
 
 $originDB = $dumper->getMongoDB();
+$newPageCol->createIndex(array("fbID" => 1));
+$newFeedCol->createIndex(array("fbID" => 1));
+$newFeedTimestampCol->createIndex(array("fbPage.\$id" => -1));
+$newFeedTimestampCol->createIndex(array("fbPage.\$id" => -1 , "batchTime" => -1));
+$newFeedTimestampCol->createIndex(array("fbFeed.\$id" => -1 , "batchTime" => -1));
+
 foreach($cursor as $feedTimestamp){
     $page = MongoDBRef::get($originDB, $feedTimestamp["fbPage"]);
     $newPageCol->update(
