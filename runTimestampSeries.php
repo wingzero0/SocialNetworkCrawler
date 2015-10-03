@@ -22,11 +22,17 @@ if (isset($argv[2])){
     $filename = "fbReport".$windowSize.".csv";
 }
 
+if (isset($argv[3])){
+    $city = $argv[3];
+}else{
+    $city = "mo";
+}
+
 $endDate = new \DateTime();
 $startDate = clone $endDate;
 $startDate->sub(new \DateInterval('P'.$windowSize.'D'));
 
 
 $obj = new CGFeedStat($startDate, $endDate, $filename);
-$obj->timestampSeriesCount();
+$obj->timestampSeriesCount($city);
 
