@@ -22,4 +22,11 @@ class CGDumpFbCollection extends CGMongoFb{
         $col = $m->selectCollection($this->tmpDbName, $colName);
         return $col;
     }
+
+    /**
+     * @return \MongoDB
+     */
+    public function getTmpDB(){
+        return $this->getMongoClient()->selectDB(CGDumpFbCollection::TMP_DB_NAME);
+    }
 }
