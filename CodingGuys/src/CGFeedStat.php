@@ -195,7 +195,7 @@ class CGFeedStat {
         print_r($likesCount);
         print_r($commentsCount);
     }
-    public function timestampSeriesCount(){
+    public function timestampSeriesCount($city = "mo"){
         $countArray = array();
         $this->feedRaw = array();
         $this->pageRaw = array();
@@ -214,13 +214,16 @@ class CGFeedStat {
                 fprintf($this->STDERR, "working on feed:" . $i . "\n");
             }
             foreach ($cursor as $feed){
+                $i++;
                 $page = \MongoDBRef::get($feedCol->db, $feed["fbPage"]);
+                if ($page["mnemono"]["location"]["city"] != $city){
+                    continue;
+                }
                 $timestampRecords = $this->queryTimestampByFeed($feed["_id"]);
                 $reformedSeries = $this->reformulateTimestampSeries($page, $feed, $timestampRecords, $batchTimeIndex);
                 if (!empty($reformedSeries)){
                     $countArray[$page["fbID"]][$feed["fbID"]] = $reformedSeries;
                 }
-                $i++;
             }
         }
         
