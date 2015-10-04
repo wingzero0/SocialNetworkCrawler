@@ -134,4 +134,18 @@ class CGMongoFb{
     public function createFeedRef(\MongoId $mongoId){
         return \MongoDBRef::create($this->getFeedCollectionName(), $mongoId);
     }
+
+    protected function extractShortLink($rawDataFromMongo){
+        return (isset($rawDataFromMongo["link"]) &&
+            $this->isFbPhotoLink($rawDataFromMongo["link"]) ?
+                $rawDataFromMongo["link"] : "https://www.facebook.com/" . $rawDataFromMongo["fbID"]);
+    }
+    protected function convertMongoDateToISODate(\MongoDate $mongoDate){
+        $batchTime = new \DateTime();
+        $batchTime->setTimestamp($mongoDate->sec);
+        return $batchTime->format(\DateTime::ISO8601);
+    }
+    private function isFbPhotoLink($link){
+        return preg_match('/www\.facebook\.com(.*)photos/', $link) > 0;
+    }
 } 

@@ -17,4 +17,7 @@ class CGMongoFbFeed extends CGMongoFb{
         $this->_id = $rawDataFromMongo["_id"];
         parent::__construct($dbName);
     }
-} 
+    public function getShortLink(){
+        parent::extractShortLink($this->rawDataFromMongo);
+    }
+}
