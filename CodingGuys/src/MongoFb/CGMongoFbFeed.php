@@ -18,6 +18,25 @@ class CGMongoFbFeed extends CGMongoFb{
         parent::__construct($dbName);
     }
     public function getShortLink(){
-        parent::extractShortLink($this->rawDataFromMongo);
+        return parent::extractShortLink($this->rawDataFromMongo);
+    }
+
+    /**
+     * @return int
+     */
+    public function getSharesCount(){
+        if (isset($this->rawDataFromMongo["shares"]) &&
+            isset($this->rawDataFromMongo["shares"]["count"])
+        ){
+            return intval($this->rawDataFromMongo["shares"]["count"]);
+        }
+        return 0;
+    }
+
+    /**
+     * @return string
+     */
+    public function getCreatedTime(){
+        return $this->rawDataFromMongo["created_time"];
     }
 }

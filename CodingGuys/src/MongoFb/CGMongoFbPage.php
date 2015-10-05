@@ -13,6 +13,10 @@ use CodingGuys\MongoFb\CGMongoFbFeedTimestamp;
 class CGMongoFbPage extends CGMongoFb{
     private $rawDataFromMongo;
     private $_id;
+    private $feedCount;
+    private $accumulateLike;
+    private $accumulateComment;
+
     public function __construct($rawDataFromMongo, $dbName = null){
         $this->rawDataFromMongo = $rawDataFromMongo;
         if (!isset($rawDataFromMongo["_id"])){
@@ -20,20 +24,36 @@ class CGMongoFbPage extends CGMongoFb{
             exit(-1);
         }
         $this->_id = $rawDataFromMongo["_id"];
+        $this->setFeedCount(0)
+            ->setAccumulateLike(0)
+            ->setAccumulateComment(0);
         parent::__construct($dbName);
     }
-    private function createQuery($start, $end){
-        $query = array(
-            "fbPage.\$id" => $this->_id
-        );
 
-        $batchTimeRange = $this->createDateRangeQuery($start,$end);
-
-        if (!empty($batchTimeRange)){
-            $query["batchTime"] = $batchTimeRange;
+    /**
+     * @return int
+     */
+    public function getLikes(){
+        if (isset($this->rawDataFromMongo["likes"])){
+            return intval($this->rawDataFromMongo["likes"]);
         }
-        return $query;
+        return 0;
     }
+
+    /**
+     * @return string
+     */
+    public function getMnemonoCategory(){
+        return $this->rawDataFromMongo["mnemono"]["category"];
+    }
+
+    /**
+     * @return string
+     */
+    public function getShortLink(){
+        return parent::extractShortLink($this->rawDataFromMongo);
+    }
+
     public function getFirstBatchTimeWithInWindow($start, $end){
         $query = $this->createQuery($start,$end);
         $col = $this->getMongoCollection($this->feedTimestampCollectionName);
@@ -132,5 +152,72 @@ class CGMongoFbPage extends CGMongoFb{
         $col = $this->getMongoCollection($this->feedCollectionName);
         $cursor = $col->find($queryArray);
         return $cursor;
+    }
+
+    private function createQuery($start, $end){
+        $query = array(
+            "fbPage.\$id" => $this->_id
+        );
+
+        $batchTimeRange = $this->createDateRangeQuery($start,$end);
+
+        if (!empty($batchTimeRange)){
+            $query["batchTime"] = $batchTimeRange;
+        }
+        return $query;
+    }
+
+    /**
+     * @return int
+     */
+    public function getFeedCount()
+    {
+        return $this->feedCount;
+    }
+
+    /**
+     * @param int $feedCount
+     * @return self
+     */
+    public function setFeedCount($feedCount)
+    {
+        $this->feedCount = $feedCount;
+        return $this;
+    }
+
+    /**
+     * @return int
+     */
+    public function getAccumulateLike()
+    {
+        return $this->accumulateLike;
+    }
+
+    /**
+     * @param int $accumulateLike
+     * @return self
+     */
+    public function setAccumulateLike($accumulateLike)
+    {
+        $this->accumulateLike = $accumulateLike;
+        return $this;
+    }
+
+    /**
+     * @return int
+     */
+    public function getAccumulateComment()
+    {
+        return $this->accumulateComment;
+    }
+
+    /**
+     * @param int $accumulateComment
+     * @return self
+     */
+    public function setAccumulateComment($accumulateComment)
+    {
+        $this->accumulateComment = $accumulateComment;
+        return $this;
     }
 } 

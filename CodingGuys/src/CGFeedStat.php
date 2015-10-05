@@ -6,6 +6,7 @@
  */
 
 namespace CodingGuys;
+use CodingGuys\MongoFb\CGMongoFbFeed;
 use CodingGuys\MongoFb\CGMongoFbFeedTimestamp;
 use CodingGuys\MongoFb\CGMongoFbPage;
 use CodingGuys\MongoFb\CGMongoFb;
@@ -21,8 +22,8 @@ class CGFeedStat {
     private $fbTimestamps;
     private $filename;
     private $fp;
-    private $pageRaw;
-    private $feedRaw;
+    private $pagePool;
+    private $feedPool;
     public function __construct(\DateTime $startDate, \DateTime $endDate, $filename){
         $this->setDateRange($startDate, $endDate);
         $this->STDERR = fopen('php://stderr', 'w+');
@@ -199,8 +200,8 @@ class CGFeedStat {
     }
     public function timestampSeriesCount($city = "mo"){
         $countArray = array();
-        $this->feedRaw = array();
-        $this->pageRaw = array();
+        $this->feedPool = array();
+        $this->pagePool = array();
         $i = 0;
         $batchTimeIndex = array();
 
@@ -231,15 +232,13 @@ class CGFeedStat {
         
         $this->avgPageLikeAndComment();
 
-        $this->outputCountArray($countArray, $batchTimeIndex, $this->feedRaw, $this->pageRaw);
+        $this->outputCountArray($countArray, $batchTimeIndex, $this->feedPool, $this->pagePool);
     }
-    private function getPreviousAverageFeedLikes($pageRaw){
-        $cgMongoFbPage = new CGMongoFbPage($pageRaw);
+    private function getPreviousAverageFeedLikes(CGMongoFbPage $cgMongoFbPage){
         $batchTime = $cgMongoFbPage->getFirstBatchTimeWithInWindow($this->startDate,$this->endDate);
         return $cgMongoFbPage->getAverageFeedLikesInTheBatch($batchTime);
     }
-    private function getPreviousAverageFeedComments($pageRaw){
-        $cgMongoFbPage = new CGMongoFbPage($pageRaw);
+    private function getPreviousAverageFeedComments(CGMongoFbPage $cgMongoFbPage){
         $batchTime = $cgMongoFbPage->getFirstBatchTimeWithInWindow($this->startDate,$this->endDate);
         return $cgMongoFbPage->getAverageFeedCommentsInTheBatch($batchTime);
     }
@@ -250,7 +249,7 @@ class CGFeedStat {
         }
         return $ret;
     }
-    private function outputCountArray($countArray, $batchTimeIndex, $feedRaw, $pageRaw){
+    private function outputCountArray($countArray, $batchTimeIndex, $feedPool, $pageRaw){
         $this->outputString("fbpage,fbPageId,feed,feedId,feedCreatedTime,mnemonoCategory,pageLikeCount,LastBatchBeforeCurrentWindowAverageLikes,LastBatchBeforeCurrentWindowAverageComments,pageFeedCount,CurrentWindowAverageLikes,CurrentWindowAverageComments,");
         ksort($batchTimeIndex);
         foreach($batchTimeIndex as $batchTimeString => $value){
@@ -262,57 +261,64 @@ class CGFeedStat {
         }
         $this->outputString("\n");
         foreach ($countArray as $pageId => $page){
-            $previousAvgLikes = $this->getPreviousAverageFeedLikes($pageRaw[$pageId]);
-            $previousAvgComments = $this->getPreviousAverageFeedComments($pageRaw[$pageId]);
-            foreach ($page as $feedId => $feed){
-                $this->outputString($this->extractShortLink($pageRaw[$pageId]) . "," . $pageId . ",");
-                $this->outputString($this->extractShortLink($feedRaw[$feedId]) . "," . $feedId . ",");
-                $this->outputString($feedRaw[$feedId]["created_time"] . ",");
-                $this->outputString($pageRaw[$pageId]["mnemono"]["category"]. ",");
-                if (isset($pageRaw[$pageId]["likes"])){
-                    $this->outputString($pageRaw[$pageId]["likes"] . ",");
-                }else{
-                    $this->outputString($this->skipNColumn(1));
-                }
-                $this->outputString($previousAvgLikes. ",");
-                $this->outputString($previousAvgComments . ",");
-                $this->outputString($pageRaw[$pageId]["feedCount"] . ",");
-                $this->outputString($pageRaw[$pageId]["feedAverageLike"] . ",");
-                $this->outputString($pageRaw[$pageId]["feedAverageComment"] . ",");
-                foreach($batchTimeIndex as $batchTimeString => $value){
-                    if (isset($feed[$batchTimeString])){
-                        $timestampRecord = $feed[$batchTimeString];
-                        $this->outputString($timestampRecord['deltaLike'].",");
-                        $this->outputString($timestampRecord['deltaComment'].",");
-                    }else{
-                        $this->outputString($this->skipNColumn(2));
+            $cgFbPage = $pageRaw[$pageId];
+            if ($cgFbPage instanceof CGMongoFbPage){
+                $previousAvgLikes = $this->getPreviousAverageFeedLikes($cgFbPage);
+                $previousAvgComments = $this->getPreviousAverageFeedComments($cgFbPage);
+                foreach ($page as $feedId => $feed){
+
+                    $this->outputString($cgFbPage->getShortLink() . "," . $pageId . ",");
+
+                    $cgFbFeed = $feedPool[$feedId];
+                    if ($cgFbFeed instanceof CGMongoFbFeed){
+                        $this->outputString($cgFbFeed->getShortLink() . "," . $feedId . ",");
+                        $this->outputString($cgFbFeed->getCreatedTime() . ",");
                     }
+
+                    $this->outputString($cgFbPage->getLikes() . ",");
+                    $this->outputString($cgFbPage->getMnemonoCategory() . ",");
+
+                    $this->outputString($previousAvgLikes. ",");
+                    $this->outputString($previousAvgComments . ",");
+                    $this->outputString($cgFbPage->getFeedCount() . ",");
+                    $this->outputString($pageRaw[$pageId]["feedAverageLike"] . ",");
+                    $this->outputString($pageRaw[$pageId]["feedAverageComment"] . ",");
+                    foreach($batchTimeIndex as $batchTimeString => $value){
+                        if (isset($feed[$batchTimeString])){
+                            $timestampRecord = $feed[$batchTimeString];
+                            $this->outputString($timestampRecord['deltaLike'].",");
+                            $this->outputString($timestampRecord['deltaComment'].",");
+                        }else{
+                            $this->outputString($this->skipNColumn(2));
+                        }
+                    }
+                    $this->outputString("\n");
                 }
-                $this->outputString("\n");
             }
         }
         $this->outputString("", true);
     }
-    // TODO chane pageRaw => pagePool, feedRaw => feedPool
     private function accumulatePageLikeAndComment($page, $feed, $timestampRecords){
-        if (!isset($this->pageRaw[$page["fbID"]])){
-            $this->pageRaw[$page["fbID"]] = $page;
-            $this->pageRaw[$page["fbID"]]["feedCount"] = 0;
-            $this->pageRaw[$page["fbID"]]["accumulateLike"] = 0;
-            $this->pageRaw[$page["fbID"]]["accumulateComment"] = 0;
+        if (!isset($this->pagePool[$page["fbID"]])){
+            $this->pagePool[$page["fbID"]] = new CGMongoFbPage($page);
         }
-        $this->pageRaw[$page["fbID"]]["feedCount"] += 1;
+        $cgMongoFbPage = $this->pagePool[$page["fbID"]];
+        if (!($cgMongoFbPage instanceof CGMongoFbPage)){
+            return;
+        }
+        $cgMongoFbPage->setFeedCount($cgMongoFbPage->getFeedCount() + 1);
 
         $ret = $this->findMaxLikeAndMaxComment($timestampRecords);
-        $this->pageRaw[$page["fbID"]]["accumulateLike"] += $ret['maxLike'];
-        $this->pageRaw[$page["fbID"]]["accumulateComment"] += $ret['maxComment'];
+        $cgMongoFbPage->setAccumulateLike($cgMongoFbPage->getAccumulateLike() + $ret['maxLike']);
+        $cgMongoFbPage->setAccumulateComment($cgMongoFbPage->getAccumulateComment() + $ret['maxComment']);
 
-        $this->feedRaw[$feed["fbID"]] = $feed;
+        $this->feedPool[$feed["fbID"]] = new CGMongoFbFeed($feed);
     }
     private function avgPageLikeAndComment(){
-        foreach ($this->pageRaw as $pageId => $page){
-            $this->pageRaw[$pageId]["feedAverageLike"] = $this->pageRaw[$pageId]["accumulateLike"] / $this->pageRaw[$pageId]["feedCount"];
-            $this->pageRaw[$pageId]["feedAverageComment"] = $this->pageRaw[$pageId]["accumulateComment"] / $this->pageRaw[$pageId]["feedCount"];
+        foreach ($this->pagePool as $pageId => $page){
+            //TODO change into object
+            $this->pagePool[$pageId]["feedAverageLike"] = $this->pagePool[$pageId]["accumulateLike"] / $this->pagePool[$pageId]["feedCount"];
+            $this->pagePool[$pageId]["feedAverageComment"] = $this->pagePool[$pageId]["accumulateComment"] / $this->pagePool[$pageId]["feedCount"];
         }
     }
     private function reformulateTimestampSeries($page, $feed, $timestampRecords, & $batchTimeIndex){
