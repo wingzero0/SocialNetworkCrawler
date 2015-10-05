@@ -64,7 +64,7 @@ class CGMongoFbFeedTimestamp extends CGMongoFb{
      * @return string
      */
     public function getUpdateTimeInISO(){
-        $updateTime = $this->getUpdateTimeInISO();
+        $updateTime = $this->getUpdateTime();
         if ($updateTime == null){
             return "";
         }
