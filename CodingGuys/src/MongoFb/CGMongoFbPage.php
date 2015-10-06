@@ -220,4 +220,20 @@ class CGMongoFbPage extends CGMongoFb{
         $this->accumulateComment = $accumulateComment;
         return $this;
     }
+
+    /**
+     * @return double
+     */
+    public function getFeedAverageLike()
+    {
+        return $this->getAccumulateLike() / $this->getFeedCount();
+    }
+
+    /**
+     * @return double
+     */
+    public function getFeedAverageComment()
+    {
+        return $this->getAccumulateComment() / $this->getFeedCount();
+    }
 } 

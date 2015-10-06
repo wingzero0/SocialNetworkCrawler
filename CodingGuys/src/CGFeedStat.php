@@ -229,8 +229,6 @@ class CGFeedStat {
                 }
             }
         }
-        
-        $this->avgPageLikeAndComment();
 
         $this->outputCountArray($countArray, $batchTimeIndex, $this->feedPool, $this->pagePool);
     }
@@ -281,8 +279,8 @@ class CGFeedStat {
                     $this->outputString($previousAvgLikes. ",");
                     $this->outputString($previousAvgComments . ",");
                     $this->outputString($cgFbPage->getFeedCount() . ",");
-                    $this->outputString($pageRaw[$pageId]["feedAverageLike"] . ",");
-                    $this->outputString($pageRaw[$pageId]["feedAverageComment"] . ",");
+                    $this->outputString($cgFbPage->getFeedAverageLike() . ",");
+                    $this->outputString($cgFbPage->getFeedAverageComment() . ",");
                     foreach($batchTimeIndex as $batchTimeString => $value){
                         if (isset($feed[$batchTimeString])){
                             $timestampRecord = $feed[$batchTimeString];
@@ -313,13 +311,6 @@ class CGFeedStat {
         $cgMongoFbPage->setAccumulateComment($cgMongoFbPage->getAccumulateComment() + $ret['maxComment']);
 
         $this->feedPool[$feed["fbID"]] = new CGMongoFbFeed($feed);
-    }
-    private function avgPageLikeAndComment(){
-        foreach ($this->pagePool as $pageId => $page){
-            //TODO change into object
-            $this->pagePool[$pageId]["feedAverageLike"] = $this->pagePool[$pageId]["accumulateLike"] / $this->pagePool[$pageId]["feedCount"];
-            $this->pagePool[$pageId]["feedAverageComment"] = $this->pagePool[$pageId]["accumulateComment"] / $this->pagePool[$pageId]["feedCount"];
-        }
     }
     private function reformulateTimestampSeries($page, $feed, $timestampRecords, & $batchTimeIndex){
         $this->accumulatePageLikeAndComment($page, $feed, $timestampRecords);
