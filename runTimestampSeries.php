@@ -28,8 +28,7 @@ if (isset($argv[3])){
     $city = "mo";
 }
 
-//$endDate = new \DateTime();
-$endDate = \DateTime::createFromFormat(\DateTime::ISO8601, "2015-09-23T00:00:00+0000");
+$endDate = new \DateTime();
 $startDate = clone $endDate;
 $startDate->sub(new \DateInterval('P'.$windowSize.'D'));
 
