@@ -31,4 +31,43 @@ class CGMongoFbFeedTimestamp extends CGMongoFb{
             return 0;
         }
     }
-} 
+
+    /**
+     * @return \MongoDate
+     */
+    public function getBatchTime(){
+        if (isset($this->rawDataFromMongo["batchTime"])){
+            return $this->rawDataFromMongo["batchTime"];
+        }
+        return null;
+    }
+    /**
+     * @return \MongoDate
+     */
+    public function getUpdateTime(){
+        if (isset($this->rawDataFromMongo["updateTime"])){
+            return $this->rawDataFromMongo["updateTime"];
+        }
+        return null;
+    }
+    /**
+     * @return string
+     */
+    public function getBatchTimeInISO(){
+        $batchTime = $this->getBatchTime();
+        if ($batchTime == null){
+            return "";
+        }
+        return $this->convertMongoDateToISODate($batchTime);
+    }
+    /**
+     * @return string
+     */
+    public function getUpdateTimeInISO(){
+        $updateTime = $this->getUpdateTime();
+        if ($updateTime == null){
+            return "";
+        }
+        return $this->convertMongoDateToISODate($updateTime);
+    }
+}
