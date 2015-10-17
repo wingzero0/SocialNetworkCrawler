@@ -22,15 +22,6 @@ $newFeedCol = $dumper->getTmpCollection($dumper->getFeedCollectionName());
 $startDate = \DateTime::createFromFormat(\DateTime::ISO8601, $options["s"]);
 $endDate = \DateTime::createFromFormat(\DateTime::ISO8601, $options["e"]);
 
-$cursor = $originFeedTimestampCol->find(
-        array(
-            "batchTime" => array(
-                "\$gte" => new \MongoDate($startDate->getTimestamp()),
-                "\$lte" => new \MongoDate($endDate->getTimestamp())
-            )
-        )
-    );
-
 $originDB = $dumper->getMongoDB();
 $newPageCol->createIndex(array("fbID" => 1));
 $newFeedCol->createIndex(array("fbID" => 1));
@@ -38,21 +29,43 @@ $newFeedTimestampCol->createIndex(array("fbPage.\$id" => -1));
 $newFeedTimestampCol->createIndex(array("fbPage.\$id" => -1 , "batchTime" => -1));
 $newFeedTimestampCol->createIndex(array("fbFeed.\$id" => -1 , "batchTime" => -1));
 
-foreach($cursor as $feedTimestamp){
-    $page = MongoDBRef::get($originDB, $feedTimestamp["fbPage"]);
-    $newPageCol->update(
+$firstRun = true;
+$lastId = null;
+do{
+    if ($lastId != null){
+        $query = array("_id" => array("\$gt" => $lastId));
+    }else{
+        $query = array();
+    }
+    $advanceQuery = array_merge(array(
+                "batchTime" => array(
+                    "\$gte" => new \MongoDate($startDate->getTimestamp()),
+                    "\$lte" => new \MongoDate($endDate->getTimestamp())
+                )
+            ), $query);
+
+    $cursor = $originFeedTimestampCol->find($advanceQuery)->limit(100);
+    $newCount = 0;
+    foreach($cursor as $feedTimestamp){
+        $newCount++;
+        $lastId = $feedTimestamp["_id"];
+        $page = MongoDBRef::get($originDB, $feedTimestamp["fbPage"]);
+        $newPageCol->update(
             array("_id" => $page["_id"]),
             $page,
             array("upsert" => true));
 
-    $feed = MongoDBRef::get($originDB, $feedTimestamp["fbFeed"]);
-    $newFeedCol->update(
+        $feed = MongoDBRef::get($originDB, $feedTimestamp["fbFeed"]);
+        $newFeedCol->update(
             array("_id" => $feed["_id"]),
             $feed,
             array("upsert" => true));
 
-    $newFeedTimestampCol->update(
-        array("_id" => $feedTimestamp["_id"]),
-        $feedTimestamp,
-        array("upsert" => true));
-}
+        $newFeedTimestampCol->update(
+            array("_id" => $feedTimestamp["_id"]),
+            $feedTimestamp,
+            array("upsert" => true));
+    }
+}while($newCount > 0);
+
+
