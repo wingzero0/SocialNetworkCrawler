@@ -35,6 +35,8 @@ $originDB = $dumper->getMongoDB();
 $newPageCol->createIndex(array("fbID" => 1));
 $newFeedCol->createIndex(array("fbID" => 1));
 $newFeedTimestampCol->createIndex(array("fbPage.\$id" => -1));
+$newFeedTimestampCol->createIndex(array("batchTime" => 1));
+$newFeedTimestampCol->createIndex(array("batchTime" => -1));
 $newFeedTimestampCol->createIndex(array("fbPage.\$id" => -1 , "batchTime" => -1));
 $newFeedTimestampCol->createIndex(array("fbFeed.\$id" => -1 , "batchTime" => -1));
 
