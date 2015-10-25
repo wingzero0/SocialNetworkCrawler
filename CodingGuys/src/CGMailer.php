@@ -37,7 +37,7 @@ class CGMailer {
         $boundary_content = md5(rand());
 
 // Headers
-        $headers = 'From: Mail System PHP <dailyRepory@coding-guys.com>' . $rn;
+        $headers = 'From: Mail System PHP <dailyReport@coding-guys.com>' . $rn;
         $headers .= 'Mime-Version: 1.0' . $rn;
         $headers .= 'Content-Type: multipart/related;boundary=' . $boundary . $rn;
 
