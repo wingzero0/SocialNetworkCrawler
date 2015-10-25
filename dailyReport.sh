@@ -2,8 +2,8 @@
 BASEDIR=$(dirname $0)
 cd $BASEDIR
 
-echo "rm fbReport*.csv fbReport*.zip"
-rm fbReport*.csv fbReport*.zip
+echo "rm fbReport*.csv"
+rm fbReport*.csv
 
 DateStr=$(date +"%F")
 for windowSize in 1 3 7
@@ -14,6 +14,7 @@ do
         php runTimestampSeries.php $windowSize "fbReport-$city-$windowSize-$DateStr.csv" $city
 	done
 done
+echo "zip fbReport-$DateStr.zip fbReport*.csv"
 zip "fbReport-$DateStr.zip" fbReport*.csv
-echo "php mailAttachment.php 'fbReport with 1 3 7' fbReport-$DateStr.zip"
-php mailAttachment.php 'fbReport with 1 3 7' fbReport-$DateStr.zip
+echo "mv fbReport-$DateStr.zip fbReport/"
+mv "fbReport-$DateStr.zip" fbReport/
