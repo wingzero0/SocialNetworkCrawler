@@ -136,9 +136,10 @@ class CGMongoFb{
     }
 
     protected function extractShortLink($rawDataFromMongo){
-        return (isset($rawDataFromMongo["link"]) &&
-            $this->isFbPhotoLink($rawDataFromMongo["link"]) ?
-                $rawDataFromMongo["link"] : "https://www.facebook.com/" . $rawDataFromMongo["fbID"]);
+        //return (isset($rawDataFromMongo["link"]) &&
+        //    $this->isFbPhotoLink($rawDataFromMongo["link"]) ?
+        //        $rawDataFromMongo["link"] : "https://www.facebook.com/" . $rawDataFromMongo["fbID"]);
+        return "https://www.facebook.com/" . $rawDataFromMongo["fbID"];
     }
     protected function convertMongoDateToISODate(\MongoDate $mongoDate){
         $batchTime = new \DateTime();
