@@ -134,7 +134,13 @@ class CGMongoFb{
     public function createFeedRef(\MongoId $mongoId){
         return \MongoDBRef::create($this->getFeedCollectionName(), $mongoId);
     }
-
+    protected function extractRawLink($rawDataFromMongo){
+        if (isset($rawDataFromMongo["link"])){
+            return $rawDataFromMongo["link"];
+        }else{
+            return null;
+        }
+    }
     protected function extractShortLink($rawDataFromMongo){
         //return (isset($rawDataFromMongo["link"]) &&
         //    $this->isFbPhotoLink($rawDataFromMongo["link"]) ?

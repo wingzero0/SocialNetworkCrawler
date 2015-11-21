@@ -21,6 +21,10 @@ class CGMongoFbFeed extends CGMongoFb{
         return parent::extractShortLink($this->rawDataFromMongo);
     }
 
+    public function getRawLink(){
+        return parent::extractRawLink($this->rawDataFromMongo);
+    }
+
     /**
      * @return int
      */

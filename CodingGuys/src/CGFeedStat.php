@@ -248,12 +248,14 @@ class CGFeedStat {
         return $ret;
     }
     private function outputCountArray($countArray, $batchTimeIndex, $feedPool, $pageRaw){
-        $this->outputString("fbpage,fbPageId,feed,feedId,feedCreatedTime,FeedShareCounts,mnemonoCategory,pageLikeCount,LastBatchBeforeCurrentWindowAverageLikes,LastBatchBeforeCurrentWindowAverageComments,pageFeedCount,CurrentWindowAverageLikes,CurrentWindowAverageComments,");
+        $this->outputString("fbpage,fbPageId,feed,feedLink,feedId,feedCreatedTime,FeedShareCounts,mnemonoCategory,pageLikeCount,"
+            . "LastBatchBeforeCurrentWindowAverageLikes,LastBatchBeforeCurrentWindowAverageComments,"
+            . "pageFeedCount,CurrentWindowAverageLikes,CurrentWindowAverageComments,");
         ksort($batchTimeIndex);
         foreach($batchTimeIndex as $batchTimeString => $value){
             $this->outputString($batchTimeString . "," . $this->skipNColumn(1));
         }
-        $this->outputString("\n" . $this->skipNColumn(13));
+        $this->outputString("\n" . $this->skipNColumn(14));
         foreach($batchTimeIndex as $batchTimeString => $value){
             $this->outputString("deltaLike,deltaComment,");
         }
@@ -270,7 +272,7 @@ class CGFeedStat {
                     }
                     $this->outputString($cgFbPage->getShortLink() . "," . $pageId . ",");
 
-                    $this->outputString($cgFbFeed->getShortLink() . "," . $feedId . ",");
+                    $this->outputString($cgFbFeed->getShortLink() . "," . preg_replace("/%/", "%%", $cgFbFeed->getRawLink()) . "," . $feedId . ",");
                     $this->outputString($cgFbFeed->getCreatedTime() . ",");
                     $this->outputString($cgFbFeed->getSharesCount() . ",");
 
