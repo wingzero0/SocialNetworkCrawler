@@ -25,6 +25,27 @@ class CGMongoFbFeed extends CGMongoFb{
         return parent::extractRawLink($this->rawDataFromMongo);
     }
 
+    public function guessLink(){
+        if (!isset($this->rawDataFromMongo["story"])){
+            return $this->getShortLink();
+        }
+
+        if (isset($this->rawDataFromMongo["message"])){
+            return $this->getShortLink();
+        }
+        if (isset($this->rawDataFromMongo["message"])){
+            return $this->getShortLink();
+        }
+
+        $pattern = "/new photos to the album:/";
+        $ret = preg_match($pattern, $this->rawDataFromMongo["story"]);
+        if ($ret > 0){
+            return $this->getRawLink();
+        }else{
+            return $this->getShortLink();
+        }
+    }
+
     /**
      * @return int
      */
