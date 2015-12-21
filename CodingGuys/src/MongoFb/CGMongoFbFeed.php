@@ -30,13 +30,6 @@ class CGMongoFbFeed extends CGMongoFb{
             return $this->getShortLink();
         }
 
-        if (isset($this->rawDataFromMongo["message"])){
-            return $this->getShortLink();
-        }
-        if (isset($this->rawDataFromMongo["message"])){
-            return $this->getShortLink();
-        }
-
         $pattern = "/new photos to the album:/";
         $ret = preg_match($pattern, $this->rawDataFromMongo["story"]);
         if ($ret > 0){

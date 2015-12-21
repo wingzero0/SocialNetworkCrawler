@@ -248,14 +248,14 @@ class CGFeedStat {
         return $ret;
     }
     private function outputCountArray($countArray, $batchTimeIndex, $feedPool, $pageRaw){
-        $this->outputString("fbpage,fbPageId,feed,feedLink,guessLink,feedId,feedCreatedTime,FeedShareCounts,mnemonoCategory,pageLikeCount,"
+        $this->outputString("fbpage,feed,feedLink,guessLink,feedCreatedTime,FeedShareCounts,mnemonoCategory,pageLikeCount,"
             . "LastBatchBeforeCurrentWindowAverageLikes,LastBatchBeforeCurrentWindowAverageComments,"
             . "pageFeedCount,CurrentWindowAverageLikes,CurrentWindowAverageComments,");
         ksort($batchTimeIndex);
         foreach($batchTimeIndex as $batchTimeString => $value){
             $this->outputString($batchTimeString . "," . $this->skipNColumn(1));
         }
-        $this->outputString("\n" . $this->skipNColumn(15));
+        $this->outputString("\n" . $this->skipNColumn(13));
         foreach($batchTimeIndex as $batchTimeString => $value){
             $this->outputString("deltaLike,deltaComment,");
         }
@@ -270,10 +270,10 @@ class CGFeedStat {
                     if (!($cgFbFeed instanceof CGMongoFbFeed)){
                         continue;
                     }
-                    $this->outputString($cgFbPage->getShortLink() . "," . $pageId . ",");
-
-                    $this->outputString($cgFbFeed->getShortLink() . "," . preg_replace("/%/", "%%", $cgFbFeed->getRawLink()) . ",");
-                    $this->outputString(preg_replace("/%/", "%%", $cgFbFeed->guessLink()) . "," . $feedId . ",");
+                    $this->outputString($cgFbPage->getShortLink() . ",");
+                    $this->outputString($cgFbFeed->getShortLink() . ",");
+                    $this->outputString(preg_replace("/%/", "%%", $cgFbFeed->getRawLink()) . ",");
+                    $this->outputString(preg_replace("/%/", "%%", $cgFbFeed->guessLink()) . ",");
                     $this->outputString($cgFbFeed->getCreatedTime() . ",");
                     $this->outputString($cgFbFeed->getSharesCount() . ",");
 
