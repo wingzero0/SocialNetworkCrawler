@@ -26,6 +26,12 @@ class CGMongoFbFeed extends CGMongoFb{
     }
 
     public function guessLink(){
+        if (isset($this->rawDataFromMongo["status_type"]) &&
+            ($this->rawDataFromMongo["status_type"] == "added_video")
+        ){
+            return $this->getRawLink();
+        }
+
         if (!isset($this->rawDataFromMongo["story"])){
             return $this->getShortLink();
         }
@@ -34,9 +40,15 @@ class CGMongoFbFeed extends CGMongoFb{
         $ret = preg_match($pattern, $this->rawDataFromMongo["story"]);
         if ($ret > 0){
             return $this->getRawLink();
-        }else{
-            return $this->getShortLink();
         }
+
+        $pattern = "/cover photo./";
+        $ret = preg_match($pattern, $this->rawDataFromMongo["story"]);
+        if ($ret > 0){
+            return $this->getRawLink();
+        }
+
+        return $this->getShortLink();
     }
 
     /**
