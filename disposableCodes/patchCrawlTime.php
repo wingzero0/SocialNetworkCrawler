@@ -17,41 +17,58 @@ $cursor = $col->find(
         "\$or" => array(
             array("exception" => array("\$exists" => false)),
             array("exception" => false),
-        ),
-        "mnemono.crawlTime" => array(
-            "\$size" => 3
         )
     )
 );
 
+$updateCount = 0;
+
 foreach ($cursor as $pageRaw){
-    echo $pageRaw["_id"]."\n";
-    echo $pageRaw["name"]."\n";
-    print_r ($pageRaw["mnemono"]["crawlTime"]);
+    //echo $pageRaw["_id"]."\n";
+    //echo $pageRaw["name"]."\n";
     $crawlTime = $pageRaw["mnemono"]["crawlTime"];
-    $arrayFilter = array("6" => 0, "12" => 0, "18" => 0);
-    foreach($crawlTime as $hour){
-        if (!isset($arrayFilter[$hour])){
-            $arrayFilter[$hour] = 0;
-        }
-        $arrayFilter[$hour] += 1;
-    }
-    if (count($arrayFilter) == 3){
-        patchCrawlTime($pageRaw["_id"]);
-    }
+    //var_dump($pageRaw["mnemono"]["crawlTime"]);
+    $updateCount += patchCrawlTime($pageRaw["_id"], $crawlTime);
 }
 
-function patchCrawlTime($mongoId){
-    $fbMongo = new CGMongoFb();
-    $col = $fbMongo->getMongoCollection($fbMongo->getPageCollectionName());
-    $col->update(
-        array("_id" => $mongoId),
-        array(
-            "\$set" => array(
-                "mnemono.crawlTime" => array(
-                    0, 6, 12, 18
+echo "\ntotal updated:" . $updateCount . "\n";
+
+/**
+ * @param \MongoId $mongoId
+ * @param array $crawlTime
+ * @return int
+ */
+function patchCrawlTime(MongoId $mongoId, $crawlTime){
+    if (empty($crawlTime)){
+        return 0;
+    }
+    $intCrawlTime = array();
+    $shouldUpdate = false;
+    foreach($crawlTime as $value){
+        if (is_string($value)){
+            $shouldUpdate = true;
+            $intCrawlTime[] = intval($value);
+        }else if (is_int($value)){
+            $intCrawlTime[] = $value;
+        }
+    }
+
+    if ($shouldUpdate){
+        echo "patching:\n";
+        var_dump($mongoId);
+        var_dump($intCrawlTime);
+
+        $fbMongo = new CGMongoFb();
+        $col = $fbMongo->getMongoCollection($fbMongo->getPageCollectionName());
+        $col->update(
+            array("_id" => $mongoId),
+            array(
+                "\$set" => array(
+                    "mnemono.crawlTime" => $intCrawlTime
                 )
             )
-        )
-    );
+        );
+        return 1;
+    }
+    return 0 ;
 }
