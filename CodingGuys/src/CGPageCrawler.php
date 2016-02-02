@@ -22,12 +22,12 @@ class CGPageCrawler extends CGFbCrawler{
      * @param array $crawlTime
      * @return array|null
      */
-    public function crawl($pageFbId, $category, $city, $country, $crawlTime){
+    public function crawlNewPage($pageFbId, $category, $city, $country, $crawlTime){
         $request = new FacebookRequest($this->getFbSession(), 'GET', '/'. $pageFbId );
         $headerMsg = "get error while crawling page:" . $pageFbId;
         $response = $this->tryRequest($request, $headerMsg);
         if ($response == null){
-            return null;
+            return "fail";
         }
         $pageMainContent = $response->getResponse();
         $pageMainContent->fbID = $pageMainContent->id;
@@ -41,10 +41,17 @@ class CGPageCrawler extends CGFbCrawler{
 
         $this->insert($pageMainContent);
 
-        return $pageMainContent;
+        return "success";
     }
 
-    function updateMeta(\MongoId $id, $category, $city, $country, $crawlTime){
+    /**
+     * @param \MongoId $id
+     * @param string $category
+     * @param string $city
+     * @param string $country
+     * @param array $crawlTime
+     */
+    public function updateMeta(\MongoId $id, $category, $city, $country, $crawlTime){
         $col = $this->getPageCollection();
         $col->update(array("_id" => $id), array("\$set"=>
             array(
@@ -55,6 +62,20 @@ class CGPageCrawler extends CGFbCrawler{
                 )
             )
         ));
+    }
+
+    /**
+     * @param $fbId
+     * @return \MongoId|null
+     */
+    public function getFbMongoId($fbId){
+        $cursor = $this->getPageCollection()->find(array("fbID"=>$fbId));
+        if ($cursor->hasNext()){
+            $data = $cursor->getNext();
+            return $data["_id"];
+        }else {
+            return null;
+        }
     }
 
     private function insert($data){
