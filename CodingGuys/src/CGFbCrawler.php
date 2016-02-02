@@ -18,46 +18,18 @@ class CGFbCrawler {
     private $mongFb;
     private $fbSession;
 
-    public function __construct(){
+    public function __construct($appId, $appSecret){
         $this->setMongFb(new CGMongoFb());
-        FacebookSession::setDefaultApplication('717078611708065', 'cfcb7c75936b2c44caba648cb4d20e69');
+        FacebookSession::setDefaultApplication($appId, $appSecret);
         $this->setFbSession(FacebookSession::newAppSession());
     }
-
     /**
-     * @return FacebookSession
+     * @param FacebookRequest $request
+     * @param string $headerMessage message that will be dump to stderr if exception occurs
+     * @return FacebookResponse|null
+     *
+     * @TODO catch api limit exception, send mail to user and sleep a long time.
      */
-    protected function getFbSession()
-    {
-        return $this->fbSession;
-    }
-
-    /**
-     * @param FacebookSession $fbSession
-     */
-    private function setFbSession($fbSession)
-    {
-        $this->fbSession = $fbSession;
-    }
-
-
-    /**
-     * @return CGMongoFb
-     */
-    protected function getMongFb()
-    {
-        return $this->mongFb;
-    }
-
-    /**
-     * @param CGMongoFb $mongFb
-     */
-    private function setMongFb($mongFb)
-    {
-        $this->mongFb = $mongFb;
-    }
-
-
     protected function tryRequest(FacebookRequest $request, $headerMessage){
         $response = null;
         $counter = 0;
@@ -93,5 +65,61 @@ class CGFbCrawler {
             fprintf($stderr, $e->getMessage() . "\n");
         }
         fclose($stderr);
+    }
+
+    /**
+     * @return FacebookSession
+     */
+    protected function getFbSession()
+    {
+        return $this->fbSession;
+    }
+
+    /**
+     * @param FacebookSession $fbSession
+     */
+    private function setFbSession($fbSession)
+    {
+        $this->fbSession = $fbSession;
+    }
+
+    /**
+     * @return CGMongoFb
+     */
+    protected function getMongFb()
+    {
+        return $this->mongFb;
+    }
+
+    /**
+     * @param CGMongoFb $mongFb
+     */
+    private function setMongFb($mongFb)
+    {
+        $this->mongFb = $mongFb;
+    }
+
+    /**
+     * @return \MongoCollection
+     */
+    protected function getFeedCollection(){
+        $feedCollectionName = $this->getMongFb()->getFeedCollectionName();
+        return $this->getMongFb()->getMongoCollection($feedCollectionName);
+    }
+
+    /**
+     * @return \MongoCollection
+     */
+    protected function getFeedTimestampCollection(){
+        $feedTimestampCollectionName = $this->getMongFb()->getFeedTimestampCollectionName();
+        return $this->getMongFb()->getMongoCollection($feedTimestampCollectionName);
+    }
+
+    /**
+     * @return \MongoCollection
+     */
+    protected function getPageCollection(){
+        $pageCollectionName = $this->getMongFb()->getPageCollectionName();
+        return $this->getMongFb()->getMongoCollection($pageCollectionName);
     }
 }

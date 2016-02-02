@@ -14,36 +14,64 @@ use Facebook\FacebookRequestException;
 use Facebook\FacebookThrottleException;
 
 class CGPageCrawler extends CGFbCrawler{
-    private $fbId;
-    public function __construct($fbPageId){
-        $this->fbId = $fbPageId;
-        parent::__construct();
-    }
-
     /**
+     * @param string $pageFbId
+     * @param string $category
+     * @param string $city
+     * @param string $country
+     * @param array $crawlTime
      * @return array|null
      */
-    public function crawl(){
-        $request = new FacebookRequest($this->getFbSession(), 'GET', '/'. $this->fbId );
-        $headerMsg = "get error while crawling page:" . $this->fbId;
+    public function crawl($pageFbId, $category, $city, $country, $crawlTime){
+        $request = new FacebookRequest($this->getFbSession(), 'GET', '/'. $pageFbId );
+        $headerMsg = "get error while crawling page:" . $pageFbId;
         $response = $this->tryRequest($request, $headerMsg);
         if ($response == null){
             return null;
         }
         $pageMainContent = $response->getResponse();
+        $pageMainContent->fbID = $pageMainContent->id;
+        unset($pageMainContent->id);
 
-        $request = new FacebookRequest($this->getFbSession(), 'GET', '/'. $this->fbId . '/picture?type=large&redirect=false');
+        $pageMainContent->mnemono = array(
+            "category" => $category,
+            "location" => array("city" => $city, "country" => $country),
+            "crawlTime" => $crawlTime,
+        );
+
+        $this->insert($pageMainContent);
+
+        return $pageMainContent;
+    }
+
+    function updateMeta(\MongoId $id, $category, $city, $country, $crawlTime){
+        $col = $this->getPageCollection();
+        $col->update(array("_id" => $id), array("\$set"=>
+            array(
+                "mnemono" => array(
+                    "category" => $category,
+                    "location" => array("city" => $city, "country" => $country),
+                    "crawlTime" => $crawlTime,
+                )
+            )
+        ));
+    }
+
+    private function insert($data){
+        $this->getPageCollection()->insert($data);
+    }
+
+    /**
+     * @return array|null
+     */
+    private function crawlProfilePicture($pageFbId){
+        $request = new FacebookRequest($this->getFbSession(), 'GET', '/'. $pageFbId . '/picture?type=large&redirect=false');
+        $headerMsg = "get error while crawling page profile picture:" . $pageFbId;
         $pictureResponse = $this->tryRequest($request, $headerMsg);
         if ($pictureResponse == null){
             return null;
         }
         $pageProfilePicture = $pictureResponse->getResponse();
-
-        $pageMainContent->fbID = $pageMainContent->id;
-        unset($pageMainContent->id);
-        $pageMainContent->profilePicture = $pageProfilePicture->data;
-
-        return $pageMainContent;
+        return $pageProfilePicture->data;
     }
-
 }
