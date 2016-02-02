@@ -11,6 +11,8 @@ require_once(__DIR__ . '/CodingGuys/autoload.php');
 
 use CodingGuys\CGFeedCrawler;
 
+$options = getopt("",array("appId:", "appSecret:"));
+
 // Create our worker object
 $worker = new \GearmanWorker();
 
@@ -18,7 +20,7 @@ $worker = new \GearmanWorker();
 $worker->addServer();
 
 // Inform the server that this worker can process "reverse" function calls
-$worker->addFunction("fbCrawler", "fbCrawler_fn");
+$worker->addFunction("fbCrawler", "fbCrawler_fn", $options);
 
 while (1) {
 	print "Waiting for job...\n";
@@ -29,14 +31,16 @@ while (1) {
 }
 
 // A much simple reverse function
-function fbCrawler_fn(GearmanJob $job) {
+function fbCrawler_fn(GearmanJob $job, &$options) {
+    $appId = $options["appId"];
+    $appSecret = $options["appSecret"];
 	$workload = unserialize($job->workload());
 	$mID = new \MongoID($workload["_id"]);
     $batchTime = $workload["batchTime"];
 	echo "Received job: " . $job->handle() . "\n";
 	echo "Workload: \n";
 	var_dump($workload);
-	$crawler = new CGFeedCrawler($workload["fbID"], $mID, $batchTime);
+	$crawler = new CGFeedCrawler($workload["fbID"], $mID, $batchTime, $appId, $appSecret);
 	echo "crawling:" . $crawler->crawl();
 	
 	return "Finish";
