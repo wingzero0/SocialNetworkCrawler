@@ -23,9 +23,7 @@ class CGPageCrawler extends CGFbCrawler{
      * @return array|null
      */
     public function crawlNewPage($pageFbId, $category, $city, $country, $crawlTime){
-        $request = new FacebookRequest($this->getFbSession(), 'GET', '/'. $pageFbId );
-        $headerMsg = "get error while crawling page:" . $pageFbId;
-        $response = $this->tryRequest($request, $headerMsg);
+        $response = $this->crawlPage($pageFbId);
         if ($response == null){
             return "fail";
         }
@@ -64,15 +62,49 @@ class CGPageCrawler extends CGFbCrawler{
         ));
     }
 
+    public function updateExistingPage($pageFbId){
+        $response = $this->crawlPage($pageFbId);
+        if ($response == null){
+            return "fail";
+        }
+        $responseData = $response->getResponse();
+        $responseData->fbID = $responseData->id;
+
+        $page = $this->getDBPageValue($pageFbId);
+        if (isset($page["mnemono"])){
+            $responseData->mnemono = $page["mnemono"];
+        }else{
+            echo "mnemono fields do not exist in: ";
+            var_dump($page);
+        }
+        unset($responseData->id);
+
+        $this->getPageCollection()->update(array("fbID" => $page["fbID"]), $responseData);
+        return $response;
+    }
+
     /**
      * @param $fbId
      * @return \MongoId|null
      */
     public function getFbMongoId($fbId){
+        $page = $this->getDBPageValue($fbId);
+        if ($page){
+            return $page["_id"];
+        }else{
+            return null;
+        }
+    }
+
+    /**
+     * @param $fbId
+     * @return array|null
+     */
+    private function getDBPageValue($fbId){
         $cursor = $this->getPageCollection()->find(array("fbID"=>$fbId));
         if ($cursor->hasNext()){
             $data = $cursor->getNext();
-            return $data["_id"];
+            return $data;
         }else {
             return null;
         }
@@ -94,5 +126,16 @@ class CGPageCrawler extends CGFbCrawler{
         }
         $pageProfilePicture = $pictureResponse->getResponse();
         return $pageProfilePicture->data;
+    }
+
+    /**
+     * @param string $pageFbId
+     * @return FacebookResponse|null
+     */
+    private function crawlPage($pageFbId){
+        $request = new FacebookRequest($this->getFbSession(), 'GET', '/'. $pageFbId );
+        $headerMsg = "get error while crawling page:" . $pageFbId;
+        $response = $this->tryRequest($request, $headerMsg);
+        return $response;
     }
 }
