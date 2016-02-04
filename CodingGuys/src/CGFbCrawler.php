@@ -55,7 +55,7 @@ class CGFbCrawler {
         return $response;
     }
 
-    private function dumpErr(\Exception $e, $headerMessage){
+    protected function dumpErr(\Exception $e, $headerMessage){
         $stderr = fopen('php://stderr', 'w');
         $dateObj = new \DateTime();
         fprintf($stderr, $dateObj->format(\DateTime::ISO8601) . ": " . $headerMessage . "\n");
@@ -121,5 +121,13 @@ class CGFbCrawler {
     protected function getPageCollection(){
         $pageCollectionName = $this->getMongFb()->getPageCollectionName();
         return $this->getMongFb()->getMongoCollection($pageCollectionName);
+    }
+
+    /**
+     * @return \MongoCollection
+     */
+    protected function getExceptionPageCollection(){
+        $exceptionPageCollectionName = $this->getMongFb()->getExceptionPageCollectionName();
+        return $this->getMongFb()->getMongoCollection($exceptionPageCollectionName);
     }
 }
