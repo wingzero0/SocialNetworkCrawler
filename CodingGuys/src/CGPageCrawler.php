@@ -64,8 +64,45 @@ class CGPageCrawler extends CGFbCrawler{
         ));
     }
 
-    public function updateExistingPage($pageFbId){
-        $page = $this->getDBPageValue($pageFbId);
+    public function updateExistingPages(){
+        $cursor = $this->getPageCollection()->find(array( "\$or" => array(
+            array("exception" => array("\$exists" => false)),
+            array("exception" => false),
+        )));
+        $pageArray = array();
+        foreach($cursor as $page){
+            $pageArray[] = $page;
+        }
+        $i = 0;
+        foreach($pageArray as $page){
+            $i++;
+            if ($i % 100 == 0){
+                echo $i."\n";
+            }
+            $this->updateExistingPage($page);
+        }
+    }
+
+
+    /**
+     * @param $fbId
+     * @return \MongoId|null
+     */
+    public function getFbMongoId($fbId){
+        $page = $this->getDBPageValue($fbId);
+        if ($page){
+            return $page["_id"];
+        }else{
+            return null;
+        }
+    }
+
+    /**
+     * @param array $page the page record fetch from mongoDB;
+     * @return string
+     */
+    private function updateExistingPage($page){
+        $pageFbId = $page["fbID"];
         $request = new FacebookRequest($this->getFbSession(), 'GET', '/'. $pageFbId );
         $headerMsg = "get error while crawling page:" . $pageFbId;
         $response = $this->tryUpdateRequest($request, $headerMsg, $page);
@@ -84,20 +121,7 @@ class CGPageCrawler extends CGFbCrawler{
         unset($responseData->id);
 
         $this->getPageCollection()->update(array("fbID" => $page["fbID"]), $responseData);
-        return $response;
-    }
-
-    /**
-     * @param $fbId
-     * @return \MongoId|null
-     */
-    public function getFbMongoId($fbId){
-        $page = $this->getDBPageValue($fbId);
-        if ($page){
-            return $page["_id"];
-        }else{
-            return null;
-        }
+        return "success";
     }
 
     /**
@@ -154,8 +178,8 @@ class CGPageCrawler extends CGFbCrawler{
     private function handleMigration($oldPage, $newID){
         if ($this->getDBPageValue($newID) == null){
             $category = $oldPage["mnemono"]["category"];
-            $city = $oldPage["mnemono"]["city"];
-            $country = $oldPage["mnemono"]["country"];
+            $city = $oldPage["mnemono"]["location"]["city"];
+            $country = $oldPage["mnemono"]["location"]["country"];
             $crawlTime = $oldPage["mnemono"]["crawlTime"];
             $this->crawlNewPage($newID,$category,$city,$country,$crawlTime);
         }else{
