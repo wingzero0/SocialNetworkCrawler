@@ -17,7 +17,13 @@ class FbFeedRepo extends FbRepo{
         $query = array(
             "fbPage.\$id" => $pageMongoId
         );
-        return $this->getFeedCollection()->find($query)->limit(1)->getNext();
+        $orderQ = array(
+            "created_time" => -1
+        );
+        return $this->getFeedCollection()
+            ->find($query)
+            ->sort($orderQ)
+            ->limit(1)->getNext();
     }
     /**
      * @return \MongoCollection

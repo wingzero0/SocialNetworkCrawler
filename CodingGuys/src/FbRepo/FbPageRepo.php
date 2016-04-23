@@ -25,6 +25,18 @@ class FbPageRepo extends FbRepo
     public function findAll(){
         return $this->getPageCollection()->find();
     }
+
+    public function findAllWorkingPage(){
+        $query = array(
+            "\$or" => array(
+                array(
+                    "exception" => array("\$exists" => false),
+                ),
+                array( "exception" => false),
+            )
+        );
+        return $this->getPageCollection()->find($query);
+    }
     
     /**
      * @return \MongoCollection

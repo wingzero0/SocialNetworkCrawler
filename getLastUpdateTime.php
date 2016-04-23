@@ -10,4 +10,5 @@ require_once(__DIR__ . '/CodingGuys/autoload.php');
 use CodingGuys\CGPageStat;
 
 $stat = new CGPageStat();
-$stat->findAllPageLastUpdateTime();
+$ret = $stat->findAllPageLastUpdateTime();
+print_r($ret);

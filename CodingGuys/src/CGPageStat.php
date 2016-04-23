@@ -14,17 +14,35 @@ class CGPageStat
 {
     private $pageRepo;
     private $feedRepo;
+    
+    public function findAllPageLastUpdateTime(){
+        $pageRepo = $this->getPageRepo();
+        $cursor = $pageRepo->findAllWorkingPage();
+        $ret = array();
+        foreach($cursor as $pageRaw){
+            $ret[$pageRaw["fbID"]] = $this->getPageLastUpdateTime($pageRaw);
+        }
+        asort($ret);
+        return $ret;
+    }
     public function pageLastUpdateTime(\MongoId $pageMongoId){
         $pageRepo = $this->getPageRepo();
         $pageRaw = $pageRepo->findOneById($pageMongoId);
         if (empty($pageRaw)){
             return null;
         }
+        return $this->getPageLastUpdateTime($pageRaw);
+        //$createdTime = \DateTime::createFromFormat(\DateTime::ISO8601, $feedRaw["created_time"]);
+        //var_dump($createdTime);
+    }
+    
+    private function getPageLastUpdateTime($pageRaw){
         $feedRepo = $this->getFeedRepo();
         $feedRaw = $feedRepo->findLatestOneByPageId($pageRaw["_id"]);
-        echo $feedRaw["created_time"];
-        $createdTime = \DateTime::createFromFormat(\DateTime::ISO8601, $feedRaw["created_time"]);
-        var_dump($createdTime);
+        if (empty($feedRaw)){
+            return null;
+        }
+        return $feedRaw["created_time"];
     }
 
     /**
