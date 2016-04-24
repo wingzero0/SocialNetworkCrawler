@@ -7,6 +7,7 @@
 
 namespace CodingGuys;
 
+use CodingGuys\Document\FacebookPage;
 use CodingGuys\FbRepo\FbFeedRepo;
 use CodingGuys\FbRepo\FbPageRepo;
 
@@ -19,10 +20,18 @@ class CGPageStat
         $pageRepo = $this->getPageRepo();
         $cursor = $pageRepo->findAllWorkingPage();
         $ret = array();
+        $counter = 0;
         foreach($cursor as $pageRaw){
-            $ret[$pageRaw["fbID"]] = $this->getPageLastUpdateTime($pageRaw);
+            $fbPage = new FacebookPage($pageRaw);
+            $mnemono = $fbPage->getMnemono();
+            $timeStr = $this->getPageLastUpdateTime($pageRaw);
+            if ($timeStr == null){
+                $timeStr = " " . $counter;
+                $counter++;
+            }
+            $ret[$timeStr] = array("mnemono" => $mnemono, "fbID" => $fbPage->getFbID());
         }
-        asort($ret);
+        ksort($ret);
         return $ret;
     }
     public function pageLastUpdateTime(\MongoId $pageMongoId){
