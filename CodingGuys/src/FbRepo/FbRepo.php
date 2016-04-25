@@ -7,24 +7,24 @@
 
 namespace CodingGuys\FbRepo;
 
-use CodingGuys\MongoFb\CGMongoFb;
+use CodingGuys\FbDocumentManager\FbDocumentManager;
 
 class FbRepo
 {
-    private $mongoFb;
+    private $fbDM;
 
     /**
      * FbRepo constructor.
      * @param $dbName
      */
     public function __construct($dbName = null){
-        $this->mongoFb = new CGMongoFb($dbName);
+        $this->fbDM = new FbDocumentManager($dbName);
     }
 
     /**
-     * @return CGMongoFb
+     * @return FbDocumentManager
      */
-    protected function getMongoFb(){
-        return $this->mongoFb;
+    protected function getFbDM(){
+        return $this->fbDM;
     }
 }

@@ -29,8 +29,8 @@ class FbFeedRepo extends FbRepo{
      * @return \MongoCollection
      */
     private function getFeedCollection(){
-        $mongoFb = $this->getMongoFb();
-        return $mongoFb->getMongoCollection($mongoFb->getFeedCollectionName());
+        $fbDM = $this->getFbDM();
+        return $fbDM->getMongoCollection($fbDM->getFeedCollectionName());
     }
 
 }

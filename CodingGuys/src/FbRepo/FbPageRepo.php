@@ -42,7 +42,7 @@ class FbPageRepo extends FbRepo
      * @return \MongoCollection
      */
     private function getPageCollection(){
-        $mongoFb = $this->getMongoFb();
-        return $mongoFb->getMongoCollection($mongoFb->getPageCollectionName());
+        $fbDM = $this->getFbDM();
+        return $fbDM->getMongoCollection($fbDM->getPageCollectionName());
     }
 }
