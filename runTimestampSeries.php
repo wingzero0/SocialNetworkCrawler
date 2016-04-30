@@ -8,7 +8,7 @@
 require_once(__DIR__ . '/facebook-php-sdk-v4/autoload.php');
 require_once(__DIR__ . '/CodingGuys/autoload.php');
 
-use CodingGuys\CGFeedStat;
+use CodingGuys\CGStat\FbTimestampReport;
 
 if (isset($argv[1])){
     $windowSize = intval($argv[1]);
@@ -33,6 +33,6 @@ $startDate = clone $endDate;
 $startDate->sub(new \DateInterval('P'.$windowSize.'D'));
 
 
-$obj = new CGFeedStat($startDate, $endDate, $filename);
+$obj = new FbTimestampReport($startDate, $endDate, $filename);
 $obj->timestampSeriesCount($city);
 

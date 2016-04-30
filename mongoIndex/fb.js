@@ -1,6 +1,7 @@
 use Mnemono;
 db.FacebookFeed.dropIndexes();
 db.FacebookFeed.createIndex({ "fbID" : 1});
+db.FacebookFeed.createIndex({ "created_time":1 })
 db.FacebookFeed.createIndex({ "fbPage.$id" : 1, "created_time":1})
 
 db.FacebookFeedTimestamp.dropIndexes();
