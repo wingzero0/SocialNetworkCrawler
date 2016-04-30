@@ -126,6 +126,14 @@ class CGFbCrawler {
     /**
      * @return \MongoCollection
      */
+    protected function getPageTimestampCollection(){
+        $colName = $this->getMongFb()->getPageTimestampCollectionName();
+        return $this->getMongFb()->getMongoCollection($colName);
+    }
+
+    /**
+     * @return \MongoCollection
+     */
     protected function getExceptionPageCollection(){
         $exceptionPageCollectionName = $this->getMongFb()->getExceptionPageCollectionName();
         return $this->getMongFb()->getMongoCollection($exceptionPageCollectionName);
