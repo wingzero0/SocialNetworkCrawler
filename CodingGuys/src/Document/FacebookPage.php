@@ -8,30 +8,38 @@
 
 namespace CodingGuys\Document;
 
-class FacebookPage{
+class FacebookPage
+{
     private $mnemono;
     private $_id;
     private $fbID;
     private $rawData;
-    
-    public function __construct($rawData = null){
-        if (is_array($rawData) && !empty($rawData) ){
+
+    public function __construct($rawData = null)
+    {
+        if (is_array($rawData) && !empty($rawData))
+        {
             $this->rawData = $rawData;
             $this->init();
-        }else {
+        } else
+        {
             $this->rawData = array();
         }
     }
-    
-    private function init(){
+
+    private function init()
+    {
         $rawData = $this->getRawData();
-        if (isset($rawData["mnemono"])){
+        if (isset($rawData["mnemono"]))
+        {
             $this->setMnemono($rawData["mnemono"]);
         }
-        if (isset($rawData["_id"])){
+        if (isset($rawData["_id"]))
+        {
             $this->setId($rawData["_id"]);
         }
-        if (isset($rawData["fbID"])){
+        if (isset($rawData["fbID"]))
+        {
             $this->setFbID($rawData["fbID"]);
         }
     }
@@ -68,7 +76,7 @@ class FacebookPage{
     {
         $this->_id = $id;
     }
-    
+
     /**
      * @return array
      */

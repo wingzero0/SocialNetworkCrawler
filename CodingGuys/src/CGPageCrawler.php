@@ -13,7 +13,8 @@ use Facebook\FacebookResponse;
 use Facebook\FacebookRequestException;
 use Facebook\FacebookThrottleException;
 
-class CGPageCrawler extends CGFbCrawler{
+class CGPageCrawler extends CGFbCrawler
+{
     /**
      * @param string $pageFbId
      * @param string $category
@@ -22,11 +23,13 @@ class CGPageCrawler extends CGFbCrawler{
      * @param array $crawlTime
      * @return array|null
      */
-    public function crawlNewPage($pageFbId, $category, $city, $country, $crawlTime){
-        $request = new FacebookRequest($this->getFbSession(), 'GET', '/'. $pageFbId );
+    public function crawlNewPage($pageFbId, $category, $city, $country, $crawlTime)
+    {
+        $request = new FacebookRequest($this->getFbSession(), 'GET', '/' . $pageFbId);
         $headerMsg = "get error while crawling page:" . $pageFbId;
         $response = $this->tryRequest($request, $headerMsg);
-        if ($response == null){
+        if ($response == null)
+        {
             return "fail";
         }
         $pageMainContent = $response->getResponse();
@@ -51,9 +54,10 @@ class CGPageCrawler extends CGFbCrawler{
      * @param string $country
      * @param array $crawlTime
      */
-    public function updateMeta(\MongoId $id, $category, $city, $country, $crawlTime){
+    public function updateMeta(\MongoId $id, $category, $city, $country, $crawlTime)
+    {
         $col = $this->getPageCollection();
-        $col->update(array("_id" => $id), array("\$set"=>
+        $col->update(array("_id" => $id), array("\$set" =>
             array(
                 "mnemono" => array(
                     "category" => $category,
@@ -64,20 +68,24 @@ class CGPageCrawler extends CGFbCrawler{
         ));
     }
 
-    public function updateExistingPages(){
-        $cursor = $this->getPageCollection()->find(array( "\$or" => array(
+    public function updateExistingPages()
+    {
+        $cursor = $this->getPageCollection()->find(array("\$or" => array(
             array("exception" => array("\$exists" => false)),
             array("exception" => false),
         )));
         $pageArray = array();
-        foreach($cursor as $page){
+        foreach ($cursor as $page)
+        {
             $pageArray[] = $page;
         }
         $i = 0;
-        foreach($pageArray as $page){
+        foreach ($pageArray as $page)
+        {
             $i++;
-            if ($i % 100 == 0){
-                echo $i."\n";
+            if ($i % 100 == 0)
+            {
+                echo $i . "\n";
             }
             $this->updateExistingPage($page);
         }
@@ -88,11 +96,14 @@ class CGPageCrawler extends CGFbCrawler{
      * @param $fbId
      * @return \MongoId|null
      */
-    public function getFbMongoId($fbId){
+    public function getFbMongoId($fbId)
+    {
         $page = $this->getDBPageValue($fbId);
-        if ($page){
+        if ($page)
+        {
             return $page["_id"];
-        }else{
+        } else
+        {
             return null;
         }
     }
@@ -101,20 +112,24 @@ class CGPageCrawler extends CGFbCrawler{
      * @param array $page the page record fetch from mongoDB;
      * @return string
      */
-    private function updateExistingPage($page){
+    private function updateExistingPage($page)
+    {
         $pageFbId = $page["fbID"];
-        $request = new FacebookRequest($this->getFbSession(), 'GET', '/'. $pageFbId );
+        $request = new FacebookRequest($this->getFbSession(), 'GET', '/' . $pageFbId);
         $headerMsg = "get error while crawling page:" . $pageFbId;
         $response = $this->tryUpdateRequest($request, $headerMsg, $page);
-        if ($response == null){
+        if ($response == null)
+        {
             return "fail";
         }
         $responseData = $response->getResponse();
         $responseData->fbID = $responseData->id;
 
-        if (isset($page["mnemono"])){
+        if (isset($page["mnemono"]))
+        {
             $responseData->mnemono = $page["mnemono"];
-        }else{
+        } else
+        {
             echo "mnemono fields do not exist in: ";
             var_dump($page);
         }
@@ -132,27 +147,33 @@ class CGPageCrawler extends CGFbCrawler{
      *
      * @TODO catch api limit exception, send mail to user and sleep a long time.
      */
-    private function tryUpdateRequest(FacebookRequest $request, $headerMessage, $page){
+    private function tryUpdateRequest(FacebookRequest $request, $headerMessage, $page)
+    {
         $response = null;
         $counter = 0;
-        do{
+        do
+        {
             $counter++;
-            try{
+            try
+            {
                 $response = $request->execute();
-            }catch(FacebookThrottleException $e){
+            } catch (FacebookThrottleException $e)
+            {
                 $this->dumpErr($e, $headerMessage);
                 $response = null;
                 sleep(600);
-            }catch (FacebookRequestException $e){
+            } catch (FacebookRequestException $e)
+            {
                 $response = null;
                 $this->handleErrorPage($e, $page);
                 break;
-            }catch (\Exception $e){
+            } catch (\Exception $e)
+            {
                 $this->dumpErr($e, $headerMessage);
                 $response = null;
                 break;
             }
-        }while($response == null && $counter < 2);
+        } while ($response == null && $counter < 2);
 
         return $response;
     }
@@ -161,12 +182,14 @@ class CGPageCrawler extends CGFbCrawler{
      * @param FacebookRequestException $e
      * @param array $page the page record fetch from mongoDB;
      */
-    private function handleErrorPage(FacebookRequestException $e, $page){
+    private function handleErrorPage(FacebookRequestException $e, $page)
+    {
         echo $e->getRawResponse() . "\n";
         $errorMsg = json_decode($e->getRawResponse());
         $code = $errorMsg->error->code;
         $hit = preg_match("/Page ID (.+) was migrated to page ID (.+)\\./", $errorMsg->error->message, $matches);
-        if ($code == 21 && $hit > 0 ){
+        if ($code == 21 && $hit > 0)
+        {
             $newID = $matches[2];
             $this->handleMigration($page, $newID);
         }
@@ -175,14 +198,17 @@ class CGPageCrawler extends CGFbCrawler{
         $this->backupExceptionPage($page);
     }
 
-    private function handleMigration($oldPage, $newID){
-        if ($this->getDBPageValue($newID) == null){
+    private function handleMigration($oldPage, $newID)
+    {
+        if ($this->getDBPageValue($newID) == null)
+        {
             $category = $oldPage["mnemono"]["category"];
             $city = $oldPage["mnemono"]["location"]["city"];
             $country = $oldPage["mnemono"]["location"]["country"];
             $crawlTime = $oldPage["mnemono"]["crawlTime"];
-            $this->crawlNewPage($newID,$category,$city,$country,$crawlTime);
-        }else{
+            $this->crawlNewPage($newID, $category, $city, $country, $crawlTime);
+        } else
+        {
             // Let it go
         }
     }
@@ -190,7 +216,8 @@ class CGPageCrawler extends CGFbCrawler{
     /**
      * @param string $fbID
      */
-    private function setPageAsException($fbID){
+    private function setPageAsException($fbID)
+    {
         $this->getPageCollection()->update(
             array("fbID" => $fbID),
             array("exception" => true, "fbID" => $fbID)
@@ -200,7 +227,8 @@ class CGPageCrawler extends CGFbCrawler{
     /**
      * @param array $page the page record fetch from mongoDB;
      */
-    private function backupExceptionPage($page){
+    private function backupExceptionPage($page)
+    {
         echo "backup " . $page["fbID"] . "\n";
         $this->getExceptionPageCollection()->update(array("_id" => $page["_id"]), $page, array("upsert" => true));
     }
@@ -209,28 +237,34 @@ class CGPageCrawler extends CGFbCrawler{
      * @param $fbId
      * @return array|null
      */
-    private function getDBPageValue($fbId){
-        $cursor = $this->getPageCollection()->find(array("fbID"=>$fbId));
-        if ($cursor->hasNext()){
+    private function getDBPageValue($fbId)
+    {
+        $cursor = $this->getPageCollection()->find(array("fbID" => $fbId));
+        if ($cursor->hasNext())
+        {
             $data = $cursor->getNext();
             return $data;
-        }else {
+        } else
+        {
             return null;
         }
     }
 
-    private function insert($data){
+    private function insert($data)
+    {
         $this->getPageCollection()->insert($data);
     }
 
     /**
      * @return array|null
      */
-    private function crawlProfilePicture($pageFbId){
-        $request = new FacebookRequest($this->getFbSession(), 'GET', '/'. $pageFbId . '/picture?type=large&redirect=false');
+    private function crawlProfilePicture($pageFbId)
+    {
+        $request = new FacebookRequest($this->getFbSession(), 'GET', '/' . $pageFbId . '/picture?type=large&redirect=false');
         $headerMsg = "get error while crawling page profile picture:" . $pageFbId;
         $pictureResponse = $this->tryRequest($request, $headerMsg);
-        if ($pictureResponse == null){
+        if ($pictureResponse == null)
+        {
             return null;
         }
         $pageProfilePicture = $pictureResponse->getResponse();

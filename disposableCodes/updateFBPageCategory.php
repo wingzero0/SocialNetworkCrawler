@@ -11,7 +11,8 @@ require_once(__DIR__ . '/../CodingGuys/autoload.php');
 $fp = fopen($argv[1], "r");
 
 $linksCat = array();
-while($line = fgets($fp)){
+while ($line = fgets($fp))
+{
     $line = trim($line);
     $list = preg_split("/\t/", $line);
     $cat = $list[0];
@@ -24,17 +25,21 @@ $col = $m->selectCollection("directory", "Facebook");
 $cursor = $col->find();
 
 $linksPages = array();
-foreach ($cursor as $page){
+foreach ($cursor as $page)
+{
     $linksPages[toString($page, "link")] = $page;
 }
 
-foreach ($linksCat as $link => $cat){
-    if (!isset($linksPages[$link])){
+foreach ($linksCat as $link => $cat)
+{
+    if (!isset($linksPages[$link]))
+    {
         echo $link . " not found in DB\n";
         continue;
     }
-    if ($cat == 'x'){
-        echo (string)$linksPages[$link]["fbID"]."\n";
+    if ($cat == 'x')
+    {
+        echo (string)$linksPages[$link]["fbID"] . "\n";
     }
     //var_dump($linksPages[$link]["_id"]);
     $col->update(
@@ -43,12 +48,15 @@ foreach ($linksCat as $link => $cat){
     );
 }
 
-function toString($page, $attributeName){
-    if (!isset($page[$attributeName])){
+function toString($page, $attributeName)
+{
+    if (!isset($page[$attributeName]))
+    {
         return "NULL";
     }
 
-    if (preg_match("/,/", $page[$attributeName])){
+    if (preg_match("/,/", $page[$attributeName]))
+    {
         return "\"" . $page[$attributeName] . "\"";
     }
     return $page[$attributeName];

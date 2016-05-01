@@ -8,12 +8,14 @@
 namespace CodingGuys\FbRepo;
 
 
-class FbFeedRepo extends FbRepo{
+class FbFeedRepo extends FbRepo
+{
     /**
      * @param \MongoId $pageMongoId
      * @return array
      */
-    public function findLatestOneByPageId(\MongoId $pageMongoId){
+    public function findLatestOneByPageId(\MongoId $pageMongoId)
+    {
         $query = array(
             "fbPage.\$id" => $pageMongoId
         );
@@ -25,10 +27,12 @@ class FbFeedRepo extends FbRepo{
             ->sort($orderQ)
             ->limit(1)->getNext();
     }
+
     /**
      * @return \MongoCollection
      */
-    private function getFeedCollection(){
+    private function getFeedCollection()
+    {
         $fbDM = $this->getFbDM();
         return $fbDM->getMongoCollection($fbDM->getFeedCollectionName());
     }

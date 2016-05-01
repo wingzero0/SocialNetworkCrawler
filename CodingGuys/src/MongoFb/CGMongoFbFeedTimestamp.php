@@ -9,25 +9,36 @@ namespace CodingGuys\MongoFb;
 
 use CodingGuys\MongoFb\CGMongoFb;
 
-class CGMongoFbFeedTimestamp extends CGMongoFb{
+class CGMongoFbFeedTimestamp extends CGMongoFb
+{
     private $rawDataFromMongo;
     private $_id;
-    public function __construct($rawDataFromMongo, $dbName = null){
+
+    public function __construct($rawDataFromMongo, $dbName = null)
+    {
         $this->rawDataFromMongo = $rawDataFromMongo;
         $this->_id = $rawDataFromMongo["_id"];
         parent::__construct($dbName);
     }
-    public function getLikesTotalCount(){
-    	if (isset($this->rawDataFromMongo["likes_total_count"])){
-    		return $this->rawDataFromMongo["likes_total_count"];
-    	}else{
-    		return 0;
-    	}
+
+    public function getLikesTotalCount()
+    {
+        if (isset($this->rawDataFromMongo["likes_total_count"]))
+        {
+            return $this->rawDataFromMongo["likes_total_count"];
+        } else
+        {
+            return 0;
+        }
     }
-    public function getCommentsTotalCount(){
-        if (isset($this->rawDataFromMongo["comments_total_count"])){
+
+    public function getCommentsTotalCount()
+    {
+        if (isset($this->rawDataFromMongo["comments_total_count"]))
+        {
             return $this->rawDataFromMongo["comments_total_count"];
-        }else{
+        } else
+        {
             return 0;
         }
     }
@@ -35,37 +46,48 @@ class CGMongoFbFeedTimestamp extends CGMongoFb{
     /**
      * @return \MongoDate
      */
-    public function getBatchTime(){
-        if (isset($this->rawDataFromMongo["batchTime"])){
+    public function getBatchTime()
+    {
+        if (isset($this->rawDataFromMongo["batchTime"]))
+        {
             return $this->rawDataFromMongo["batchTime"];
         }
         return null;
     }
+
     /**
      * @return \MongoDate
      */
-    public function getUpdateTime(){
-        if (isset($this->rawDataFromMongo["updateTime"])){
+    public function getUpdateTime()
+    {
+        if (isset($this->rawDataFromMongo["updateTime"]))
+        {
             return $this->rawDataFromMongo["updateTime"];
         }
         return null;
     }
+
     /**
      * @return string
      */
-    public function getBatchTimeInISO(){
+    public function getBatchTimeInISO()
+    {
         $batchTime = $this->getBatchTime();
-        if ($batchTime == null){
+        if ($batchTime == null)
+        {
             return "";
         }
         return $this->convertMongoDateToISODate($batchTime);
     }
+
     /**
      * @return string
      */
-    public function getUpdateTimeInISO(){
+    public function getUpdateTimeInISO()
+    {
         $updateTime = $this->getUpdateTime();
-        if ($updateTime == null){
+        if ($updateTime == null)
+        {
             return "";
         }
         return $this->convertMongoDateToISODate($updateTime);

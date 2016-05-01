@@ -11,13 +11,15 @@ $col = $m->selectCollection("directory", "Facebook");
 $cursor = $col->find(array("fbID" => $fbID));
 
 $fbPage = null;
-foreach ($cursor as $v){
+foreach ($cursor as $v)
+{
     $fbPage = $v;
     print_r($fbPage);
 }
 
-if ($fbPage == null){
-    return ;
+if ($fbPage == null)
+{
+    return;
 }
 
 $timestampCol = $m->selectCollection("directory", "FacebookTimestampRecord");

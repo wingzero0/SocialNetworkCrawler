@@ -11,13 +11,14 @@ use CodingGuys\CGPageStat;
 
 $stat = new CGPageStat();
 $ret = $stat->findAllPageLastUpdateTime();
-foreach($ret as $key => $record){
+foreach ($ret as $key => $record)
+{
     $mnemono = $record["mnemono"];
     $fbID = $record["fbID"];
     $cat = $mnemono["category"];
     $city = $mnemono["location"]["city"];
     $country = $mnemono["location"]["country"];
-    echo $cat . "\t" . $city . "\t" . $country . "\t"  .
+    echo $cat . "\t" . $city . "\t" . $country . "\t" .
         $fbID . "\t" .
         $key . "\n";
 }

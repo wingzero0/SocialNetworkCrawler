@@ -23,7 +23,8 @@ $cursor = $col->find(
 
 $updateCount = 0;
 
-foreach ($cursor as $pageRaw){
+foreach ($cursor as $pageRaw)
+{
     //echo $pageRaw["_id"]."\n";
     //echo $pageRaw["name"]."\n";
     $crawlTime = $pageRaw["mnemono"]["crawlTime"];
@@ -38,22 +39,28 @@ echo "\ntotal updated:" . $updateCount . "\n";
  * @param array $crawlTime
  * @return int
  */
-function patchCrawlTime(MongoId $mongoId, $crawlTime){
-    if (empty($crawlTime)){
+function patchCrawlTime(MongoId $mongoId, $crawlTime)
+{
+    if (empty($crawlTime))
+    {
         return 0;
     }
     $intCrawlTime = array();
     $shouldUpdate = false;
-    foreach($crawlTime as $value){
-        if (is_string($value)){
+    foreach ($crawlTime as $value)
+    {
+        if (is_string($value))
+        {
             $shouldUpdate = true;
             $intCrawlTime[] = intval($value);
-        }else if (is_int($value)){
+        } else if (is_int($value))
+        {
             $intCrawlTime[] = $value;
         }
     }
 
-    if ($shouldUpdate){
+    if ($shouldUpdate)
+    {
         echo "patching:\n";
         var_dump($mongoId);
         var_dump($intCrawlTime);
@@ -70,5 +77,5 @@ function patchCrawlTime(MongoId $mongoId, $crawlTime){
         );
         return 1;
     }
-    return 0 ;
+    return 0;
 }
