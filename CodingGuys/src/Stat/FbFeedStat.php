@@ -104,7 +104,7 @@ class FbFeedStat extends FbStat{
      * @return array
      */
     protected function findTimestampByFeed(\MongoId $feedId){
-        $col = $this->getMongoCollection($this->getMongoFb()->getFeedTimestampCollectionName());
+        $col = $this->getFbFeedTimestampCol();
         $query = array(
             "batchTime" => $this->getFacebookTimestampDateRangeQuery(),
             "fbFeed.\$id" => $feedId

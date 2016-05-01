@@ -17,6 +17,21 @@ class CGMongoFbFeedTimestamp extends CGMongoFb{
         $this->_id = $rawDataFromMongo["_id"];
         parent::__construct($dbName);
     }
+
+    /**
+     * @return \MongoDBRef|array|null
+     */
+    public function getFbFeed(){
+        if (isset($this->rawDataFromMongo["fbFeed"])){
+            return $this->rawDataFromMongo["fbFeed"];
+        }else{
+            return null;
+        }
+    }
+
+    /**
+     * @return int
+     */
     public function getLikesTotalCount(){
     	if (isset($this->rawDataFromMongo["likes_total_count"])){
     		return $this->rawDataFromMongo["likes_total_count"];
@@ -24,6 +39,10 @@ class CGMongoFbFeedTimestamp extends CGMongoFb{
     		return 0;
     	}
     }
+
+    /**
+     * @return int
+     */
     public function getCommentsTotalCount(){
         if (isset($this->rawDataFromMongo["comments_total_count"])){
             return $this->rawDataFromMongo["comments_total_count"];

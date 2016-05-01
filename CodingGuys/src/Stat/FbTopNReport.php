@@ -10,6 +10,10 @@ namespace CodingGuys\Stat;
 use CodingGuys\MongoFb\CGMongoFbFeedTimestamp;
 
 class FbTopNReport extends FbFeedStat{
+    /**
+     * @param $maxRecords array of CGMongoFbFeedTimestamp
+     * use for debugging, very element should not be null
+     */
     private function checkNull($maxRecords){
         echo "count of max Records:" . count($maxRecords) . "\n";
         foreach($maxRecords as $record){
@@ -41,7 +45,6 @@ class FbTopNReport extends FbFeedStat{
         echo "],'topNComments':[";
         $first = true;
         $maxComment = array_values($maxRecord['maxCommentRecord']);
-        $this->checkNull($maxComment);
         usort($maxComment, array("CodingGuys\\Stat\\FbTopNReport", "cmpCommentRecord"));
         $topNComments = $this->filterTopNComment($maxComment, $topN);
         foreach($topNComments as $i => $v){
@@ -70,6 +73,7 @@ class FbTopNReport extends FbFeedStat{
         $maxCommentRecord = array();
         foreach ($cursor as $feed){
             $timestampRecords = $this->findTimestampByFeed($feed["_id"]);
+            if (empty($timestampRecords)){ continue; }
             $ret = $this->findMaxLikeAndMaxComment($timestampRecords);
             $maxLikeRecord[$feed["fbID"]] = $ret['maxLikeRecord'];
             $maxCommentRecord[$feed["fbID"]] = $ret['maxCommentRecord'];
@@ -77,14 +81,14 @@ class FbTopNReport extends FbFeedStat{
         return array('maxLikeRecord' => $maxLikeRecord, 'maxCommentRecord' => $maxCommentRecord);
     }
 
-    private function extractTimestampNecessaryField($timestampRecord){
-        $fbFeed = \MongoDBRef::get($this->getMongoDB(), $timestampRecord["fbFeed"]);
+    private function extractTimestampNecessaryField(CGMongoFbFeedTimestamp $t){
+        $fbFeed = \MongoDBRef::get($this->getMongoDB(), $t->getFbFeed());
         $updateTime = new \DateTime();
-        $updateTime->setTimestamp($timestampRecord["updateTime"]->sec);
+        $updateTime->setTimestamp($t->getUpdateTime()->sec);
         return array(
             'shortLink' => $this->extractShortLink($fbFeed),
-            'likes_total_count' => $timestampRecord['likes_total_count'],
-            'comments_total_count' => $timestampRecord['comments_total_count'],
+            'likes_total_count' => $t->getLikesTotalCount(),
+            'comments_total_count' => $t->getCommentsTotalCount(),
             'message' => (isset($fbFeed["message"]) ? mb_substr($fbFeed["message"], 0, 20) . "..." : ""),
             "updateTime" => $updateTime->format(\DateTime::ISO8601),
         );
