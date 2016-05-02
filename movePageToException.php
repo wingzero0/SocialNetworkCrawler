@@ -9,9 +9,11 @@ require_once(__DIR__ . '/CodingGuys/autoload.php');
 use CodingGuys\MongoFb\CGMongoFb;
 
 $options = getopt("", array("id:", "message::"));
-if (is_array($options["id"])){
+if (is_array($options["id"]))
+{
     $queryId = $options["id"];
-}else{
+} else
+{
     $queryId = array($options["id"]);
 }
 
@@ -22,10 +24,12 @@ $mongoFb = new CGMongoFb();
 $col = $mongoFb->getMongoCollection($mongoFb->getPageCollectionName());
 $exceptionCol = $mongoFb->getMongoCollection($mongoFb->getExceptionPageCollectionName());
 
-foreach ($queryId as $id){
+foreach ($queryId as $id)
+{
     $query = array("_id" => new MongoId($id));
     $cursor = $col->find($query);
-    foreach($cursor as $page){
+    foreach ($cursor as $page)
+    {
         var_dump($page);
         $exceptionCol->update(
             array("_id" => $page["_id"]),

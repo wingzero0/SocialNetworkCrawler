@@ -14,15 +14,18 @@ use Facebook\FacebookSession;
 use Facebook\FacebookRequestException;
 use Facebook\FacebookThrottleException;
 
-class CGFbCrawler {
+class CGFbCrawler
+{
     private $mongFb;
     private $fbSession;
 
-    public function __construct($appId, $appSecret){
+    public function __construct($appId, $appSecret)
+    {
         $this->setMongFb(new CGMongoFb());
         FacebookSession::setDefaultApplication($appId, $appSecret);
         $this->setFbSession(FacebookSession::newAppSession());
     }
+
     /**
      * @param FacebookRequest $request
      * @param string $headerMessage message that will be dump to stderr if exception occurs
@@ -30,38 +33,47 @@ class CGFbCrawler {
      *
      * @TODO catch api limit exception, send mail to user and sleep a long time.
      */
-    protected function tryRequest(FacebookRequest $request, $headerMessage){
+    protected function tryRequest(FacebookRequest $request, $headerMessage)
+    {
         $response = null;
         $counter = 0;
-        do{
+        do
+        {
             $counter++;
-            try{
+            try
+            {
                 $response = $request->execute();
-            }catch(FacebookThrottleException $e){
+            } catch (FacebookThrottleException $e)
+            {
                 $this->dumpErr($e, $headerMessage);
                 $response = null;
                 sleep(600);
-            }catch (FacebookRequestException $e){
+            } catch (FacebookRequestException $e)
+            {
                 $this->dumpErr($e, $headerMessage);
                 $response = null;
                 sleep(10);
-            }catch (\Exception $e){
+            } catch (\Exception $e)
+            {
                 $this->dumpErr($e, $headerMessage);
                 $response = null;
                 break;
             }
-        }while($response == null && $counter < 2);
+        } while ($response == null && $counter < 2);
 
         return $response;
     }
 
-    protected function dumpErr(\Exception $e, $headerMessage){
+    protected function dumpErr(\Exception $e, $headerMessage)
+    {
         $stderr = fopen('php://stderr', 'w');
         $dateObj = new \DateTime();
         fprintf($stderr, $dateObj->format(\DateTime::ISO8601) . ": " . $headerMessage . "\n");
-        if ($e instanceof FacebookRequestException) {
+        if ($e instanceof FacebookRequestException)
+        {
             fprintf($stderr, $e->getRawResponse() . "\n");
-        } else {
+        } else
+        {
             fprintf($stderr, $e->getMessage() . "\n");
         }
         fclose($stderr);
@@ -102,7 +114,8 @@ class CGFbCrawler {
     /**
      * @return \MongoCollection
      */
-    protected function getFeedCollection(){
+    protected function getFeedCollection()
+    {
         $feedCollectionName = $this->getMongFb()->getFeedCollectionName();
         return $this->getMongFb()->getMongoCollection($feedCollectionName);
     }
@@ -110,7 +123,8 @@ class CGFbCrawler {
     /**
      * @return \MongoCollection
      */
-    protected function getFeedTimestampCollection(){
+    protected function getFeedTimestampCollection()
+    {
         $feedTimestampCollectionName = $this->getMongFb()->getFeedTimestampCollectionName();
         return $this->getMongFb()->getMongoCollection($feedTimestampCollectionName);
     }
@@ -118,7 +132,8 @@ class CGFbCrawler {
     /**
      * @return \MongoCollection
      */
-    protected function getPageCollection(){
+    protected function getPageCollection()
+    {
         $pageCollectionName = $this->getMongFb()->getPageCollectionName();
         return $this->getMongFb()->getMongoCollection($pageCollectionName);
     }
@@ -126,7 +141,8 @@ class CGFbCrawler {
     /**
      * @return \MongoCollection
      */
-    protected function getPageTimestampCollection(){
+    protected function getPageTimestampCollection()
+    {
         $colName = $this->getMongFb()->getPageTimestampCollectionName();
         return $this->getMongFb()->getMongoCollection($colName);
     }
@@ -134,7 +150,8 @@ class CGFbCrawler {
     /**
      * @return \MongoCollection
      */
-    protected function getExceptionPageCollection(){
+    protected function getExceptionPageCollection()
+    {
         $exceptionPageCollectionName = $this->getMongFb()->getExceptionPageCollectionName();
         return $this->getMongFb()->getMongoCollection($exceptionPageCollectionName);
     }

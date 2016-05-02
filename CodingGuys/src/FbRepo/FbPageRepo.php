@@ -14,7 +14,8 @@ class FbPageRepo extends FbRepo
      * @param \MongoId $mongoId
      * @return array
      */
-    public function findOneById(\MongoId $mongoId){
+    public function findOneById(\MongoId $mongoId)
+    {
         $query = array("_id" => $mongoId);
         return $this->getPageCollection()->find($query)->limit(1)->getNext();
     }
@@ -22,26 +23,29 @@ class FbPageRepo extends FbRepo
     /**
      * @return \MongoCursor
      */
-    public function findAll(){
+    public function findAll()
+    {
         return $this->getPageCollection()->find();
     }
 
-    public function findAllWorkingPage(){
+    public function findAllWorkingPage()
+    {
         $query = array(
             "\$or" => array(
                 array(
                     "exception" => array("\$exists" => false),
                 ),
-                array( "exception" => false),
+                array("exception" => false),
             )
         );
         return $this->getPageCollection()->find($query);
     }
-    
+
     /**
      * @return \MongoCollection
      */
-    private function getPageCollection(){
+    private function getPageCollection()
+    {
         $fbDM = $this->getFbDM();
         return $fbDM->getMongoCollection($fbDM->getPageCollectionName());
     }

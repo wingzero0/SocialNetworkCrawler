@@ -11,7 +11,8 @@ namespace CodingGuys\FbWrapper;
 use Facebook\GraphPage;
 use Facebook\GraphLocation;
 
-class CGGraphPage extends GraphPage{
+class CGGraphPage extends GraphPage
+{
     /**
      * Returns the best available Page on Facebook.
      *
@@ -39,7 +40,7 @@ class CGGraphPage extends GraphPage{
      */
     public function getLocation()
     {
-        return $this->getProperty('location',GraphLocation::className());
+        return $this->getProperty('location', GraphLocation::className());
     }
 
     /**
@@ -82,6 +83,7 @@ class CGGraphPage extends GraphPage{
     {
         return $this->getProperty('username');
     }
+
     /**
      * Returns cover
      *
@@ -91,6 +93,7 @@ class CGGraphPage extends GraphPage{
     {
         return $this->getProperty('cover')->backingData;
     }
+
     /**
      * Returns CoverUrl
      *

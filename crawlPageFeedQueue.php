@@ -10,13 +10,13 @@ $crawlTime = new \DateTime();
 $crawlTime->setTimestamp($batchTime->sec)->setTimezone(new \DateTimeZone("GMT"));
 $crawlTimeH = intval($crawlTime->format('H'));
 
-echo "crawlTimeH:" . $crawlTimeH."\n";
+echo "crawlTimeH:" . $crawlTimeH . "\n";
 
 $pageCol = $mongoFb->getMongoCollection($mongoFb->getPageCollectionName());
 $cursor = $pageCol->find(array(
     "\$or" => array(
-            array("exception" => array("\$exists" => false)),
-            array("exception" => false),
+        array("exception" => array("\$exists" => false)),
+        array("exception" => false),
     ),
     "mnemono.crawlTime" => $crawlTimeH,
 ));
@@ -26,14 +26,15 @@ $client = new GearmanClient();
 
 // Add a server
 $client->addServer(); // by default host/port will be "localhost" & 4730
-foreach($cursor as $doc){
-	echo "crawling:".$doc["fbID"]."\n";
+foreach ($cursor as $doc)
+{
+    echo "crawling:" . $doc["fbID"] . "\n";
 
-	echo "Sending job\n";
-	// Send reverse job
-	$job_handle = $client->doBackground("fbCrawler", serialize(array(
+    echo "Sending job\n";
+    // Send reverse job
+    $job_handle = $client->doBackground("fbCrawler", serialize(array(
         "fbID" => $doc["fbID"],
-        "_id" => $doc["_id"]."",
+        "_id" => $doc["_id"] . "",
         "batchTime" => $batchTime,
     )));
 }

@@ -6,13 +6,16 @@
  */
 
 namespace CodingGuys\FbWrapper;
+
 use Facebook\GraphObject;
 
-class CGCursor extends GraphObject{
+class CGCursor extends GraphObject
+{
     /**
      * @return string | null
      */
-    public function getAfter(){
+    public function getAfter()
+    {
         return $this->getProperty('after');
     }
 }
