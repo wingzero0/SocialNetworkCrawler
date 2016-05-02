@@ -9,12 +9,14 @@ namespace CodingGuys\Stat;
 
 use CodingGuys\MongoFb\CGMongoFb;
 
-class FbStat{
+class FbStat
+{
     protected $STDERR;
-    
+
     private $mongoFb;
-    
-    public function __construct(){
+
+    public function __construct()
+    {
         $this->STDERR = fopen('php://stderr', 'w+');
     }
 
@@ -22,28 +24,34 @@ class FbStat{
      * @param $colName
      * @return \MongoCollection
      */
-    protected function getMongoCollection($colName){
+    protected function getMongoCollection($colName)
+    {
         return $this->getMongoFb()->getMongoCollection($colName);
     }
 
     /**
      * @return \MongoDB
      */
-    protected function getMongoDB(){
+    protected function getMongoDB()
+    {
         return $this->getMongoFb()->getMongoDB();
     }
 
     /**
      * @return \MongoClient
      */
-    protected function getMongoClient(){
+    protected function getMongoClient()
+    {
         return $this->getMongoFb()->getMongoClient();
     }
+
     /**
      * @return CGMongoFb
      */
-    protected function getMongoFb(){
-        if ($this->mongoFb == null){
+    protected function getMongoFb()
+    {
+        if ($this->mongoFb == null)
+        {
             $this->mongoFb = new CGMongoFb();
         }
         return $this->mongoFb;
@@ -52,14 +60,16 @@ class FbStat{
     /**
      * @return \MongoCollection
      */
-    protected function getFbFeedCol(){
+    protected function getFbFeedCol()
+    {
         return $this->getMongoCollection($this->getMongoFb()->getFeedCollectionName());
     }
 
     /**
      * @return \MongoCollection
      */
-    protected function getFbFeedTimestampCol(){
+    protected function getFbFeedTimestampCol()
+    {
         return $this->getMongoCollection($this->getMongoFb()->getFeedTimestampCollectionName());
     }
 }

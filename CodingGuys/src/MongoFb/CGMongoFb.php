@@ -46,7 +46,7 @@ class CGMongoFb
     {
         $this->pageCollectionName = $pageCollectionName;
     }
-    
+
     /**
      * @return string
      */

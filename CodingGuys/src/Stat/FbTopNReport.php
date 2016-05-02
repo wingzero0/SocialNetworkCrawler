@@ -9,21 +9,27 @@ namespace CodingGuys\Stat;
 
 use CodingGuys\MongoFb\CGMongoFbFeedTimestamp;
 
-class FbTopNReport extends FbFeedStat{
+class FbTopNReport extends FbFeedStat
+{
     /**
      * @param $maxRecords array of CGMongoFbFeedTimestamp
      * use for debugging, very element should not be null
      */
-    private function checkNull($maxRecords){
+    private function checkNull($maxRecords)
+    {
         echo "count of max Records:" . count($maxRecords) . "\n";
-        foreach($maxRecords as $record){
-            if (!($record instanceof CGMongoFbFeedTimestamp)){
+        foreach ($maxRecords as $record)
+        {
+            if (!($record instanceof CGMongoFbFeedTimestamp))
+            {
                 echo "get invalid object\n";
             }
         }
     }
+
     // TODO refine output format
-    public function topNResult($topN){
+    public function topNResult($topN)
+    {
         mb_internal_encoding("UTF-8");
         $maxRecord = $this->queryTimestampMaxValue();
 
@@ -33,12 +39,15 @@ class FbTopNReport extends FbFeedStat{
         $result = array();
         echo "{'topNLikes':[";
         $first = true;
-        foreach($topNLikes as $i => $v){
+        foreach ($topNLikes as $i => $v)
+        {
             $result['topNLikes'][$i] = $this->extractTimestampNecessaryField($v);
-            if ($first){
+            if ($first)
+            {
                 echo json_encode($result['topNLikes'][$i]);
                 $first = false;
-            }else{
+            } else
+            {
                 echo "," . json_encode($result['topNLikes'][$i]);
             }
         }
@@ -47,33 +56,42 @@ class FbTopNReport extends FbFeedStat{
         $maxComment = array_values($maxRecord['maxCommentRecord']);
         usort($maxComment, array("CodingGuys\\Stat\\FbTopNReport", "cmpCommentRecord"));
         $topNComments = $this->filterTopNComment($maxComment, $topN);
-        foreach($topNComments as $i => $v){
+        foreach ($topNComments as $i => $v)
+        {
             $result['topNComments'][$i] = $this->extractTimestampNecessaryField($v);
-            if ($first){
+            if ($first)
+            {
                 echo json_encode($result['topNComments'][$i]);
                 $first = false;
-            }else{
+            } else
+            {
                 echo "," . json_encode($result['topNComments'][$i]);
             }
         }
         echo "]}";
-        return ;
+        return;
     }
+
     /**
      * query feed's timestamp record in the pre-set date range.
      * feed's timestamp record could change with time.
      * this function will return only the timestamp with max like and max comment for a feed
      * @return array it contains two indexes, 'maxLikeRecord' link to the timestamp record with max value of like. 'maxCommentRecord' link to the timestamp record with max value of comment.
      */
-    private function queryTimestampMaxValue(){
+    private function queryTimestampMaxValue()
+    {
         $col = $this->getFbFeedCol();
         $cursor = $col->find($this->getFacebookFeedDateRangeQuery());
         // TODO rename maxLikeRecord to maxLikeRecords, maxCommentRecord to maxCommentRecords
         $maxLikeRecord = array();
         $maxCommentRecord = array();
-        foreach ($cursor as $feed){
+        foreach ($cursor as $feed)
+        {
             $timestampRecords = $this->findTimestampByFeed($feed["_id"]);
-            if (empty($timestampRecords)){ continue; }
+            if (empty($timestampRecords))
+            {
+                continue;
+            }
             $ret = $this->findMaxLikeAndMaxComment($timestampRecords);
             $maxLikeRecord[$feed["fbID"]] = $ret['maxLikeRecord'];
             $maxCommentRecord[$feed["fbID"]] = $ret['maxCommentRecord'];
@@ -81,7 +99,8 @@ class FbTopNReport extends FbFeedStat{
         return array('maxLikeRecord' => $maxLikeRecord, 'maxCommentRecord' => $maxCommentRecord);
     }
 
-    private function extractTimestampNecessaryField(CGMongoFbFeedTimestamp $t){
+    private function extractTimestampNecessaryField(CGMongoFbFeedTimestamp $t)
+    {
         $fbFeed = \MongoDBRef::get($this->getMongoDB(), $t->getFbFeed());
         $updateTime = new \DateTime();
         $updateTime->setTimestamp($t->getUpdateTime()->sec);
@@ -94,20 +113,27 @@ class FbTopNReport extends FbFeedStat{
         );
     }
 
-    private function extractShortLink($fb){
+    private function extractShortLink($fb)
+    {
         return (isset($fb["link"]) && $this->isFbPhotoLink($fb["link"]) ?
             $fb["link"] : "https://www.facebook.com/" . $fb["fbID"]);
     }
-    private function isFbPhotoLink($link){
+
+    private function isFbPhotoLink($link)
+    {
         return preg_match('/www\.facebook\.com(.*)photos/', $link) > 0;
     }
 
     const COMMENTS_TOTAL_COUNT = "comments_total_count";
     const LIKES_TOTAL_COUNT = "likes_total_count";
-    private function filterTopNComment($sortedCommentTimestamp, $topN){
+
+    private function filterTopNComment($sortedCommentTimestamp, $topN)
+    {
         return $this->filterTopN(FbTopNReport::COMMENTS_TOTAL_COUNT, $sortedCommentTimestamp, $topN);
     }
-    private function filterTopNLike($sortedLikeTimestamp, $topN){
+
+    private function filterTopNLike($sortedLikeTimestamp, $topN)
+    {
         return $this->filterTopN(FbTopNReport::LIKES_TOTAL_COUNT, $sortedLikeTimestamp, $topN);
     }
 
@@ -119,24 +145,36 @@ class FbTopNReport extends FbFeedStat{
      *
      * get top n result, any record has the sample score as the n-th record, it also will be included;
      */
-    private function filterTopN($fieldName, $sortedTimestamp, $topN){
-        if ($topN <= 0){
+    private function filterTopN($fieldName, $sortedTimestamp, $topN)
+    {
+        if ($topN <= 0)
+        {
             return array();
         }
         $ret = array_slice($sortedTimestamp, 0, $topN);
-        for ($i = $topN; $i < count($sortedTimestamp); $i++){
-            $lastRecord = $sortedTimestamp[$i-1];
+        for ($i = $topN; $i < count($sortedTimestamp); $i++)
+        {
+            $lastRecord = $sortedTimestamp[$i - 1];
             $currentRecord = $sortedTimestamp[$i];
             if (!($lastRecord instanceof CGMongoFbFeedTimestamp)
-                || !($currentRecord instanceof CGMongoFbFeedTimestamp)){ break; }
+                || !($currentRecord instanceof CGMongoFbFeedTimestamp)
+            )
+            {
+                break;
+            }
 
             if ($fieldName == FbTopNReport::COMMENTS_TOTAL_COUNT
-                && $lastRecord->getCommentsTotalCount() == $currentRecord->getCommentsTotalCount()) {
+                && $lastRecord->getCommentsTotalCount() == $currentRecord->getCommentsTotalCount()
+            )
+            {
                 $ret[] = $sortedTimestamp[$i];
             } else if ($fieldName == FbTopNReport::LIKES_TOTAL_COUNT
-                && $lastRecord->getLikesTotalCount() == $currentRecord->getLikesTotalCount()) {
+                && $lastRecord->getLikesTotalCount() == $currentRecord->getLikesTotalCount()
+            )
+            {
                 $ret[] = $sortedTimestamp[$i];
-            }else{
+            } else
+            {
                 break;
             }
         }
@@ -148,7 +186,8 @@ class FbTopNReport extends FbFeedStat{
      * @param CGMongoFbFeedTimestamp $b
      * @return bool
      */
-    public static function cmpLikeRecord(CGMongoFbFeedTimestamp $a, CGMongoFbFeedTimestamp $b){
+    public static function cmpLikeRecord(CGMongoFbFeedTimestamp $a, CGMongoFbFeedTimestamp $b)
+    {
         return $a->getLikesTotalCount() < $b->getLikesTotalCount();
     }
 
@@ -157,7 +196,8 @@ class FbTopNReport extends FbFeedStat{
      * @param CGMongoFbFeedTimestamp $b
      * @return bool
      */
-    public static function cmpCommentRecord(CGMongoFbFeedTimestamp $a, CGMongoFbFeedTimestamp $b){
+    public static function cmpCommentRecord(CGMongoFbFeedTimestamp $a, CGMongoFbFeedTimestamp $b)
+    {
         return $a->getCommentsTotalCount() < $b->getCommentsTotalCount();
     }
 }
