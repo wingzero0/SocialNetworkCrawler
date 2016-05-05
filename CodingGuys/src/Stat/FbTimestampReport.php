@@ -54,6 +54,7 @@ class FbTimestampReport extends FbFeedStat
             {
                 $i++;
                 $page = \MongoDBRef::get($feedCol->db, $feed["fbPage"]);
+                // TODO find suitable anchor point, same batch? one hour?
                 if ($page["mnemono"]["location"]["city"] != $city)
                 {
                     continue;
@@ -72,13 +73,13 @@ class FbTimestampReport extends FbFeedStat
 
     private function getPreviousAverageFeedLikes(CGMongoFbPage $cgMongoFbPage)
     {
-        $batchTime = $cgMongoFbPage->getFirstBatchTimeWithInWindow($this->getStartDate(), $this->getEndDate());
+        $batchTime = $cgMongoFbPage->getFirstBatchTimeWithInWindow($this->getStartDateMongoDate(), $this->getEndDateMongoDate());
         return $cgMongoFbPage->getAverageFeedLikesInTheBatch($batchTime);
     }
 
     private function getPreviousAverageFeedComments(CGMongoFbPage $cgMongoFbPage)
     {
-        $batchTime = $cgMongoFbPage->getFirstBatchTimeWithInWindow($this->getStartDate(), $this->getEndDate());
+        $batchTime = $cgMongoFbPage->getFirstBatchTimeWithInWindow($this->getStartDateMongoDate(), $this->getEndDateMongoDate());
         return $cgMongoFbPage->getAverageFeedCommentsInTheBatch($batchTime);
     }
 
@@ -177,18 +178,32 @@ class FbTimestampReport extends FbFeedStat
         $this->feedPool[$feed["fbID"]] = new CGMongoFbFeed($feed);
     }
 
-    private function reformulateTimestampSeries($page, $feed, $timestampRecords, & $batchTimeIndex)
+    /**
+     * @param array $page feed's related page
+     * @param array $feed fb feed
+     * @param array $sortedFeedTimestampRecords array of feed's related timestamp
+     * @return array
+     */
+    private function reformulateTimestampSeries($page, $feed, $sortedFeedTimestampRecords)
     {
-        $this->accumulatePageLikeAndComment($page, $feed, $timestampRecords);
+        $this->accumulatePageLikeAndComment($page, $feed, $sortedFeedTimestampRecords);
         $lastLikeCount = 0;
         $lastCommentCount = 0;
         $ret = array();
-        foreach ($timestampRecords as $timestampRecord)
+        // TODO split delta in hours level
+        $stdStartDate = new \DateTime();
+        if ($this->getStartDateMongoDate() != null){
+            $stdStartDate->setTimestamp($this->getStartDateMongoDate()->sec);
+        }else {
+            return array();
+        }
+
+        foreach ($sortedFeedTimestampRecords as $timestampRecord)
         {
             if ($timestampRecord instanceof CGMongoFbFeedTimestamp)
             {
                 $batchTimeString = $timestampRecord->getBatchTimeInISO();
-                $batchTimeIndex[$batchTimeString] = 1;
+                //$batchTimeIndex[$batchTimeString] = 1;
                 $totalLike = $timestampRecord->getLikesTotalCount();
                 $deltaLike = $totalLike - $lastLikeCount;
                 $lastLikeCount = $totalLike;
@@ -205,28 +220,6 @@ class FbTimestampReport extends FbFeedStat
             }
         }
         return $ret;
-    }
-
-
-    /**
-     * @return array mongo date query with range of $this->getStartDate() and $this->getEndDate()
-     */
-    private function getFacebookFeedDateRangeQuery()
-    {
-        $dateRange = array();
-        if ($this->getStartDate() != null)
-        {
-            $dateRange["\$gte"] = gmdate(\DateTime::ISO8601, $this->getStartDate()->sec);
-        }
-        if ($this->getEndDate() != null)
-        {
-            $dateRange["\$lte"] = gmdate(\DateTime::ISO8601, $this->getEndDate()->sec);
-        }
-        if (empty($dateRange))
-        {
-            return array();
-        }
-        return array("created_time" => $dateRange);
     }
 
     private function checkTime($isRest = true, $displayMessage = "")

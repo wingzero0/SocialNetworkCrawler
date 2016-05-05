@@ -11,8 +11,10 @@ use CodingGuys\MongoFb\CGMongoFbFeedTimestamp;
 
 class FbFeedStat extends FbStat
 {
-    private $startDate;
-    private $endDate;
+    private $startDateMongoDate;
+    private $endDateMongoDate;
+    private $startDateDateTime;
+    private $endDateDateTime;
 
     public function __construct(\DateTime $startDate, \DateTime $endDate)
     {
@@ -22,19 +24,22 @@ class FbFeedStat extends FbStat
 
     public function setDateRange(\DateTime $startDate, \DateTime $endDate)
     {
+        $this->startDateDateTime = $startDate;
         if ($startDate != null)
         {
-            $this->startDate = new \MongoDate($startDate->getTimestamp());
+            $this->startDateMongoDate = new \MongoDate($startDate->getTimestamp());
         } else
         {
-            $this->startDate = null;
+            $this->startDateMongoDate = null;
         }
+
+        $this->endDateDateTime = $endDate;
         if ($endDate != null)
         {
-            $this->endDate = new \MongoDate($endDate->getTimestamp());
+            $this->endDateMongoDate = new \MongoDate($endDate->getTimestamp());
         } else
         {
-            $this->endDate = null;
+            $this->endDateMongoDate = null;
         }
     }
 
@@ -79,13 +84,14 @@ class FbFeedStat extends FbStat
     protected function getFacebookFeedDateRangeQuery()
     {
         $dateRange = array();
-        if ($this->getStartDate() != null)
+        //TODO fix timezone problem, fb date is a string with time zone 0
+        if ($this->getStartDateDateTime() != null)
         {
-            $dateRange["\$gte"] = gmdate(\DateTime::ISO8601, $this->getStartDate()->sec);
+            $dateRange["\$gte"] = $this->getStartDateDateTime()->format(\DateTime::ISO8601);
         }
-        if ($this->getEndDate() != null)
+        if ($this->getEndDateDateTime() != null)
         {
-            $dateRange["\$lte"] = gmdate(\DateTime::ISO8601, $this->getEndDate()->sec);
+            $dateRange["\$lte"] = $this->getEndDateDateTime()->format(\DateTime::ISO8601);
         }
         if (empty($dateRange))
         {
@@ -152,13 +158,13 @@ class FbFeedStat extends FbStat
     private function getFacebookTimestampDateRangeQuery()
     {
         $dateRange = array();
-        if ($this->getStartDate() != null)
+        if ($this->getStartDateMongoDate() != null)
         {
-            $dateRange["\$gte"] = $this->getStartDate();
+            $dateRange["\$gte"] = $this->getStartDateMongoDate();
         }
-        if ($this->getEndDate() != null)
+        if ($this->getEndDateMongoDate() != null)
         {
-            $dateRange["\$lte"] = $this->getEndDate();
+            $dateRange["\$lte"] = $this->getEndDateMongoDate();
         }
         if (empty($dateRange))
         {
@@ -170,16 +176,33 @@ class FbFeedStat extends FbStat
     /**
      * @return \MongoDate|null
      */
-    public function getStartDate()
+    public function getStartDateMongoDate()
     {
-        return $this->startDate;
+        return $this->startDateMongoDate;
     }
 
     /**
      * @return \MongoDate|null
      */
-    public function getEndDate()
+    public function getEndDateMongoDate()
     {
-        return $this->endDate;
+        return $this->endDateMongoDate;
+    }
+
+
+    /**
+     * @return \DateTime|null
+     */
+    public function getEndDateDateTime()
+    {
+        return $this->endDateDateTime;
+    }
+
+    /**
+     * @return \DateTime|null
+     */
+    public function getStartDateDateTime()
+    {
+        return $this->startDateDateTime;
     }
 }

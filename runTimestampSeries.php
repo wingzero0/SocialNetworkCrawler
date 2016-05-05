@@ -8,7 +8,7 @@
 require_once(__DIR__ . '/facebook-php-sdk-v4/autoload.php');
 require_once(__DIR__ . '/CodingGuys/autoload.php');
 
-use CodingGuys\CGStat\FbTimestampReport;
+use CodingGuys\Stat\FbTimestampReport;
 
 if (isset($argv[1]))
 {
