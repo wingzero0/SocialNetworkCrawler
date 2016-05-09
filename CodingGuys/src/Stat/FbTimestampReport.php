@@ -38,10 +38,10 @@ class FbTimestampReport extends FbFeedStat
 
         //$this->checkTime(true, "start timer");
 
-        $feedCol = $this->getFbFeedCol();
+        $db = $this->getFbFeedCol()->db;
         while (1)
         {
-            $cursor = $feedCol->find($this->getFacebookFeedDateRangeQuery())->skip($i)->limit(100);
+            $cursor = $this->findFeedByDateRange()->skip($i)->limit(100);
             if (!$cursor->hasNext())
             {
                 break;
@@ -53,7 +53,7 @@ class FbTimestampReport extends FbFeedStat
             foreach ($cursor as $feed)
             {
                 $i++;
-                $page = \MongoDBRef::get($feedCol->db, $feed["fbPage"]);
+                $page = \MongoDBRef::get($db, $feed["fbPage"]);
                 // TODO find suitable anchor point, same batch? one hour?
                 if ($page["mnemono"]["location"]["city"] != $city)
                 {
@@ -67,6 +67,8 @@ class FbTimestampReport extends FbFeedStat
                 }
             }
         }
+
+        ksort($countArray);
 
         $this->outputCountArray($countArray, $batchTimeIndex, $this->feedPool, $this->pagePool);
     }
@@ -182,9 +184,10 @@ class FbTimestampReport extends FbFeedStat
      * @param array $page feed's related page
      * @param array $feed fb feed
      * @param array $sortedFeedTimestampRecords array of feed's related timestamp
+     * @param array $batchTimeIndex for writing the matrix output
      * @return array
      */
-    private function reformulateTimestampSeries($page, $feed, $sortedFeedTimestampRecords)
+    private function reformulateTimestampSeries($page, $feed, $sortedFeedTimestampRecords, & $batchTimeIndex)
     {
         $this->accumulatePageLikeAndComment($page, $feed, $sortedFeedTimestampRecords);
         $lastLikeCount = 0;
@@ -203,7 +206,7 @@ class FbTimestampReport extends FbFeedStat
             if ($timestampRecord instanceof CGMongoFbFeedTimestamp)
             {
                 $batchTimeString = $timestampRecord->getBatchTimeInISO();
-                //$batchTimeIndex[$batchTimeString] = 1;
+                $batchTimeIndex[$batchTimeString] = 1;
                 $totalLike = $timestampRecord->getLikesTotalCount();
                 $deltaLike = $totalLike - $lastLikeCount;
                 $lastLikeCount = $totalLike;

@@ -84,20 +84,32 @@ class FbFeedStat extends FbStat
     protected function getFacebookFeedDateRangeQuery()
     {
         $dateRange = array();
-        //TODO fix timezone problem, fb date is a string with time zone 0
         if ($this->getStartDateDateTime() != null)
         {
-            $dateRange["\$gte"] = $this->getStartDateDateTime()->format(\DateTime::ISO8601);
+            $startTime = clone $this->getStartDateDateTime();
+            $startTime->setTimezone(new \DateTimeZone("GMT+0"));
+            $dateRange["\$gte"] = $startTime->format(\DateTime::ISO8601);
         }
         if ($this->getEndDateDateTime() != null)
         {
-            $dateRange["\$lte"] = $this->getEndDateDateTime()->format(\DateTime::ISO8601);
+            $endTime = clone $this->getEndDateDateTime();
+            $endTime->setTimezone(new \DateTimeZone("GMT+0"));
+            $dateRange["\$lte"] = $endTime->format(\DateTime::ISO8601);
         }
         if (empty($dateRange))
         {
             return array();
         }
         return array("created_time" => $dateRange);
+    }
+
+    /**
+     * @return \MongoCursor
+     */
+    protected function findFeedByDateRange()
+    {
+        $feedCol = $this->getFbFeedCol();
+        return $feedCol->find($this->getFacebookFeedDateRangeQuery());
     }
 
     /**
