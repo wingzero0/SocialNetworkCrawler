@@ -114,7 +114,7 @@ class FbFeedStat extends FbStat
 
     /**
      * @param $timestampRecords array of CGMongoFbFeedTimestamp
-     * @return array the max record
+     * @return array the maximum record of CGMongoFbFeedTimestamp
      */
     protected function findMaxLikeAndMaxComment($timestampRecords)
     {
@@ -146,7 +146,7 @@ class FbFeedStat extends FbStat
 
     /**
      * @param \MongoId $feedId
-     * @return array
+     * @return array array of CGMongoFbFeedTimestamp
      */
     protected function findTimestampByFeed(\MongoId $feedId)
     {

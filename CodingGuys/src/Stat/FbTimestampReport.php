@@ -37,8 +37,6 @@ class FbTimestampReport extends FbFeedStat
         $batchTimeIndex = array();
 
         //$this->checkTime(true, "start timer");
-
-        $db = $this->getFbFeedCol()->db;
         while (1)
         {
             $cursor = $this->findFeedByDateRange()->skip($i)->limit(100);
@@ -53,17 +51,20 @@ class FbTimestampReport extends FbFeedStat
             foreach ($cursor as $feed)
             {
                 $i++;
-                $page = \MongoDBRef::get($db, $feed["fbPage"]);
                 // TODO find suitable anchor point, same batch? one hour?
+                $page = \MongoDBRef::get($this->getFbFeedCol()->db, $feed["fbPage"]);
                 if ($page["mnemono"]["location"]["city"] != $city)
                 {
                     continue;
                 }
-                $timestampRecords = $this->findTimestampByFeed($feed["_id"]);
-                $reformedSeries = $this->reformulateTimestampSeries($page, $feed, $timestampRecords, $batchTimeIndex);
+                $reformedSeries = $this->reformulateTimestampSeries($feed);
                 if (!empty($reformedSeries))
                 {
                     $countArray[$page["fbID"]][$feed["fbID"]] = $reformedSeries;
+                    foreach ($reformedSeries as $batchTime => $v)
+                    {
+                        $batchTimeIndex[$batchTime] = 1;
+                    }
                 }
             }
         }
@@ -145,9 +146,15 @@ class FbTimestampReport extends FbFeedStat
                     {
                         if (isset($feed[$batchTimeString]))
                         {
-                            $timestampRecord = $feed[$batchTimeString];
-                            $this->outputString($timestampRecord['deltaLike'] . ",");
-                            $this->outputString($timestampRecord['deltaComment'] . ",");
+                            $delta = $feed[$batchTimeString];
+                            if ($delta instanceof FbFeedDelta)
+                            {
+                                $this->outputString($delta->getDeltaLike() . ",");
+                                $this->outputString($delta->getDeltaComment() . ",");
+                            } else
+                            {
+                                // TODO throw exception;
+                            }
                         } else
                         {
                             $this->outputString($this->skipNColumn(2));
@@ -160,7 +167,11 @@ class FbTimestampReport extends FbFeedStat
         $this->outputString("", true);
     }
 
-    private function accumulatePageLikeAndComment($page, $feed, $timestampRecords)
+    /**
+     * @param array $page mongo raw data of fb page
+     * @param array $feedTimestampRecords array of CGMongoFbFeedTimestamp
+     */
+    private function accumulatePageLikeAndComment($page, $feedTimestampRecords)
     {
         if (!isset($this->pagePool[$page["fbID"]]))
         {
@@ -173,40 +184,32 @@ class FbTimestampReport extends FbFeedStat
         }
         $cgMongoFbPage->setFeedCount($cgMongoFbPage->getFeedCount() + 1);
 
-        $ret = $this->findMaxLikeAndMaxComment($timestampRecords);
+        $ret = $this->findMaxLikeAndMaxComment($feedTimestampRecords);
         $cgMongoFbPage->setAccumulateLike($cgMongoFbPage->getAccumulateLike() + $ret['maxLike']);
         $cgMongoFbPage->setAccumulateComment($cgMongoFbPage->getAccumulateComment() + $ret['maxComment']);
-
-        $this->feedPool[$feed["fbID"]] = new CGMongoFbFeed($feed);
     }
 
     /**
-     * @param array $page feed's related page
      * @param array $feed fb feed
-     * @param array $sortedFeedTimestampRecords array of feed's related timestamp
-     * @param array $batchTimeIndex for writing the matrix output
-     * @return array
+     * @return array array of FbFeedDelta
      */
-    private function reformulateTimestampSeries($page, $feed, $sortedFeedTimestampRecords, & $batchTimeIndex)
+    private function reformulateTimestampSeries($feed)
     {
-        $this->accumulatePageLikeAndComment($page, $feed, $sortedFeedTimestampRecords);
+        $db = $this->getFbFeedCol()->db;
+        $page = \MongoDBRef::get($db, $feed["fbPage"]);
+        $sortedFeedTimestampRecords = $this->findTimestampByFeed($feed["_id"]);
+        $this->accumulatePageLikeAndComment($page, $sortedFeedTimestampRecords);
+        $this->feedPool[$feed["fbID"]] = new CGMongoFbFeed($feed);
+
         $lastLikeCount = 0;
         $lastCommentCount = 0;
         $ret = array();
-        // TODO split delta in hours level
-        $stdStartDate = new \DateTime();
-        if ($this->getStartDateMongoDate() != null){
-            $stdStartDate->setTimestamp($this->getStartDateMongoDate()->sec);
-        }else {
-            return array();
-        }
 
         foreach ($sortedFeedTimestampRecords as $timestampRecord)
         {
             if ($timestampRecord instanceof CGMongoFbFeedTimestamp)
             {
                 $batchTimeString = $timestampRecord->getBatchTimeInISO();
-                $batchTimeIndex[$batchTimeString] = 1;
                 $totalLike = $timestampRecord->getLikesTotalCount();
                 $deltaLike = $totalLike - $lastLikeCount;
                 $lastLikeCount = $totalLike;
@@ -215,11 +218,7 @@ class FbTimestampReport extends FbFeedStat
                 $deltaComment = $totalComment - $lastCommentCount;
                 $lastCommentCount = $totalComment;
 
-                $ret[$batchTimeString] = array(
-                    "deltaLike" => $deltaLike,
-                    "deltaComment" => $deltaComment,
-                    "updateTime" => $timestampRecord->getUpdateTimeInISO(),
-                );
+                $ret[$batchTimeString] = new FbFeedDelta($deltaLike, $deltaComment);
             }
         }
         return $ret;

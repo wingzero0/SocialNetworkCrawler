@@ -7,8 +7,6 @@
 
 namespace CodingGuys\MongoFb;
 
-use CodingGuys\MongoFb\CGMongoFb;
-
 class CGMongoFbFeedTimestamp extends CGMongoFb
 {
     private $rawDataFromMongo;

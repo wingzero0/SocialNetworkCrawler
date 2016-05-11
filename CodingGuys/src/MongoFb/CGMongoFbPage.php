@@ -25,6 +25,7 @@ class CGMongoFbPage extends CGMongoFb
         if (!isset($rawDataFromMongo["_id"]))
         {
             var_dump($rawDataFromMongo);
+            // TODO throw exception instead of exit program, add error message
             exit(-1);
         }
         $this->_id = $rawDataFromMongo["_id"];
