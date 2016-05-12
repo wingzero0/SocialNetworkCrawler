@@ -57,7 +57,7 @@ class FbTimestampReport extends FbFeedStat
                 {
                     continue;
                 }
-                $reformedSeries = $this->reformulateTimestampSeries($feed);
+                $reformedSeries = $this->storeInPoolAndGetDelta($feed, $page);
                 if (!empty($reformedSeries))
                 {
                     $countArray[$page["fbID"]][$feed["fbID"]] = $reformedSeries;
@@ -168,38 +168,48 @@ class FbTimestampReport extends FbFeedStat
     }
 
     /**
-     * @param array $page mongo raw data of fb page
+     * @param CGMongoFbPage $cgMongoFbPage mongo raw data of fb page
      * @param array $feedTimestampRecords array of CGMongoFbFeedTimestamp
      */
-    private function accumulatePageLikeAndComment($page, $feedTimestampRecords)
+    private function accumulatePageLikeAndComment(CGMongoFbPage $cgMongoFbPage, $feedTimestampRecords)
     {
+        $cgMongoFbPage->setFeedCount($cgMongoFbPage->getFeedCount() + 1);
+
+        $ret = $this->getIndexOfMaxRecord($feedTimestampRecords);
+        $record =  $feedTimestampRecords[$ret['indexOfMaxLike']];
+        if (! $record instanceof CGMongoFbFeedTimestamp){
+            //TODO throw exception
+            return;
+        }
+        $maxLike = $record->getLikesTotalCount();
+        $record =  $feedTimestampRecords[$ret['indexOfMaxComment']];
+        if (! $record instanceof CGMongoFbFeedTimestamp){
+            //TODO throw exception
+            return;
+        }
+        $maxComment = $record->getCommentsTotalCount();
+
+        $cgMongoFbPage->setAccumulateLike($cgMongoFbPage->getAccumulateLike() + $maxLike);
+        $cgMongoFbPage->setAccumulateComment($cgMongoFbPage->getAccumulateComment() + $maxComment);
+    }
+
+    /**
+     * @param array $feed mongo raw data of fb feed
+     * @param array $page mongo raw data of fb page
+     * @return array array of FbFeedDelta
+     */
+    private function storeInPoolAndGetDelta($feed, $page)
+    {
+        $this->feedPool[$feed["fbID"]] = new CGMongoFbFeed($feed);
         if (!isset($this->pagePool[$page["fbID"]]))
         {
             $this->pagePool[$page["fbID"]] = new CGMongoFbPage($page);
         }
+
         $cgMongoFbPage = $this->pagePool[$page["fbID"]];
-        if (!($cgMongoFbPage instanceof CGMongoFbPage))
-        {
-            return;
-        }
-        $cgMongoFbPage->setFeedCount($cgMongoFbPage->getFeedCount() + 1);
 
-        $ret = $this->findMaxLikeAndMaxComment($feedTimestampRecords);
-        $cgMongoFbPage->setAccumulateLike($cgMongoFbPage->getAccumulateLike() + $ret['maxLike']);
-        $cgMongoFbPage->setAccumulateComment($cgMongoFbPage->getAccumulateComment() + $ret['maxComment']);
-    }
-
-    /**
-     * @param array $feed fb feed
-     * @return array array of FbFeedDelta
-     */
-    private function reformulateTimestampSeries($feed)
-    {
-        $db = $this->getFbFeedCol()->db;
-        $page = \MongoDBRef::get($db, $feed["fbPage"]);
         $sortedFeedTimestampRecords = $this->findTimestampByFeed($feed["_id"]);
-        $this->accumulatePageLikeAndComment($page, $sortedFeedTimestampRecords);
-        $this->feedPool[$feed["fbID"]] = new CGMongoFbFeed($feed);
+        $this->accumulatePageLikeAndComment($cgMongoFbPage, $sortedFeedTimestampRecords);
 
         $lastLikeCount = 0;
         $lastCommentCount = 0;

@@ -115,6 +115,7 @@ class FbFeedStat extends FbStat
     /**
      * @param $timestampRecords array of CGMongoFbFeedTimestamp
      * @return array the maximum record of CGMongoFbFeedTimestamp
+     * @deprecated please use getIndexOfMaxRecord
      */
     protected function findMaxLikeAndMaxComment($timestampRecords)
     {
@@ -142,6 +143,38 @@ class FbFeedStat extends FbStat
             'maxCommentRecord' => $maxCommentRecord,
             'maxLike' => $maxLike,
             'maxComment' => $maxComment);
+    }
+
+    /**
+     * @param $timestampRecords array of CGMongoFbFeedTimestamp
+     * @return array the index of maximum record in input
+     */
+    protected function getIndexOfMaxRecord($timestampRecords)
+    {
+        $maxLike = -1;
+        $maxComment = -1;
+        $indexOfMaxLike = 0;
+        $indexOfMaxComment = 0;
+        foreach ($timestampRecords as $i => $record)
+        {
+            if ($record instanceof CGMongoFbFeedTimestamp)
+            {
+                if ($maxLike < $record->getLikesTotalCount())
+                {
+                    $indexOfMaxLike = $i;
+                    $maxLike = $record->getLikesTotalCount();
+                }
+                if ($maxComment < $record->getCommentsTotalCount())
+                {
+                    $indexOfMaxComment = $i;
+                    $maxComment = $record->getCommentsTotalCount();
+                }
+            }
+        }
+
+        return array(
+            "indexOfMaxLike" => $indexOfMaxLike,
+            "indexOfMaxComment" => $indexOfMaxComment);
     }
 
     /**
