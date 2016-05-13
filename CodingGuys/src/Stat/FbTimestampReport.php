@@ -71,16 +71,16 @@ class FbTimestampReport extends FbFeedStat
 
         ksort($countArray);
 
-        $this->outputCountArray($countArray, $batchTimeIndex, $this->feedPool, $this->pagePool);
+        $this->outputCountArray($countArray, $batchTimeIndex);
     }
 
-    private function getPreviousAverageFeedLikes(CGMongoFbPage $cgMongoFbPage)
+    private function getFirstBatchAverageFeedLikes(CGMongoFbPage $cgMongoFbPage)
     {
         $batchTime = $cgMongoFbPage->getFirstBatchTimeWithInWindow($this->getStartDateMongoDate(), $this->getEndDateMongoDate());
         return $cgMongoFbPage->getAverageFeedLikesInTheBatch($batchTime);
     }
 
-    private function getPreviousAverageFeedComments(CGMongoFbPage $cgMongoFbPage)
+    private function getFirstBatchAverageFeedComments(CGMongoFbPage $cgMongoFbPage)
     {
         $batchTime = $cgMongoFbPage->getFirstBatchTimeWithInWindow($this->getStartDateMongoDate(), $this->getEndDateMongoDate());
         return $cgMongoFbPage->getAverageFeedCommentsInTheBatch($batchTime);
@@ -96,75 +96,93 @@ class FbTimestampReport extends FbFeedStat
         return $ret;
     }
 
-    private function outputCountArray($countArray, $batchTimeIndex, $feedPool, $pageRaw)
+    /**
+     * @param string $fbID
+     * @return CGMongoFbPage|null
+     */
+    private function getCGFbPage($fbID){
+        if (isset($this->pagePool[$fbID])){
+            return $this->pagePool[$fbID];
+        }
+        return null;
+    }
+
+    /**
+     * @param string $fbID
+     * @return CGMongoFbFeed|null
+     */
+    private function getCGFbFeed($fbID){
+        if (isset($this->feedPool[$fbID])){
+            return $this->feedPool[$fbID];
+        }
+        return null;
+    }
+
+    private function outputCountArray($countArray, $batchTimeIndex)
     {
-        $this->outputString("fbpage,feed,feedLink,guessLink,feedCreatedTime,FeedShareCounts,mnemonoCategory,pageLikeCount,"
-            . "LastBatchBeforeCurrentWindowAverageLikes,LastBatchBeforeCurrentWindowAverageComments,"
-            . "pageFeedCount,CurrentWindowAverageLikes,CurrentWindowAverageComments,");
         ksort($batchTimeIndex);
+        $this->outputHeading($batchTimeIndex);
+        foreach ($countArray as $pageId => $page)
+        {
+            $cgFbPage = $this->getCGFbPage($pageId);
+            $firstBatchAvgLikes = $this->getFirstBatchAverageFeedLikes($cgFbPage);
+            $firstBatchAvgComments = $this->getFirstBatchAverageFeedComments($cgFbPage);
+            foreach ($page as $feedId => $feed)
+            {
+                $cgFbFeed = $this->getCGFbFeed($feedId);
+                $this->outputString($cgFbPage->getShortLink() . ",");
+                $this->outputString($cgFbFeed->getShortLink() . ",");
+                $this->outputString(preg_replace("/%/", "%%", $cgFbFeed->guessLink()) . ",");
+                $this->outputString($cgFbFeed->getCreatedTime() . ",");
+                $this->outputString($cgFbFeed->getSharesCount() . ",");
+
+                $this->outputString($cgFbPage->getMnemonoCategory() . ",");
+                $this->outputString($cgFbPage->getLikes() . ",");
+
+                $this->outputString($firstBatchAvgLikes . ",");
+                $this->outputString($firstBatchAvgComments . ",");
+                $this->outputString($cgFbPage->getFeedCount() . ",");
+                $this->outputString($cgFbPage->getFeedAverageLike() . ",");
+                $this->outputString($cgFbPage->getFeedAverageComment() . ",");
+
+                foreach ($batchTimeIndex as $batchTimeString => $value)
+                {
+                    if (isset($feed[$batchTimeString]))
+                    {
+                        $delta = $feed[$batchTimeString];
+                        if ($delta instanceof FbFeedDelta)
+                        {
+                            $this->outputString($delta->getDeltaLike() . ",");
+                            $this->outputString($delta->getDeltaComment() . ",");
+                        } else
+                        {
+                            // TODO throw exception;
+                        }
+                    } else
+                    {
+                        $this->outputString($this->skipNColumn(2));
+                    }
+                }
+                $this->outputString("\n");
+            }
+        }
+        $this->outputString("", true);
+    }
+
+    private function outputHeading($batchTimeIndex){
+        $this->outputString("fbpage,feed,feedLink,feedCreatedTime,FeedShareCounts,mnemonoCategory,pageLikeCount,"
+            . "FirstBatchAverageLikes,FirstBatchAverageComments,"
+            . "pageFeedCount,CurrentWindowAverageLikes,CurrentWindowAverageComments,");
         foreach ($batchTimeIndex as $batchTimeString => $value)
         {
             $this->outputString($batchTimeString . "," . $this->skipNColumn(1));
         }
-        $this->outputString("\n" . $this->skipNColumn(13));
+        $this->outputString("\n" . $this->skipNColumn(12));
         foreach ($batchTimeIndex as $batchTimeString => $value)
         {
             $this->outputString("deltaLike,deltaComment,");
         }
         $this->outputString("\n");
-        foreach ($countArray as $pageId => $page)
-        {
-            $cgFbPage = $pageRaw[$pageId];
-            if ($cgFbPage instanceof CGMongoFbPage)
-            {
-                $previousAvgLikes = $this->getPreviousAverageFeedLikes($cgFbPage);
-                $previousAvgComments = $this->getPreviousAverageFeedComments($cgFbPage);
-                foreach ($page as $feedId => $feed)
-                {
-                    $cgFbFeed = $feedPool[$feedId];
-                    if (!($cgFbFeed instanceof CGMongoFbFeed))
-                    {
-                        continue;
-                    }
-                    $this->outputString($cgFbPage->getShortLink() . ",");
-                    $this->outputString($cgFbFeed->getShortLink() . ",");
-                    $this->outputString(preg_replace("/%/", "%%", $cgFbFeed->getRawLink()) . ",");
-                    $this->outputString(preg_replace("/%/", "%%", $cgFbFeed->guessLink()) . ",");
-                    $this->outputString($cgFbFeed->getCreatedTime() . ",");
-                    $this->outputString($cgFbFeed->getSharesCount() . ",");
-
-                    $this->outputString($cgFbPage->getMnemonoCategory() . ",");
-                    $this->outputString($cgFbPage->getLikes() . ",");
-
-                    $this->outputString($previousAvgLikes . ",");
-                    $this->outputString($previousAvgComments . ",");
-                    $this->outputString($cgFbPage->getFeedCount() . ",");
-                    $this->outputString($cgFbPage->getFeedAverageLike() . ",");
-                    $this->outputString($cgFbPage->getFeedAverageComment() . ",");
-
-                    foreach ($batchTimeIndex as $batchTimeString => $value)
-                    {
-                        if (isset($feed[$batchTimeString]))
-                        {
-                            $delta = $feed[$batchTimeString];
-                            if ($delta instanceof FbFeedDelta)
-                            {
-                                $this->outputString($delta->getDeltaLike() . ",");
-                                $this->outputString($delta->getDeltaComment() . ",");
-                            } else
-                            {
-                                // TODO throw exception;
-                            }
-                        } else
-                        {
-                            $this->outputString($this->skipNColumn(2));
-                        }
-                    }
-                    $this->outputString("\n");
-                }
-            }
-        }
-        $this->outputString("", true);
     }
 
     /**
