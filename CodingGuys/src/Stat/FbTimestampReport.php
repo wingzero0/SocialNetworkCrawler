@@ -129,21 +129,18 @@ class FbTimestampReport extends FbFeedStat
             $firstBatchAvgComments = $this->getFirstBatchAverageFeedComments($cgFbPage);
             foreach ($page as $feedId => $feed)
             {
-                $cgFbFeed = $this->getCGFbFeed($feedId);
                 $this->outputString($cgFbPage->getShortLink() . ",");
-                $this->outputString($cgFbFeed->getShortLink() . ",");
-                $this->outputString(preg_replace("/%/", "%%", $cgFbFeed->guessLink()) . ",");
-                $this->outputString($cgFbFeed->getCreatedTime() . ",");
-                $this->outputString($cgFbFeed->getSharesCount() . ",");
-
                 $this->outputString($cgFbPage->getMnemonoCategory() . ",");
-                $this->outputString($cgFbPage->getLikes() . ",");
-
                 $this->outputString($firstBatchAvgLikes . ",");
                 $this->outputString($firstBatchAvgComments . ",");
                 $this->outputString($cgFbPage->getFeedCount() . ",");
                 $this->outputString($cgFbPage->getFeedAverageLike() . ",");
                 $this->outputString($cgFbPage->getFeedAverageComment() . ",");
+
+                $cgFbFeed = $this->getCGFbFeed($feedId);
+                $this->outputString(preg_replace("/%/", "%%", $cgFbFeed->guessLink()) . ",");
+                $this->outputString($cgFbFeed->getCreatedTime() . ",");
+                $this->outputString($cgFbFeed->getSharesCount() . ",");
 
                 foreach ($batchTimeIndex as $batchTimeString => $value)
                 {
@@ -170,14 +167,15 @@ class FbTimestampReport extends FbFeedStat
     }
 
     private function outputHeading($batchTimeIndex){
-        $this->outputString("fbpage,feed,feedLink,feedCreatedTime,FeedShareCounts,mnemonoCategory,pageLikeCount,"
+        $this->outputString("FbPage,MnemonoCategory,"
             . "FirstBatchAverageLikes,FirstBatchAverageComments,"
-            . "pageFeedCount,CurrentWindowAverageLikes,CurrentWindowAverageComments,");
+            . "PageFeedCount,CurrentWindowAverageLikes,CurrentWindowAverageComments,"
+            . "FbFeed,FeedCreatedTime,FeedShareCounts,");
         foreach ($batchTimeIndex as $batchTimeString => $value)
         {
             $this->outputString($batchTimeString . "," . $this->skipNColumn(1));
         }
-        $this->outputString("\n" . $this->skipNColumn(12));
+        $this->outputString("\n" . $this->skipNColumn(10));
         foreach ($batchTimeIndex as $batchTimeString => $value)
         {
             $this->outputString("deltaLike,deltaComment,");
