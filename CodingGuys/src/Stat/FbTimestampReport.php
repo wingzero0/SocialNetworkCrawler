@@ -7,6 +7,7 @@
 
 namespace CodingGuys\Stat;
 
+use CodingGuys\Exception\ClassTypeException;
 use CodingGuys\MongoFb\CGMongoFbFeed;
 use CodingGuys\MongoFb\CGMongoFbFeedTimestamp;
 use CodingGuys\MongoFb\CGMongoFbPage;
@@ -153,7 +154,7 @@ class FbTimestampReport extends FbFeedStat
                             $this->outputString($delta->getDeltaComment() . ",");
                         } else
                         {
-                            // TODO throw exception;
+                            throw new ClassTypeException("FbFeedDelta", $delta);
                         }
                     } else
                     {
