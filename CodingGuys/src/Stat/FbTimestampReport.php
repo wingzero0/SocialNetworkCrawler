@@ -40,6 +40,7 @@ class FbTimestampReport extends FbFeedStat
         //$this->checkTime(true, "start timer");
         while (1)
         {
+            // TODO should start from Page, not from feed
             $cursor = $this->findFeedByDateRange()->skip($i)->limit(100);
             if (!$cursor->hasNext())
             {
@@ -52,7 +53,6 @@ class FbTimestampReport extends FbFeedStat
             foreach ($cursor as $feed)
             {
                 $i++;
-                // TODO find suitable anchor point, same batch? one hour?
                 $page = \MongoDBRef::get($this->getFbFeedCol()->db, $feed["fbPage"]);
                 if ($page["mnemono"]["location"]["city"] != $city)
                 {
