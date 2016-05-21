@@ -79,37 +79,12 @@ class FbFeedStat extends FbStat
     }
 
     /**
-     * @return array mongo date query with range of $this->getStartDate() and $this->getEndDate()
-     */
-    protected function getFacebookFeedDateRangeQuery()
-    {
-        $dateRange = array();
-        if ($this->getStartDateDateTime() != null)
-        {
-            $startTime = clone $this->getStartDateDateTime();
-            $startTime->setTimezone(new \DateTimeZone("GMT+0"));
-            $dateRange["\$gte"] = $startTime->format(\DateTime::ISO8601);
-        }
-        if ($this->getEndDateDateTime() != null)
-        {
-            $endTime = clone $this->getEndDateDateTime();
-            $endTime->setTimezone(new \DateTimeZone("GMT+0"));
-            $dateRange["\$lte"] = $endTime->format(\DateTime::ISO8601);
-        }
-        if (empty($dateRange))
-        {
-            return array();
-        }
-        return array("created_time" => $dateRange);
-    }
-
-    /**
      * @return \MongoCursor
      */
     protected function findFeedByDateRange()
     {
-        $feedCol = $this->getFbFeedCol();
-        return $feedCol->find($this->getFacebookFeedDateRangeQuery());
+        $repo = $this->getFeedRepo();
+        return $repo->findFeedByCreatedTime($this->getStartDateDateTime(), $this->getEndDateDateTime());
     }
 
     /**

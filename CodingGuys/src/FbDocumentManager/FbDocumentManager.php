@@ -12,10 +12,11 @@ class FbDocumentManager
 {
     private $dbName;
     private $mongoClient;
-    protected $pageCollectionName = "FacebookPage"; // origin is 'Facebook'
+    protected $pageCollectionName = "FacebookPage";
     protected $exceptionPageCollectionName = "FacebookExceptionPage";
-    protected $feedCollectionName = "FacebookFeed"; // origin is 'FacebookFeed'
-    protected $feedTimestampCollectionName = "FacebookFeedTimestamp"; // origin is 'FacebookTimestampRecord'
+    protected $feedCollectionName = "FacebookFeed";
+    protected $feedTimestampCollectionName = "FacebookFeedTimestamp";
+    protected $pageTimestampCollectionName = "FacebookPageTimestamp";
 
     const DEFAULT_DB_NAME = 'Mnemono';
 
@@ -94,6 +95,22 @@ class FbDocumentManager
     public function setFeedTimestampCollectionName($feedTimestampCollectionName)
     {
         $this->feedTimestampCollectionName = $feedTimestampCollectionName;
+    }
+
+    /**
+     * @return string
+     */
+    public function getPageTimestampCollectionName()
+    {
+        return $this->pageTimestampCollectionName;
+    }
+
+    /**
+     * @param string $pageTimestampCollectionName
+     */
+    public function setPageTimestampCollectionName($pageTimestampCollectionName)
+    {
+        $this->pageTimestampCollectionName = $pageTimestampCollectionName;
     }
 
     /**

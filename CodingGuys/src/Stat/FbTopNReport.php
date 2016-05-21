@@ -80,8 +80,7 @@ class FbTopNReport extends FbFeedStat
      */
     private function queryTimestampMaxValue()
     {
-        $col = $this->getFbFeedCol();
-        $cursor = $col->find($this->getFacebookFeedDateRangeQuery());
+        $cursor = $this->findFeedByDateRange();
         // TODO rename maxLikeRecord to maxLikeRecords, maxCommentRecord to maxCommentRecords
         $maxLikeRecord = array();
         $maxCommentRecord = array();

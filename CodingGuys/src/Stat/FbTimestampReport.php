@@ -53,7 +53,7 @@ class FbTimestampReport extends FbFeedStat
             foreach ($cursor as $feed)
             {
                 $i++;
-                $page = \MongoDBRef::get($this->getFbFeedCol()->db, $feed["fbPage"]);
+                $page = \MongoDBRef::get($this->getFbDocumentManager()->getMongoDB(), $feed["fbPage"]);
                 if ($page["mnemono"]["location"]["city"] != $city)
                 {
                     continue;
@@ -221,6 +221,7 @@ class FbTimestampReport extends FbFeedStat
         if (!isset($this->pagePool[$page["fbID"]]))
         {
             $this->pagePool[$page["fbID"]] = new CGMongoFbPage($page);
+            $this->getPageTimestamp($page["_id"]);
         }
 
         $cgMongoFbPage = $this->pagePool[$page["fbID"]];
@@ -249,6 +250,13 @@ class FbTimestampReport extends FbFeedStat
             }
         }
         return $ret;
+    }
+
+    private function getPageTimestamp(\MongoId $pageId){
+        $cursor = $this->getPageTimestampRepo()->findTimestampByPageAndDate($pageId, $this->getStartDateMongoDate(), $this->getEndDateMongoDate());
+        foreach ($cursor as $record){
+            // TODO store in obj and db tmp table?
+        }
     }
 
     private function checkTime($isRest = true, $displayMessage = "")
