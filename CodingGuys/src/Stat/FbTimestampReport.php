@@ -23,11 +23,13 @@ class FbTimestampReport extends FbFeedStat
     private $fp;
     private $pagePool;
     private $feedPool;
+    private $batchTimeIndexes;
 
     public function __construct(\DateTime $startDate, \DateTime $endDate, $filename)
     {
         parent::__construct($startDate, $endDate);
         $this->filename = $filename;
+        $this->batchTimeIndexes = array();
     }
 
 
@@ -66,7 +68,7 @@ class FbTimestampReport extends FbFeedStat
                     $countArray[$page["fbID"]][$feed["fbID"]] = $reformedSeries;
                     foreach ($reformedSeries as $batchTime => $v)
                     {
-                        $batchTimeIndex[$batchTime] = 1;
+                        $this->batchTimeIndexes[$batchTime] = 1;
                     }
                 }
             }
@@ -74,7 +76,7 @@ class FbTimestampReport extends FbFeedStat
 
         ksort($countArray);
 
-        $this->outputCountArray($countArray, $batchTimeIndex);
+        $this->outputCountArray($countArray, $this->batchTimeIndexes);
     }
 
     private function getFirstBatchAverageFeedLikes(CGMongoFbPage $cgMongoFbPage)
@@ -230,7 +232,7 @@ class FbTimestampReport extends FbFeedStat
         if (!isset($this->pagePool[$page["fbID"]]))
         {
             $this->pagePool[$page["fbID"]] = new CGMongoFbPage($page);
-            $pageDeltas = $this->genPageTimestampDeltasToTmp($page["_id"]);
+            $this->genPageTimestampDeltasToTmp($page["_id"]);
         }
 
         $cgMongoFbPage = $this->pagePool[$page["fbID"]];
@@ -263,7 +265,6 @@ class FbTimestampReport extends FbFeedStat
 
     /**
      * @param \MongoId $pageId
-     * @return array $arrayOfDelta
      */
     private function genPageTimestampDeltasToTmp(\MongoId $pageId)
     {
@@ -273,7 +274,6 @@ class FbTimestampReport extends FbFeedStat
                 $this->getStartDateMongoDate(),
                 $this->getEndDateMongoDate()
             );
-        $arrayOfDelta = array();
         $lastLike = 0;
         $lastHere = 0;
         $lastTalking = 0;
@@ -296,10 +296,8 @@ class FbTimestampReport extends FbFeedStat
             $delta->setDeltaWereHereCount($deltaHere);
             $this->getFbDocumentManager()->writeToDB($delta);
 
-            $arrayOfDelta[] = $delta;
+            $this->batchTimeIndexes[$delta->getDateStr()] = 1;
         }
-
-        return $arrayOfDelta;
     }
 
     private function checkTime($isRest = true, $displayMessage = "")
