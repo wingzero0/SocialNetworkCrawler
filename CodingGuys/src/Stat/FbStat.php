@@ -55,7 +55,7 @@ class FbStat
 
     /**
      * @return CGMongoFb
-     * @deprecated 
+     * @deprecated
      */
     protected function getMongoFb()
     {
@@ -68,7 +68,7 @@ class FbStat
 
     /**
      * @return \MongoCollection
-     * @deprecated 
+     * @deprecated
      */
     protected function getFbFeedCol()
     {
@@ -121,8 +121,10 @@ class FbStat
     /**
      * @return FbDocumentManager
      */
-    protected function getFbDocumentManager(){
-        if ($this->fbDm == null){
+    protected function getFbDocumentManager()
+    {
+        if ($this->fbDm == null)
+        {
             $this->fbDm = new FbDocumentManager();
         }
         return $this->fbDm;

@@ -7,6 +7,8 @@
 
 namespace CodingGuys\MongoFb;
 
+use CodingGuys\Utility\DateUtility;
+
 class CGMongoFbFeedTimestamp extends CGMongoFb
 {
     private $rawDataFromMongo;
@@ -95,7 +97,7 @@ class CGMongoFbFeedTimestamp extends CGMongoFb
         {
             return "";
         }
-        return $this->convertMongoDateToISODate($batchTime);
+        return DateUtility::convertMongoDateToISODate($batchTime);
     }
 
     /**
@@ -108,6 +110,6 @@ class CGMongoFbFeedTimestamp extends CGMongoFb
         {
             return "";
         }
-        return $this->convertMongoDateToISODate($updateTime);
+        return DateUtility::convertMongoDateToISODate($updateTime);
     }
 }

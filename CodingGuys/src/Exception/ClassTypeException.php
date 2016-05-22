@@ -7,15 +7,19 @@
 
 namespace CodingGuys\Exception;
 
-class ClassTypeException extends \Exception {
-    public function __construct($expectedClassType, $currentVar, \Exception $previous = null){
-        if (is_object($currentVar)){
+class ClassTypeException extends \Exception
+{
+    public function __construct($expectedClassType, $currentVar, \Exception $previous = null)
+    {
+        if (is_object($currentVar))
+        {
             $currentType = get_class($currentVar);
-        }else{
+        } else
+        {
             $currentType = gettype($currentVar);
         }
         $message = "class type not match: expected class type-" . $expectedClassType .
-            " current class type-" . $currentType ;
+            " current class type-" . $currentType;
 
         parent::__construct($message, 0, $previous);
     }

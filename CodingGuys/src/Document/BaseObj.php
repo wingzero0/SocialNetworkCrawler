@@ -34,16 +34,21 @@ abstract class BaseObj
         }
     }
 
-    public function getFromRaw($key){
+    public function getFromRaw($key)
+    {
         $raw = $this->getMongoRawData();
-        if (isset($raw[$key])){
+        if (isset($raw[$key]))
+        {
             return $raw[$key];
-        }else{
+        } else
+        {
             throw new KeyNotExistsException();
         }
     }
 
-
+    protected abstract function getId();
 
     protected abstract function init();
+
+    public abstract function toArray();
 }

@@ -8,6 +8,7 @@
 namespace CodingGuys\Exception;
 
 
-class KeyNotExistsException extends \Exception{
+class KeyNotExistsException extends \Exception
+{
 
 }

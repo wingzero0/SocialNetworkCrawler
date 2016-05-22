@@ -20,9 +20,9 @@ class FbPageTimestampRepo extends FbRepo
     {
         $col = $this->getPageTimestampCollection();
         $query = array(
-            "fbFeed.\$id" => $pageId
+            "fbPage.\$id" => $pageId
         );
-        
+
         $dateRange = array();
         if ($startDate != null)
         {
@@ -36,11 +36,12 @@ class FbPageTimestampRepo extends FbRepo
         {
             $query = array_merge(array("batchTime" => $dateRange), $query);
         }
-        
+
         return $col->find($query)->sort(array("batchTime" => 1));
     }
-    
-    private function getPageTimestampCollection(){
+
+    private function getPageTimestampCollection()
+    {
         return $this->getFbDM()->getMongoCollection($this->getFbDM()->getPageTimestampCollectionName());
     }
 }

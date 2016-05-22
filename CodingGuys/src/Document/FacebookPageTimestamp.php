@@ -9,6 +9,7 @@ namespace CodingGuys\Document;
 
 
 use CodingGuys\Exception\KeyNotExistsException;
+use CodingGuys\Utility\DateUtility;
 
 class FacebookPageTimestamp extends BaseObj
 {
@@ -78,6 +79,11 @@ class FacebookPageTimestamp extends BaseObj
         {
             $this->setBatchTime(null);
         }
+    }
+
+    public function toArray()
+    {
+        // TODO: Implement toArray() method.
     }
 
     /**
@@ -190,5 +196,16 @@ class FacebookPageTimestamp extends BaseObj
     public function setBatchTime(\MongoDate $batchTime = null)
     {
         $this->batchTime = $batchTime;
+    }
+
+    public function getBatchTimeInISO()
+    {
+        $batchTime = $this->getBatchTime();
+        if ($batchTime instanceof \MongoDate)
+        {
+            $isoStr = DateUtility::convertMongoDateToISODate($batchTime);
+            return $isoStr;
+        }
+        return "";
     }
 }

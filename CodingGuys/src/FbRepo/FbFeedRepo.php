@@ -33,7 +33,8 @@ class FbFeedRepo extends FbRepo
      * @param \DateTime $endDate
      * @return \MongoCursor
      */
-    public function findFeedByCreatedTime(\DateTime $startDate = null, \DateTime $endDate = null){
+    public function findFeedByCreatedTime(\DateTime $startDate = null, \DateTime $endDate = null)
+    {
         $dateRange = array();
         if ($startDate != null)
         {

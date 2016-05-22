@@ -7,10 +7,12 @@
 
 namespace CodingGuys\Stat;
 
+use CodingGuys\Document\FacebookPageTimestamp;
 use CodingGuys\Exception\ClassTypeException;
 use CodingGuys\MongoFb\CGMongoFbFeed;
 use CodingGuys\MongoFb\CGMongoFbFeedTimestamp;
 use CodingGuys\MongoFb\CGMongoFbPage;
+use CodingGuys\Document\FbPageDelta;
 
 class FbTimestampReport extends FbFeedStat
 {
@@ -101,8 +103,10 @@ class FbTimestampReport extends FbFeedStat
      * @param string $fbID
      * @return CGMongoFbPage|null
      */
-    private function getCGFbPage($fbID){
-        if (isset($this->pagePool[$fbID])){
+    private function getCGFbPage($fbID)
+    {
+        if (isset($this->pagePool[$fbID]))
+        {
             return $this->pagePool[$fbID];
         }
         return null;
@@ -112,8 +116,10 @@ class FbTimestampReport extends FbFeedStat
      * @param string $fbID
      * @return CGMongoFbFeed|null
      */
-    private function getCGFbFeed($fbID){
-        if (isset($this->feedPool[$fbID])){
+    private function getCGFbFeed($fbID)
+    {
+        if (isset($this->feedPool[$fbID]))
+        {
             return $this->feedPool[$fbID];
         }
         return null;
@@ -167,7 +173,8 @@ class FbTimestampReport extends FbFeedStat
         $this->outputString("", true);
     }
 
-    private function outputHeading($batchTimeIndex){
+    private function outputHeading($batchTimeIndex)
+    {
         $this->outputString("FbPage,MnemonoCategory,"
             . "FirstBatchAverageLikes,FirstBatchAverageComments,"
             . "PageFeedCount,CurrentWindowAverageLikes,CurrentWindowAverageComments,"
@@ -193,14 +200,16 @@ class FbTimestampReport extends FbFeedStat
         $cgMongoFbPage->setFeedCount($cgMongoFbPage->getFeedCount() + 1);
 
         $ret = $this->getIndexOfMaxRecord($feedTimestampRecords);
-        $record =  $feedTimestampRecords[$ret['indexOfMaxLike']];
-        if (! $record instanceof CGMongoFbFeedTimestamp){
+        $record = $feedTimestampRecords[$ret['indexOfMaxLike']];
+        if (!$record instanceof CGMongoFbFeedTimestamp)
+        {
             //TODO throw exception
             return;
         }
         $maxLike = $record->getLikesTotalCount();
-        $record =  $feedTimestampRecords[$ret['indexOfMaxComment']];
-        if (! $record instanceof CGMongoFbFeedTimestamp){
+        $record = $feedTimestampRecords[$ret['indexOfMaxComment']];
+        if (!$record instanceof CGMongoFbFeedTimestamp)
+        {
             //TODO throw exception
             return;
         }
@@ -221,7 +230,7 @@ class FbTimestampReport extends FbFeedStat
         if (!isset($this->pagePool[$page["fbID"]]))
         {
             $this->pagePool[$page["fbID"]] = new CGMongoFbPage($page);
-            $this->getPageTimestamp($page["_id"]);
+            $pageDeltas = $this->genPageTimestampDeltasToTmp($page["_id"]);
         }
 
         $cgMongoFbPage = $this->pagePool[$page["fbID"]];
@@ -252,11 +261,45 @@ class FbTimestampReport extends FbFeedStat
         return $ret;
     }
 
-    private function getPageTimestamp(\MongoId $pageId){
-        $cursor = $this->getPageTimestampRepo()->findTimestampByPageAndDate($pageId, $this->getStartDateMongoDate(), $this->getEndDateMongoDate());
-        foreach ($cursor as $record){
-            // TODO store in obj and db tmp table?
+    /**
+     * @param \MongoId $pageId
+     * @return array $arrayOfDelta
+     */
+    private function genPageTimestampDeltasToTmp(\MongoId $pageId)
+    {
+        $cursor = $this->getPageTimestampRepo()
+            ->findTimestampByPageAndDate(
+                $pageId,
+                $this->getStartDateMongoDate(),
+                $this->getEndDateMongoDate()
+            );
+        $arrayOfDelta = array();
+        $lastLike = 0;
+        $lastHere = 0;
+        $lastTalking = 0;
+        foreach ($cursor as $record)
+        {
+            $pageT = new FacebookPageTimestamp($record);
+            $deltaLike = $pageT->getLikes() - $lastLike;
+            $lastLike = $pageT->getLikes();
+
+            $deltaHere = $pageT->getWereHereCount() - $lastHere;
+            $lastHere = $pageT->getWereHereCount();
+
+            $deltaTalking = $pageT->getTalkingAboutCount() - $lastTalking;
+            $lastTalking = $pageT->getTalkingAboutCount();
+
+            $delta = new FbPageDelta();
+            $delta->setDateStr($pageT->getBatchTimeInISO());
+            $delta->setDeltaLike($deltaLike);
+            $delta->setDeltaTalkingAboutCount($deltaTalking);
+            $delta->setDeltaWereHereCount($deltaHere);
+            $this->getFbDocumentManager()->writeToDB($delta);
+
+            $arrayOfDelta[] = $delta;
         }
+
+        return $arrayOfDelta;
     }
 
     private function checkTime($isRest = true, $displayMessage = "")

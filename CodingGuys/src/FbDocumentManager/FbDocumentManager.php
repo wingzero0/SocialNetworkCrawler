@@ -8,6 +8,10 @@
 namespace CodingGuys\FbDocumentManager;
 
 
+use CodingGuys\Document\BaseObj;
+use CodingGuys\Document\FbPageDelta;
+use CodingGuys\Exception\CollectionNotExist;
+
 class FbDocumentManager
 {
     private $dbName;
@@ -17,6 +21,7 @@ class FbDocumentManager
     protected $feedCollectionName = "FacebookFeed";
     protected $feedTimestampCollectionName = "FacebookFeedTimestamp";
     protected $pageTimestampCollectionName = "FacebookPageTimestamp";
+    protected $pageDeltaCollectionName = "FacebookPageDelta";
 
     const DEFAULT_DB_NAME = 'Mnemono';
 
@@ -30,6 +35,32 @@ class FbDocumentManager
         {
             $this->dbName = $dbName;
         }
+    }
+
+    public function writeToDB(BaseObj $obj)
+    {
+        if ($obj instanceof FbPageDelta)
+        {
+            $col = $this->getMongoCollection($this->getPageDeltaCollectionName());
+        } else
+        {
+            throw new CollectionNotExist();
+        }
+
+        $serialize = $obj->toArray();
+        if ($obj->getId() instanceof \MongoId)
+        {
+            $col->findAndModify(array("_id" => $obj->getId()), $serialize);
+        } else
+        {
+            $col->insert($serialize);
+        }
+    }
+
+    public function dropTmpCollection()
+    {
+        $col = $this->getMongoCollection($this->getPageDeltaCollectionName());
+        $col->drop();
     }
 
     /**
@@ -170,5 +201,21 @@ class FbDocumentManager
         $batchTime = new \DateTime();
         $batchTime->setTimestamp($mongoDate->sec);
         return $batchTime->format(\DateTime::ISO8601);
+    }
+
+    /**
+     * @return string
+     */
+    public function getPageDeltaCollectionName()
+    {
+        return $this->pageDeltaCollectionName;
+    }
+
+    /**
+     * @param string $pageDeltaCollectionName
+     */
+    public function setPageDeltaCollectionName($pageDeltaCollectionName)
+    {
+        $this->pageDeltaCollectionName = $pageDeltaCollectionName;
     }
 } 

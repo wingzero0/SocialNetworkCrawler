@@ -182,13 +182,6 @@ class CGMongoFb
         return "https://www.facebook.com/" . $rawDataFromMongo["fbID"];
     }
 
-    protected function convertMongoDateToISODate(\MongoDate $mongoDate)
-    {
-        $batchTime = new \DateTime();
-        $batchTime->setTimestamp($mongoDate->sec);
-        return $batchTime->format(\DateTime::ISO8601);
-    }
-
     private function isFbPhotoLink($link)
     {
         return preg_match('/www\.facebook\.com(.*)photos/', $link) > 0;
