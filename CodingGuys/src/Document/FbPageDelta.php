@@ -16,6 +16,7 @@ class FbPageDelta extends BaseObj
     private $deltaTalkingAboutCount;
     private $dateStr;
     private $_id;
+    private $fbPageRef;
 
     protected function init()
     {
@@ -36,10 +37,11 @@ class FbPageDelta extends BaseObj
         {
             $a["_id"] = $this->getId();
         }
-        $a["date_str"] = $this->getDateStr();
-        $a["delta_like"] = $this->getDeltaLike();
-        $a["dalta_were_here_count"] = $this->getDeltaWereHereCount();
-        $a["delta_talking_about_count"] = $this->getDeltaTalkingAboutCount();
+        $a["dateStr"] = $this->getDateStr();
+        $a["deltaLike"] = $this->getDeltaLike();
+        $a["deltaWereHereCount"] = $this->getDeltaWereHereCount();
+        $a["deltaTalkingAboutCount"] = $this->getDeltaTalkingAboutCount();
+        $a["fbPage"] = $this->getFbPageRef();
         return $a;
     }
 
@@ -53,10 +55,12 @@ class FbPageDelta extends BaseObj
 
     /**
      * @param \MongoId $id
+     * @return self
      */
     public function setId($id)
     {
         $this->_id = $id;
+        return $this;
     }
 
     /**
@@ -69,10 +73,12 @@ class FbPageDelta extends BaseObj
 
     /**
      * @param int $deltaLike
+     * @return self
      */
     public function setDeltaLike($deltaLike)
     {
         $this->deltaLike = $deltaLike;
+        return $this;
     }
 
     /**
@@ -85,10 +91,12 @@ class FbPageDelta extends BaseObj
 
     /**
      * @param int $deltaWereHereCount
+     * @return self
      */
     public function setDeltaWereHereCount($deltaWereHereCount)
     {
         $this->deltaWereHereCount = $deltaWereHereCount;
+        return $this;
     }
 
     /**
@@ -101,10 +109,12 @@ class FbPageDelta extends BaseObj
 
     /**
      * @param int $deltaTalkingAboutCount
+     * @return self
      */
     public function setDeltaTalkingAboutCount($deltaTalkingAboutCount)
     {
         $this->deltaTalkingAboutCount = $deltaTalkingAboutCount;
+        return $this;
     }
 
     /**
@@ -117,9 +127,29 @@ class FbPageDelta extends BaseObj
 
     /**
      * @param string $dateStr
+     * @return self
      */
     public function setDateStr($dateStr)
     {
         $this->dateStr = $dateStr;
+        return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getFbPageRef()
+    {
+        return $this->fbPageRef;
+    }
+
+    /**
+     * @param array $fbPageRef
+     * @return self
+     */
+    public function setFbPageRef($fbPageRef)
+    {
+        $this->fbPageRef = $fbPageRef;
+        return $this;
     }
 }

@@ -9,10 +9,12 @@ namespace CodingGuys\Stat;
 
 use CodingGuys\Document\FacebookPageTimestamp;
 use CodingGuys\Exception\ClassTypeException;
+use CodingGuys\FbDocumentManager\FbDocumentManager;
 use CodingGuys\MongoFb\CGMongoFbFeed;
 use CodingGuys\MongoFb\CGMongoFbFeedTimestamp;
 use CodingGuys\MongoFb\CGMongoFbPage;
 use CodingGuys\Document\FbPageDelta;
+use CodingGuys\Document\FbFeedDelta;
 
 class FbTimestampReport extends FbFeedStat
 {
@@ -62,14 +64,11 @@ class FbTimestampReport extends FbFeedStat
                 {
                     continue;
                 }
-                $reformedSeries = $this->storeInPoolAndGetDelta($feed, $page);
-                if (!empty($reformedSeries))
-                {
-                    $countArray[$page["fbID"]][$feed["fbID"]] = $reformedSeries;
-                    foreach ($reformedSeries as $batchTime => $v)
-                    {
-                        $this->batchTimeIndexes[$batchTime] = 1;
-                    }
+                try{
+                    $this->storeInPoolAndGenDelta($feed, $page);
+                    $countArray[$page["fbID"]][$feed["fbID"]] = 1;
+                }catch (\UnexpectedValueException $e){
+                    $this->logToSTDERR($e->getTraceAsString());
                 }
             }
         }
@@ -224,9 +223,8 @@ class FbTimestampReport extends FbFeedStat
     /**
      * @param array $feed mongo raw data of fb feed
      * @param array $page mongo raw data of fb page
-     * @return array array of FbFeedDelta
      */
-    private function storeInPoolAndGetDelta($feed, $page)
+    private function storeInPoolAndGenDelta($feed, $page)
     {
         $this->feedPool[$feed["fbID"]] = new CGMongoFbFeed($feed);
         if (!isset($this->pagePool[$page["fbID"]]))
@@ -238,11 +236,17 @@ class FbTimestampReport extends FbFeedStat
         $cgMongoFbPage = $this->pagePool[$page["fbID"]];
 
         $sortedFeedTimestampRecords = $this->findTimestampByFeed($feed["_id"]);
+        if (empty($sortedFeedTimestampRecords)){
+            throw new \UnexpectedValueException(
+                "no timestamp for feed "
+                . $feed["_id"] .
+                ". Is Timestamp range query too narrow?");
+        }
+
         $this->accumulatePageLikeAndComment($cgMongoFbPage, $sortedFeedTimestampRecords);
 
         $lastLikeCount = 0;
         $lastCommentCount = 0;
-        $ret = array();
 
         foreach ($sortedFeedTimestampRecords as $timestampRecord)
         {
@@ -257,10 +261,19 @@ class FbTimestampReport extends FbFeedStat
                 $deltaComment = $totalComment - $lastCommentCount;
                 $lastCommentCount = $totalComment;
 
-                $ret[$batchTimeString] = new FbFeedDelta($deltaLike, $deltaComment);
+                $dm = $this->getFbDocumentManager();
+                $feedDelta = new FbFeedDelta();
+                $feedDelta->setDateStr($batchTimeString)
+                    ->setDeltaLike($deltaLike)
+                    ->setDeltaComment($deltaComment)
+                    ->setFbFeedRef(
+                        \MongoDBRef::create($dm->getFeedCollectionName(), $feed["_id"])
+                    );
+
+                $dm->writeToDB($feedDelta);
+                $this->batchTimeIndexes[$feedDelta->getDateStr()] = 1;
             }
         }
-        return $ret;
     }
 
     /**
@@ -290,11 +303,15 @@ class FbTimestampReport extends FbFeedStat
             $lastTalking = $pageT->getTalkingAboutCount();
 
             $delta = new FbPageDelta();
-            $delta->setDateStr($pageT->getBatchTimeInISO());
-            $delta->setDeltaLike($deltaLike);
-            $delta->setDeltaTalkingAboutCount($deltaTalking);
-            $delta->setDeltaWereHereCount($deltaHere);
-            $this->getFbDocumentManager()->writeToDB($delta);
+            $dm = $this->getFbDocumentManager();
+            $delta->setDateStr($pageT->getBatchTimeInISO())
+                ->setDeltaLike($deltaLike)
+                ->setDeltaTalkingAboutCount($deltaTalking)
+                ->setDeltaWereHereCount($deltaHere)
+                ->setFbPageRef(
+                    \MongoDBRef::create($dm->getPageCollectionName(), $pageId)
+                );
+            $dm->writeToDB($delta);
 
             $this->batchTimeIndexes[$delta->getDateStr()] = 1;
         }
@@ -329,5 +346,9 @@ class FbTimestampReport extends FbFeedStat
             fclose($this->fp);
             $this->fp = null;
         }
+    }
+
+    private function logToSTDERR($msg){
+        fprintf($this->STDERR, $msg);
     }
 }

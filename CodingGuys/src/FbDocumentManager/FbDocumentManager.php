@@ -9,6 +9,7 @@ namespace CodingGuys\FbDocumentManager;
 
 
 use CodingGuys\Document\BaseObj;
+use CodingGuys\Document\FbFeedDelta;
 use CodingGuys\Document\FbPageDelta;
 use CodingGuys\Exception\CollectionNotExist;
 
@@ -22,6 +23,7 @@ class FbDocumentManager
     protected $feedTimestampCollectionName = "FacebookFeedTimestamp";
     protected $pageTimestampCollectionName = "FacebookPageTimestamp";
     protected $pageDeltaCollectionName = "FacebookPageDelta";
+    const FEED_DELTA_COLLECTION_NAME = "FacebookFeedDelta";
 
     const DEFAULT_DB_NAME = 'Mnemono';
 
@@ -42,6 +44,9 @@ class FbDocumentManager
         if ($obj instanceof FbPageDelta)
         {
             $col = $this->getMongoCollection($this->getPageDeltaCollectionName());
+        } else if ($obj instanceof FbFeedDelta)
+        {
+            $col = $this->getMongoCollection(FbDocumentManager::FEED_DELTA_COLLECTION_NAME);
         } else
         {
             throw new CollectionNotExist();
