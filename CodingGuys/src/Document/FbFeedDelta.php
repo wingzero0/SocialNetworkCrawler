@@ -27,6 +27,38 @@ class FbFeedDelta extends BaseObj
         {
             $this->setId(null);
         }
+
+        try
+        {
+            $this->setDateStr($this->getFromRaw("dateStr"));
+        } catch (KeyNotExistsException $e)
+        {
+            $this->setDateStr(null);
+        }
+
+        try
+        {
+            $this->setDeltaLike($this->getFromRaw("deltaLike"));
+        } catch (KeyNotExistsException $e)
+        {
+            $this->setDeltaLike(0);
+        }
+
+        try
+        {
+            $this->setDeltaComment($this->getFromRaw("deltaComment"));
+        } catch (KeyNotExistsException $e)
+        {
+            $this->setDeltaComment(0);
+        }
+
+        try
+        {
+            $this->setFbFeedRef($this->getFromRaw("fbFeed"));
+        } catch (KeyNotExistsException $e)
+        {
+            $this->setFbFeedRef(null);
+        }
     }
 
     public function toArray()

@@ -10,6 +10,7 @@ namespace CodingGuys\Stat;
 use CodingGuys\Document\FacebookPageTimestamp;
 use CodingGuys\Exception\ClassTypeException;
 use CodingGuys\FbDocumentManager\FbDocumentManager;
+use CodingGuys\FbRepo\FbFeedDeltaRepo;
 use CodingGuys\MongoFb\CGMongoFbFeed;
 use CodingGuys\MongoFb\CGMongoFbFeedTimestamp;
 use CodingGuys\MongoFb\CGMongoFbPage;
@@ -26,12 +27,14 @@ class FbTimestampReport extends FbFeedStat
     private $pagePool;
     private $feedPool;
     private $batchTimeIndexes;
+    private $feedDeltaRepo;
 
     public function __construct(\DateTime $startDate, \DateTime $endDate, $filename)
     {
         parent::__construct($startDate, $endDate);
         $this->filename = $filename;
         $this->batchTimeIndexes = array();
+        $this->feedDeltaRepo = new FbFeedDeltaRepo();
     }
 
 
@@ -64,10 +67,12 @@ class FbTimestampReport extends FbFeedStat
                 {
                     continue;
                 }
-                try{
+                try
+                {
                     $this->storeInPoolAndGenDelta($feed, $page);
                     $countArray[$page["fbID"]][$feed["fbID"]] = 1;
-                }catch (\UnexpectedValueException $e){
+                } catch (\UnexpectedValueException $e)
+                {
                     $this->logToSTDERR($e->getTraceAsString());
                 }
             }
@@ -126,16 +131,16 @@ class FbTimestampReport extends FbFeedStat
         return null;
     }
 
-    private function outputCountArray($countArray, $batchTimeIndex)
+    private function outputCountArray($matrix, $batchTimeIndex)
     {
         ksort($batchTimeIndex);
         $this->outputHeading($batchTimeIndex);
-        foreach ($countArray as $pageId => $page)
+        foreach ($matrix as $pageId => $page)
         {
             $cgFbPage = $this->getCGFbPage($pageId);
             $firstBatchAvgLikes = $this->getFirstBatchAverageFeedLikes($cgFbPage);
             $firstBatchAvgComments = $this->getFirstBatchAverageFeedComments($cgFbPage);
-            foreach ($page as $feedId => $feed)
+            foreach ($page as $feedId => $dummyValue)
             {
                 $this->outputString($cgFbPage->getShortLink() . ",");
                 $this->outputString($cgFbPage->getMnemonoCategory() . ",");
@@ -150,11 +155,13 @@ class FbTimestampReport extends FbFeedStat
                 $this->outputString($cgFbFeed->getCreatedTime() . ",");
                 $this->outputString($cgFbFeed->getSharesCount() . ",");
 
+                $deltas = $this->findFeedDeltaByFeed($cgFbFeed);
+
                 foreach ($batchTimeIndex as $batchTimeString => $value)
                 {
-                    if (isset($feed[$batchTimeString]))
+                    if (isset($deltas[$batchTimeString]))
                     {
-                        $delta = $feed[$batchTimeString];
+                        $delta = $deltas[$batchTimeString];
                         if ($delta instanceof FbFeedDelta)
                         {
                             $this->outputString($delta->getDeltaLike() . ",");
@@ -172,6 +179,22 @@ class FbTimestampReport extends FbFeedStat
             }
         }
         $this->outputString("", true);
+    }
+
+    /**
+     * @param CGMongoFbFeed $feed
+     * @return array array of FbFeedDelta
+     */
+    private function findFeedDeltaByFeed(CGMongoFbFeed $feed)
+    {
+        $cursor = $this->feedDeltaRepo->findByFeedId($feed->getId());
+        $ret = array();
+        foreach ($cursor as $raw)
+        {
+            $delta = new FbFeedDelta($raw);
+            $ret[$delta->getDateStr()] = $delta;
+        }
+        return $ret;
     }
 
     private function outputHeading($batchTimeIndex)
@@ -236,7 +259,8 @@ class FbTimestampReport extends FbFeedStat
         $cgMongoFbPage = $this->pagePool[$page["fbID"]];
 
         $sortedFeedTimestampRecords = $this->findTimestampByFeed($feed["_id"]);
-        if (empty($sortedFeedTimestampRecords)){
+        if (empty($sortedFeedTimestampRecords))
+        {
             throw new \UnexpectedValueException(
                 "no timestamp for feed "
                 . $feed["_id"] .
@@ -348,7 +372,8 @@ class FbTimestampReport extends FbFeedStat
         }
     }
 
-    private function logToSTDERR($msg){
+    private function logToSTDERR($msg)
+    {
         fprintf($this->STDERR, $msg);
     }
 }

@@ -23,6 +23,7 @@ class FbDocumentManager
     protected $feedTimestampCollectionName = "FacebookFeedTimestamp";
     protected $pageTimestampCollectionName = "FacebookPageTimestamp";
     protected $pageDeltaCollectionName = "FacebookPageDelta";
+    // TODO change all name attribute into const, add get collection function directly
     const FEED_DELTA_COLLECTION_NAME = "FacebookFeedDelta";
 
     const DEFAULT_DB_NAME = 'Mnemono';
@@ -62,9 +63,18 @@ class FbDocumentManager
         }
     }
 
+    /**
+     * @return \MongoCollection
+     */
+    public function getFeedDeltaCollection(){
+        return $this->getMongoCollection(FbDocumentManager::FEED_DELTA_COLLECTION_NAME);
+    }
+
     public function dropTmpCollection()
     {
         $col = $this->getMongoCollection($this->getPageDeltaCollectionName());
+        $col->drop();
+        $col = $this->getFeedDeltaCollection();
         $col->drop();
     }
 

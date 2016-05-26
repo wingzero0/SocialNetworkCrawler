@@ -21,6 +21,14 @@ class CGMongoFbFeed extends CGMongoFb
         parent::__construct($dbName);
     }
 
+    /**
+     * @return \MongoId|null
+     */
+    public function getId()
+    {
+        return $this->_id;
+    }
+
     public function getShortLink()
     {
         return parent::extractShortLink($this->rawDataFromMongo);
