@@ -9,8 +9,8 @@ namespace CodingGuys\Stat;
 
 use CodingGuys\Document\FacebookPageTimestamp;
 use CodingGuys\Exception\ClassTypeException;
-use CodingGuys\FbDocumentManager\FbDocumentManager;
 use CodingGuys\FbRepo\FbFeedDeltaRepo;
+use CodingGuys\FbRepo\FbPageDeltaRepo;
 use CodingGuys\MongoFb\CGMongoFbFeed;
 use CodingGuys\MongoFb\CGMongoFbFeedTimestamp;
 use CodingGuys\MongoFb\CGMongoFbPage;
@@ -28,6 +28,7 @@ class FbTimestampReport extends FbFeedStat
     private $feedPool;
     private $batchTimeIndexes;
     private $feedDeltaRepo;
+    private $pageDeltaRepo;
 
     public function __construct(\DateTime $startDate, \DateTime $endDate, $filename)
     {
@@ -35,8 +36,8 @@ class FbTimestampReport extends FbFeedStat
         $this->filename = $filename;
         $this->batchTimeIndexes = array();
         $this->feedDeltaRepo = new FbFeedDeltaRepo();
+        $this->pageDeltaRepo = new FbPageDeltaRepo();
     }
-
 
     public function timestampSeriesCount($city = "mo")
     {
@@ -44,7 +45,8 @@ class FbTimestampReport extends FbFeedStat
         $this->feedPool = array();
         $this->pagePool = array();
         $i = 0;
-        $batchTimeIndex = array();
+        $this->getFbDocumentManager()->dropTmpCollection();
+        $this->getFbDocumentManager()->createTmpCollectionIndex();
 
         //$this->checkTime(true, "start timer");
         while (1)
@@ -80,7 +82,7 @@ class FbTimestampReport extends FbFeedStat
 
         ksort($countArray);
 
-        $this->outputCountArray($countArray, $this->batchTimeIndexes);
+        $this->outputCountArray($countArray);
     }
 
     private function getFirstBatchAverageFeedLikes(CGMongoFbPage $cgMongoFbPage)
@@ -131,13 +133,14 @@ class FbTimestampReport extends FbFeedStat
         return null;
     }
 
-    private function outputCountArray($matrix, $batchTimeIndex)
+    private function outputCountArray($matrix)
     {
-        ksort($batchTimeIndex);
-        $this->outputHeading($batchTimeIndex);
+        ksort($this->batchTimeIndexes);
+        $this->outputHeading($this->batchTimeIndexes);
         foreach ($matrix as $pageId => $page)
         {
             $cgFbPage = $this->getCGFbPage($pageId);
+            $this->outputPageDelta($cgFbPage);
             $firstBatchAvgLikes = $this->getFirstBatchAverageFeedLikes($cgFbPage);
             $firstBatchAvgComments = $this->getFirstBatchAverageFeedComments($cgFbPage);
             foreach ($page as $feedId => $dummyValue)
@@ -154,40 +157,95 @@ class FbTimestampReport extends FbFeedStat
                 $this->outputString(preg_replace("/%/", "%%", $cgFbFeed->guessLink()) . ",");
                 $this->outputString($cgFbFeed->getCreatedTime() . ",");
                 $this->outputString($cgFbFeed->getSharesCount() . ",");
-
-                $deltas = $this->findFeedDeltaByFeed($cgFbFeed);
-
-                foreach ($batchTimeIndex as $batchTimeString => $value)
-                {
-                    if (isset($deltas[$batchTimeString]))
-                    {
-                        $delta = $deltas[$batchTimeString];
-                        if ($delta instanceof FbFeedDelta)
-                        {
-                            $this->outputString($delta->getDeltaLike() . ",");
-                            $this->outputString($delta->getDeltaComment() . ",");
-                        } else
-                        {
-                            throw new ClassTypeException("FbFeedDelta", $delta);
-                        }
-                    } else
-                    {
-                        $this->outputString($this->skipNColumn(2));
-                    }
-                }
-                $this->outputString("\n");
+                $this->outputFeedDelta($cgFbFeed);
             }
         }
         $this->outputString("", true);
     }
 
+    private function outputPageDelta(CGMongoFbPage $cgFbPage)
+    {
+        // TODO should page static only in page?
+        $this->outputString($cgFbPage->getShortLink() . ",");
+        $this->outputString($cgFbPage->getMnemonoCategory() . ",");
+        $this->outputString($this->skipNColumn(2));
+        $this->outputString($cgFbPage->getFeedCount() . ",");
+        $this->outputString($cgFbPage->getFeedAverageLike() . ",");
+        $this->outputString($cgFbPage->getFeedAverageComment() . ",");
+        $this->outputString($this->skipNColumn(3));
+
+        $deltas = $this->findPageDeltaByPageId($cgFbPage->getId());
+        $batchTimeIndexes = $this->batchTimeIndexes;
+        foreach ($batchTimeIndexes as $batchTimeString => $value)
+        {
+            if (isset($deltas[$batchTimeString]))
+            {
+                $delta = $deltas[$batchTimeString];
+                if ($delta instanceof FbPageDelta)
+                {
+                    $this->outputString($delta->getDeltaLike() . ",");
+                    $this->outputString($delta->getDeltaTalkingAboutCount() . ",");
+                } else
+                {
+                    throw new ClassTypeException("FbPageDelta", $delta);
+                }
+            } else
+            {
+                $this->outputString($this->skipNColumn(2));
+            }
+        }
+        $this->outputString("\n");
+    }
+
+    private function outputFeedDelta(CGMongoFbFeed $cgFbFeed)
+    {
+        $deltas = $this->findFeedDeltaByFeedId($cgFbFeed->getId());
+        $batchTimeIndexes = $this->batchTimeIndexes;
+
+        foreach ($batchTimeIndexes as $batchTimeString => $value)
+        {
+            if (isset($deltas[$batchTimeString]))
+            {
+                $delta = $deltas[$batchTimeString];
+                if ($delta instanceof FbFeedDelta)
+                {
+                    $this->outputString($delta->getDeltaLike() . ",");
+                    $this->outputString($delta->getDeltaComment() . ",");
+                } else
+                {
+                    throw new ClassTypeException("FbFeedDelta", $delta);
+                }
+            } else
+            {
+                $this->outputString($this->skipNColumn(2));
+            }
+        }
+        $this->outputString("\n");
+    }
+
     /**
-     * @param CGMongoFbFeed $feed
+     * @param \MongoId $pageId
+     * @return array array of FbPageDelta
+     */
+    private function findPageDeltaByPageId(\MongoId $pageId)
+    {
+        $cursor = $this->pageDeltaRepo->findByPageId($pageId);
+        $ret = array();
+        foreach ($cursor as $raw)
+        {
+            $delta = new FbPageDelta($raw);
+            $ret[$delta->getDateStr()] = $delta;
+        }
+        return $ret;
+    }
+
+    /**
+     * @param \MongoId $feedId
      * @return array array of FbFeedDelta
      */
-    private function findFeedDeltaByFeed(CGMongoFbFeed $feed)
+    private function findFeedDeltaByFeedId(\MongoId $feedId)
     {
-        $cursor = $this->feedDeltaRepo->findByFeedId($feed->getId());
+        $cursor = $this->feedDeltaRepo->findByFeedId($feedId);
         $ret = array();
         foreach ($cursor as $raw)
         {
@@ -256,9 +314,7 @@ class FbTimestampReport extends FbFeedStat
             $this->genPageTimestampDeltasToTmp($page["_id"]);
         }
 
-        $cgMongoFbPage = $this->pagePool[$page["fbID"]];
-
-        $sortedFeedTimestampRecords = $this->findTimestampByFeed($feed["_id"]);
+        $sortedFeedTimestampRecords = $this->genFeedTimestampDeltaToTmp($feed["_id"]);
         if (empty($sortedFeedTimestampRecords))
         {
             throw new \UnexpectedValueException(
@@ -267,7 +323,17 @@ class FbTimestampReport extends FbFeedStat
                 ". Is Timestamp range query too narrow?");
         }
 
+        $cgMongoFbPage = $this->pagePool[$page["fbID"]];
         $this->accumulatePageLikeAndComment($cgMongoFbPage, $sortedFeedTimestampRecords);
+    }
+
+    /**
+     * @param \MongoId $feedId
+     * @return array $sortedFeedTimestampRecords
+     */
+    private function genFeedTimestampDeltaToTmp(\MongoId $feedId)
+    {
+        $sortedFeedTimestampRecords = $this->findTimestampByFeed($feedId);
 
         $lastLikeCount = 0;
         $lastCommentCount = 0;
@@ -291,13 +357,14 @@ class FbTimestampReport extends FbFeedStat
                     ->setDeltaLike($deltaLike)
                     ->setDeltaComment($deltaComment)
                     ->setFbFeedRef(
-                        \MongoDBRef::create($dm->getFeedCollectionName(), $feed["_id"])
+                        \MongoDBRef::create($dm->getFeedCollectionName(), $feedId)
                     );
 
                 $dm->writeToDB($feedDelta);
                 $this->batchTimeIndexes[$feedDelta->getDateStr()] = 1;
             }
         }
+        return $sortedFeedTimestampRecords;
     }
 
     /**

@@ -7,10 +7,6 @@
 
 namespace CodingGuys\MongoFb;
 
-use CodingGuys\MongoFb\CGMongoFb;
-use CodingGuys\MongoFb\CGMongoFbFeed;
-use CodingGuys\MongoFb\CGMongoFbFeedTimestamp;
-
 class CGMongoFbPage extends CGMongoFb
 {
     private $rawDataFromMongo;
@@ -33,6 +29,14 @@ class CGMongoFbPage extends CGMongoFb
             ->setAccumulateLike(0)
             ->setAccumulateComment(0);
         parent::__construct($dbName);
+    }
+
+    /**
+     * @return \MongoId|null
+     */
+    public function getId()
+    {
+        return $this->_id;
     }
 
     /**

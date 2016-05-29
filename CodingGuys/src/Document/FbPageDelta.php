@@ -22,11 +22,50 @@ class FbPageDelta extends BaseObj
     {
         try
         {
-            $id = $this->getFromRaw("_id");
-            $this->setId($id);
+            $this->setId($this->getFromRaw("_id"));
         } catch (KeyNotExistsException $e)
         {
             $this->setId(null);
+        }
+
+        try
+        {
+            $this->setDateStr($this->getFromRaw("dateStr"));
+        } catch (KeyNotExistsException $e)
+        {
+            $this->setDateStr(null);
+        }
+
+        try
+        {
+            $this->setDeltaLike($this->getFromRaw("deltaLike"));
+        } catch (KeyNotExistsException $e)
+        {
+            $this->setDeltaLike(0);
+        }
+
+        try
+        {
+            $this->setDeltaWereHereCount($this->getFromRaw("deltaWereHereCount"));
+        } catch (KeyNotExistsException $e)
+        {
+            $this->setDeltaWereHereCount(0);
+        }
+
+        try
+        {
+            $this->setDeltaTalkingAboutCount($this->getFromRaw("deltaTalkingAboutCount"));
+        } catch (KeyNotExistsException $e)
+        {
+            $this->setDeltaTalkingAboutCount(0);
+        }
+
+        try
+        {
+            $this->setFbPageRef($this->getFromRaw("fbPage"));
+        } catch (KeyNotExistsException $e)
+        {
+            $this->setFbPageRef(null);
         }
     }
 

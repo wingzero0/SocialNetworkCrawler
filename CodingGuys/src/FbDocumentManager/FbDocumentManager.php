@@ -22,8 +22,8 @@ class FbDocumentManager
     protected $feedCollectionName = "FacebookFeed";
     protected $feedTimestampCollectionName = "FacebookFeedTimestamp";
     protected $pageTimestampCollectionName = "FacebookPageTimestamp";
-    protected $pageDeltaCollectionName = "FacebookPageDelta";
     // TODO change all name attribute into const, add get collection function directly
+    const PAGE_DELTA_COLLECTION_NAME = "FacebookPageDelta";
     const FEED_DELTA_COLLECTION_NAME = "FacebookFeedDelta";
 
     const DEFAULT_DB_NAME = 'Mnemono';
@@ -44,10 +44,10 @@ class FbDocumentManager
     {
         if ($obj instanceof FbPageDelta)
         {
-            $col = $this->getMongoCollection($this->getPageDeltaCollectionName());
+            $col = $this->getPageDeltaCollection();
         } else if ($obj instanceof FbFeedDelta)
         {
-            $col = $this->getMongoCollection(FbDocumentManager::FEED_DELTA_COLLECTION_NAME);
+            $col = $this->getFeedDeltaCollection();
         } else
         {
             throw new CollectionNotExist();
@@ -66,16 +66,33 @@ class FbDocumentManager
     /**
      * @return \MongoCollection
      */
-    public function getFeedDeltaCollection(){
+    public function getFeedDeltaCollection()
+    {
         return $this->getMongoCollection(FbDocumentManager::FEED_DELTA_COLLECTION_NAME);
+    }
+
+    /**
+     * @return \MongoCollection
+     */
+    public function getPageDeltaCollection()
+    {
+        return $this->getMongoCollection(FbDocumentManager::PAGE_DELTA_COLLECTION_NAME);
     }
 
     public function dropTmpCollection()
     {
-        $col = $this->getMongoCollection($this->getPageDeltaCollectionName());
+        $col = $this->getPageDeltaCollection();
         $col->drop();
         $col = $this->getFeedDeltaCollection();
         $col->drop();
+    }
+
+    public function createTmpCollectionIndex()
+    {
+        $col = $this->getPageDeltaCollection();
+        $col->ensureIndex(array("fbPage.\$id" => 1));
+        $col = $this->getFeedDeltaCollection();
+        $col->ensureIndex(array("fbFeed.\$id" => 1));
     }
 
     /**
@@ -93,7 +110,6 @@ class FbDocumentManager
     {
         $this->pageCollectionName = $pageCollectionName;
     }
-
 
     /**
      * @return string
@@ -192,7 +208,6 @@ class FbDocumentManager
         return $this->mongoClient;
     }
 
-
     /**
      * @param \MongoId $mongoId
      * @return \MongoDBRef|array
@@ -216,21 +231,5 @@ class FbDocumentManager
         $batchTime = new \DateTime();
         $batchTime->setTimestamp($mongoDate->sec);
         return $batchTime->format(\DateTime::ISO8601);
-    }
-
-    /**
-     * @return string
-     */
-    public function getPageDeltaCollectionName()
-    {
-        return $this->pageDeltaCollectionName;
-    }
-
-    /**
-     * @param string $pageDeltaCollectionName
-     */
-    public function setPageDeltaCollectionName($pageDeltaCollectionName)
-    {
-        $this->pageDeltaCollectionName = $pageDeltaCollectionName;
     }
 } 
