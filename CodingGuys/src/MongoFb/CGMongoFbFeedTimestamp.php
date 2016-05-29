@@ -7,7 +7,7 @@
 
 namespace CodingGuys\MongoFb;
 
-use CodingGuys\MongoFb\CGMongoFb;
+use CodingGuys\Utility\DateUtility;
 
 class CGMongoFbFeedTimestamp extends CGMongoFb
 {
@@ -21,6 +21,23 @@ class CGMongoFbFeedTimestamp extends CGMongoFb
         parent::__construct($dbName);
     }
 
+    /**
+     * @return \MongoDBRef|array|null
+     */
+    public function getFbFeed()
+    {
+        if (isset($this->rawDataFromMongo["fbFeed"]))
+        {
+            return $this->rawDataFromMongo["fbFeed"];
+        } else
+        {
+            return null;
+        }
+    }
+
+    /**
+     * @return int
+     */
     public function getLikesTotalCount()
     {
         if (isset($this->rawDataFromMongo["likes_total_count"]))
@@ -32,6 +49,9 @@ class CGMongoFbFeedTimestamp extends CGMongoFb
         }
     }
 
+    /**
+     * @return int
+     */
     public function getCommentsTotalCount()
     {
         if (isset($this->rawDataFromMongo["comments_total_count"]))
@@ -77,7 +97,7 @@ class CGMongoFbFeedTimestamp extends CGMongoFb
         {
             return "";
         }
-        return $this->convertMongoDateToISODate($batchTime);
+        return DateUtility::convertMongoDateToISODate($batchTime);
     }
 
     /**
@@ -90,6 +110,6 @@ class CGMongoFbFeedTimestamp extends CGMongoFb
         {
             return "";
         }
-        return $this->convertMongoDateToISODate($updateTime);
+        return DateUtility::convertMongoDateToISODate($updateTime);
     }
 }

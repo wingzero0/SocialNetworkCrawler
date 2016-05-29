@@ -1,4 +1,6 @@
 Mongo collection
-Facebook: all facebook page basic info
-FacebookIDs: all facebook page but only with fbID
-searchResult: created by search in facebook
+FacebookPage: keep all pages record with latest update, including exceptional page.
+FacebookPageTimestamp:
+FacebookExceptionPage: keep original data of the exceptional page.
+FacebookFeed:
+FacebookFeedTimestamp:

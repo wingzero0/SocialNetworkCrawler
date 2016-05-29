@@ -29,6 +29,34 @@ class FbFeedRepo extends FbRepo
     }
 
     /**
+     * @param \DateTime $startDate
+     * @param \DateTime $endDate
+     * @return \MongoCursor
+     */
+    public function findFeedByCreatedTime(\DateTime $startDate = null, \DateTime $endDate = null)
+    {
+        $dateRange = array();
+        if ($startDate != null)
+        {
+            $tmpDate = clone $startDate;
+            $tmpDate->setTimezone(new \DateTimeZone("GMT+0"));
+            $dateRange["\$gte"] = $tmpDate->format(\DateTime::ISO8601);
+        }
+        if ($endDate != null)
+        {
+            $tmpDate = clone $endDate;
+            $tmpDate->setTimezone(new \DateTimeZone("GMT+0"));
+            $dateRange["\$lte"] = $tmpDate->format(\DateTime::ISO8601);
+        }
+
+        if (empty($dateRange))
+        {
+            return $this->getFeedCollection()->find();
+        }
+        return $this->getFeedCollection()->find(array("created_time" => $dateRange));
+    }
+
+    /**
      * @return \MongoCollection
      */
     private function getFeedCollection()

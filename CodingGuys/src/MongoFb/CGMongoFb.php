@@ -12,6 +12,7 @@ class CGMongoFb
     private $dbName;
     private $mongoClient;
     protected $pageCollectionName = "FacebookPage"; // origin is 'Facebook'
+    protected $pageTimestampCollectionName = "FacebookPageTimestamp";
     protected $exceptionPageCollectionName = "FacebookExceptionPage";
     protected $feedCollectionName = "FacebookFeed"; // origin is 'FacebookFeed'
     protected $feedTimestampCollectionName = "FacebookFeedTimestamp"; // origin is 'FacebookTimestampRecord'
@@ -46,6 +47,21 @@ class CGMongoFb
         $this->pageCollectionName = $pageCollectionName;
     }
 
+    /**
+     * @return string
+     */
+    public function getPageTimestampCollectionName()
+    {
+        return $this->pageTimestampCollectionName;
+    }
+
+    /**
+     * @param string $pageTimestampCollectionName
+     */
+    public function setPageTimestampCollectionName($pageTimestampCollectionName)
+    {
+        $this->pageTimestampCollectionName = $pageTimestampCollectionName;
+    }
 
     /**
      * @return string
@@ -164,13 +180,6 @@ class CGMongoFb
         //    $this->isFbPhotoLink($rawDataFromMongo["link"]) ?
         //        $rawDataFromMongo["link"] : "https://www.facebook.com/" . $rawDataFromMongo["fbID"]);
         return "https://www.facebook.com/" . $rawDataFromMongo["fbID"];
-    }
-
-    protected function convertMongoDateToISODate(\MongoDate $mongoDate)
-    {
-        $batchTime = new \DateTime();
-        $batchTime->setTimestamp($mongoDate->sec);
-        return $batchTime->format(\DateTime::ISO8601);
     }
 
     private function isFbPhotoLink($link)
