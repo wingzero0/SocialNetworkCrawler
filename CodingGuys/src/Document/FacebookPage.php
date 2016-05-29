@@ -8,6 +8,7 @@
 
 namespace CodingGuys\Document;
 
+// TODO should extends BaseObj
 class FacebookPage
 {
     private $mnemono;
