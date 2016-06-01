@@ -18,6 +18,8 @@ class FbPageDelta extends BaseObj
     private $_id;
     private $fbPageRef;
 
+    const TARGET_COLLECTION = "FacebookPageDelta";
+
     protected function init()
     {
         try
@@ -190,5 +192,10 @@ class FbPageDelta extends BaseObj
     {
         $this->fbPageRef = $fbPageRef;
         return $this;
+    }
+
+    public function getCollectionName()
+    {
+        return FbPageDelta::TARGET_COLLECTION;
     }
 }

@@ -357,7 +357,7 @@ class FbTimestampReport extends FbFeedStat
                     ->setDeltaLike($deltaLike)
                     ->setDeltaComment($deltaComment)
                     ->setFbFeedRef(
-                        \MongoDBRef::create($dm->getFeedCollectionName(), $feedId)
+                        $dm->createFeedRef($feedId)
                     );
 
                 $dm->writeToDB($feedDelta);
@@ -400,7 +400,7 @@ class FbTimestampReport extends FbFeedStat
                 ->setDeltaTalkingAboutCount($deltaTalking)
                 ->setDeltaWereHereCount($deltaHere)
                 ->setFbPageRef(
-                    \MongoDBRef::create($dm->getPageCollectionName(), $pageId)
+                    $dm->createPageRef($pageId)
                 );
             $dm->writeToDB($delta);
 

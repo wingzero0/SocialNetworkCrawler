@@ -12,12 +12,32 @@ class FbPageRepo extends FbRepo
 {
     /**
      * @param \MongoId $mongoId
-     * @return array
+     * @return array|null
      */
     public function findOneById(\MongoId $mongoId)
     {
         $query = array("_id" => $mongoId);
-        return $this->getPageCollection()->find($query)->limit(1)->getNext();
+        $cursor = $this->getPageCollection()->find($query)->limit(1);
+        if (!$cursor->hasNext()){
+            return $cursor->getNext();
+        }else{
+            return null;
+        }
+    }
+
+    /**
+     * @param string $fbId
+     * @return array|null
+     */
+    public function findOneByFbId($fbId)
+    {
+        $query = array("fbID" => $fbId);
+        $cursor = $this->getPageCollection()->find($query)->limit(1);
+        if (!$cursor->hasNext()){
+            return $cursor->getNext();
+        }else{
+            return null;
+        }
     }
 
     /**
@@ -28,6 +48,9 @@ class FbPageRepo extends FbRepo
         return $this->getPageCollection()->find();
     }
 
+    /**
+     * @return \MongoCursor
+     */
     public function findAllWorkingPage()
     {
         $query = array(
@@ -46,7 +69,6 @@ class FbPageRepo extends FbRepo
      */
     private function getPageCollection()
     {
-        $fbDM = $this->getFbDM();
-        return $fbDM->getMongoCollection($fbDM->getPageCollectionName());
+        return $this->getFbDM()->getPageCollection();
     }
 }

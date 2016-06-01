@@ -46,9 +46,11 @@ abstract class BaseObj
         }
     }
 
-    protected abstract function getId();
+    public abstract function getId();
 
     protected abstract function init();
 
     public abstract function toArray();
+
+    public abstract function getCollectionName();
 }

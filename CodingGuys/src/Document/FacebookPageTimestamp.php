@@ -208,4 +208,9 @@ class FacebookPageTimestamp extends BaseObj
         }
         return "";
     }
+
+    public function getCollectionName()
+    {
+        // TODO: Implement getCollectionName() method.
+    }
 }

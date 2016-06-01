@@ -8,41 +8,60 @@
 
 namespace CodingGuys\Document;
 
-// TODO should extends BaseObj
-class FacebookPage
+use CodingGuys\Exception\KeyNotExistsException;
+
+class FacebookPage extends BaseObj
 {
     private $mnemono;
     private $_id;
     private $fbID;
-    private $rawData;
+    private $fbResponse;
 
-    public function __construct($rawData = null)
+    const TARGET_COLLECTION = "FacebookPage";
+
+    const KEY_ID = "_id";
+    const KEY_FB_ID = "fbID";
+    const KEY_MNEMONO = "mnemono";
+
+    const FIELD_ID = "id";
+    const FIELD_FB_ID = "fbId";
+    const FIELD_MNEMONO = "mnemono";
+
+    private static $dbMapping = array(
+        FacebookPage::KEY_ID => FacebookPage::FIELD_ID,
+        FacebookPage::KEY_FB_ID => FacebookPage::FIELD_FB_ID,
+        FacebookPage::KEY_MNEMONO => FacebookPage::FIELD_MNEMONO,
+    );
+
+    protected function init()
     {
-        if (is_array($rawData) && !empty($rawData))
+        foreach (FacebookPage::$dbMapping as $field => $dbCol)
         {
-            $this->rawData = $rawData;
-            $this->init();
-        } else
-        {
-            $this->rawData = array();
+            try
+            {
+                $val = $this->getFromRaw($dbCol);
+                $this->{"set" . ucfirst($field)}($val);
+            } catch (KeyNotExistsException $e)
+            {
+                $this->{"set" . ucfirst($field)}(null);
+            }
         }
+        $this->setFbResponse(array());
     }
 
-    private function init()
+    public function toArray()
     {
-        $rawData = $this->getRawData();
-        if (isset($rawData["mnemono"]))
+        $arr = $this->getFbResponse();
+        foreach (FacebookPage::$dbMapping as $field => $dbCol)
         {
-            $this->setMnemono($rawData["mnemono"]);
+            $arr[$dbCol] = $this->{"get" . ucfirst($field)}();
         }
-        if (isset($rawData["_id"]))
-        {
-            $this->setId($rawData["_id"]);
-        }
-        if (isset($rawData["fbID"]))
-        {
-            $this->setFbID($rawData["fbID"]);
-        }
+        return $arr;
+    }
+
+    public function getCollectionName()
+    {
+        return FacebookPage::TARGET_COLLECTION;
     }
 
     /**
@@ -79,22 +98,6 @@ class FacebookPage
     }
 
     /**
-     * @return array
-     */
-    public function getRawData()
-    {
-        return $this->rawData;
-    }
-
-    /**
-     * @param array $rawData
-     */
-    public function setRawData($rawData)
-    {
-        $this->rawData = $rawData;
-    }
-
-    /**
      * @return string|null
      */
     public function getFbID()
@@ -108,5 +111,21 @@ class FacebookPage
     public function setFbID($fbID)
     {
         $this->fbID = $fbID;
+    }
+
+    /**
+     * @return array
+     */
+    public function getFbResponse()
+    {
+        return $this->fbResponse;
+    }
+
+    /**
+     * @param array $fbResponse
+     */
+    public function setFbResponse($fbResponse)
+    {
+        $this->fbResponse = $fbResponse;
     }
 }
