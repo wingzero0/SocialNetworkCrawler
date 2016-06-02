@@ -7,6 +7,8 @@
 
 namespace CodingGuys;
 
+use CodingGuys\FbDocumentManager\FbDocumentManager;
+use CodingGuys\FbRepo\FbPageRepo;
 use CodingGuys\MongoFb\CGMongoFb;
 use Facebook\FacebookRequest;
 use Facebook\FacebookResponse;
@@ -18,12 +20,14 @@ class CGFbCrawler
 {
     private $mongFb;
     private $fbSession;
+    private $fbDM;
 
     public function __construct($appId, $appSecret)
     {
         $this->setMongFb(new CGMongoFb());
         FacebookSession::setDefaultApplication($appId, $appSecret);
         $this->setFbSession(FacebookSession::newAppSession());
+        $this->setFbDM(new FbDocumentManager());
     }
 
     /**
@@ -97,6 +101,7 @@ class CGFbCrawler
 
     /**
      * @return CGMongoFb
+     * @deprecated
      */
     protected function getMongFb()
     {
@@ -134,8 +139,7 @@ class CGFbCrawler
      */
     protected function getPageCollection()
     {
-        $pageCollectionName = $this->getMongFb()->getPageCollectionName();
-        return $this->getMongFb()->getMongoCollection($pageCollectionName);
+        return $this->getFbDM()->getPageCollection();
     }
 
     /**
@@ -154,5 +158,28 @@ class CGFbCrawler
     {
         $exceptionPageCollectionName = $this->getMongFb()->getExceptionPageCollectionName();
         return $this->getMongFb()->getMongoCollection($exceptionPageCollectionName);
+    }
+
+    /**
+     * @return FbDocumentManager
+     */
+    protected function getFbDM()
+    {
+        return $this->fbDM;
+    }
+
+    /**
+     * @param FbDocumentManager $fbDM
+     */
+    protected function setFbDM(FbDocumentManager $fbDM)
+    {
+        $this->fbDM = $fbDM;
+    }
+
+    /**
+     * @return FbPageRepo
+     */
+    protected function getFbPageRepo(){
+        return new FbPageRepo($this->getFbDM());
     }
 }

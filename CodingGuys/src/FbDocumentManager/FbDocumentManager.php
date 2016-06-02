@@ -11,6 +11,7 @@ namespace CodingGuys\FbDocumentManager;
 use CodingGuys\Document\BaseObj;
 use CodingGuys\Document\FacebookFeed;
 use CodingGuys\Document\FacebookPage;
+use CodingGuys\Document\FacebookPageTimestamp;
 use CodingGuys\Document\FbFeedDelta;
 use CodingGuys\Document\FbPageDelta;
 use CodingGuys\Exception\CollectionNotExist;
@@ -136,19 +137,10 @@ class FbDocumentManager
     }
 
     /**
-     * @return string
+     * @return \MongoCollection
      */
-    public function getPageTimestampCollectionName()
-    {
-        return $this->pageTimestampCollectionName;
-    }
-
-    /**
-     * @param string $pageTimestampCollectionName
-     */
-    public function setPageTimestampCollectionName($pageTimestampCollectionName)
-    {
-        $this->pageTimestampCollectionName = $pageTimestampCollectionName;
+    public function getPageTimestampCollection(){
+        return $this->getMongoCollection(FacebookPageTimestamp::TARGET_COLLECTION);
     }
 
     /**

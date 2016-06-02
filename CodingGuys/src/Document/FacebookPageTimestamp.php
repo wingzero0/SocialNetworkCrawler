@@ -20,6 +20,7 @@ class FacebookPageTimestamp extends BaseObj
     private $fbPage;
     private $updateTime;
     private $batchTime;
+    const TARGET_COLLECTION = "FacebookPageTimestamp";
 
     protected function init()
     {
@@ -211,6 +212,6 @@ class FacebookPageTimestamp extends BaseObj
 
     public function getCollectionName()
     {
-        // TODO: Implement getCollectionName() method.
+        return FacebookPageTimestamp::TARGET_COLLECTION;
     }
 }
