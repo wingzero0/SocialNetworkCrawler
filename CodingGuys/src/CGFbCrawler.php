@@ -179,7 +179,8 @@ class CGFbCrawler
     /**
      * @return FbPageRepo
      */
-    protected function getFbPageRepo(){
+    protected function getFbPageRepo()
+    {
         return new FbPageRepo($this->getFbDM());
     }
 }

@@ -18,9 +18,11 @@ class FbPageRepo extends FbRepo
     {
         $query = array("_id" => $mongoId);
         $cursor = $this->getPageCollection()->find($query)->limit(1);
-        if (!$cursor->hasNext()){
+        if ($cursor->hasNext())
+        {
             return $cursor->getNext();
-        }else{
+        } else
+        {
             return null;
         }
     }
@@ -33,9 +35,11 @@ class FbPageRepo extends FbRepo
     {
         $query = array("fbID" => $fbId);
         $cursor = $this->getPageCollection()->find($query)->limit(1);
-        if (!$cursor->hasNext()){
+        if ($cursor->hasNext())
+        {
             return $cursor->getNext();
-        }else{
+        } else
+        {
             return null;
         }
     }

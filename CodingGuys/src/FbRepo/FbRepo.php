@@ -19,9 +19,11 @@ class FbRepo
      */
     public function __construct(FbDocumentManager $fbDM = null)
     {
-        if ($fbDM != null){
+        if ($fbDM != null)
+        {
             $this->fbDM = $fbDM;
-        }else{
+        } else
+        {
             $this->fbDM = new FbDocumentManager();
         }
     }

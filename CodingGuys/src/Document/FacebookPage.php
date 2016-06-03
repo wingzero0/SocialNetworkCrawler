@@ -28,9 +28,9 @@ class FacebookPage extends BaseObj
     const FIELD_MNEMONO = "mnemono";
 
     private static $dbMapping = array(
-        FacebookPage::KEY_ID => FacebookPage::FIELD_ID,
-        FacebookPage::KEY_FB_ID => FacebookPage::FIELD_FB_ID,
-        FacebookPage::KEY_MNEMONO => FacebookPage::FIELD_MNEMONO,
+        FacebookPage::FIELD_ID => FacebookPage::KEY_ID,
+        FacebookPage::FIELD_FB_ID => FacebookPage::KEY_FB_ID,
+        FacebookPage::FIELD_MNEMONO => FacebookPage::KEY_MNEMONO,
     );
 
     protected function init()
@@ -51,11 +51,13 @@ class FacebookPage extends BaseObj
 
     public function toArray()
     {
-        $arr = $this->getFbResponse();
+        $arr = $this->getMongoRawData();
+        $arr = array_merge($arr, $this->getFbResponse());
         foreach (FacebookPage::$dbMapping as $field => $dbCol)
         {
             $arr[$dbCol] = $this->{"get" . ucfirst($field)}();
         }
+        $arr = array_filter($arr, array($this, 'filterNonNullValue'));
         return $arr;
     }
 

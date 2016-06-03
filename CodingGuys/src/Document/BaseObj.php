@@ -53,4 +53,9 @@ abstract class BaseObj
     public abstract function toArray();
 
     public abstract function getCollectionName();
+
+    public function filterNonNullValue($value)
+    {
+        return !($value === null);
+    }
 }

@@ -43,7 +43,8 @@ class FbDocumentManager
     public function writeToDB(BaseObj $obj)
     {
         $collectionName = $obj->getCollectionName();
-        if (empty ($collectionName)){
+        if (empty ($collectionName))
+        {
             throw new CollectionNotExist;
         }
         $col = $this->getMongoCollection($collectionName);
@@ -77,14 +78,16 @@ class FbDocumentManager
     /**
      * @return \MongoCollection
      */
-    public function getFeedCollection(){
+    public function getFeedCollection()
+    {
         return $this->getMongoCollection(FacebookFeed::TARGET_COLLECTION);
     }
 
     /**
      * @return \MongoCollection
      */
-    public function getPageCollection(){
+    public function getPageCollection()
+    {
         return $this->getMongoCollection(FacebookPage::TARGET_COLLECTION);
     }
 
@@ -139,7 +142,8 @@ class FbDocumentManager
     /**
      * @return \MongoCollection
      */
-    public function getPageTimestampCollection(){
+    public function getPageTimestampCollection()
+    {
         return $this->getMongoCollection(FacebookPageTimestamp::TARGET_COLLECTION);
     }
 

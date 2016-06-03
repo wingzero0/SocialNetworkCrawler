@@ -13,7 +13,8 @@ $cli = new MongoClient();
 $col = $cli->selectCollection("Mnemono", "FacebookFeed");
 $cur = $col->find()->limit(1)->sort(array("_id" => -1));
 
-foreach($cur as $feed){
+foreach ($cur as $feed)
+{
     //var_dump($feed);
     $fb = new FacebookFeed($feed);
     var_dump($fb);

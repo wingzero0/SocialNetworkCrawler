@@ -86,11 +86,14 @@ class FacebookFeed extends BaseObj
 
     protected function init()
     {
-        foreach (FacebookFeed::$dbMapping as $field => $dbCol){
-            try{
+        foreach (FacebookFeed::$dbMapping as $field => $dbCol)
+        {
+            try
+            {
                 $val = $this->getFromRaw($dbCol);
                 $this->{"set" . ucfirst($field)}($val);
-            }catch (KeyNotExistsException $e){
+            } catch (KeyNotExistsException $e)
+            {
                 $this->{"set" . ucfirst($field)}(null);
             }
         }
@@ -103,8 +106,10 @@ class FacebookFeed extends BaseObj
      */
     public function toArray()
     {
-        $arr = $this->getFbResponse();
-        foreach (FacebookFeed::$dbMapping as $field => $dbCol){
+        $arr = $this->getMongoRawData();
+        $arr = array_merge($arr, $this->getFbResponse());
+        foreach (FacebookFeed::$dbMapping as $field => $dbCol)
+        {
             $arr[$dbCol] = $this->{"get" . ucfirst($field)}();
         }
         return $arr;
