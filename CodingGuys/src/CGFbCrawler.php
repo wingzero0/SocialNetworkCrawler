@@ -121,8 +121,7 @@ class CGFbCrawler
      */
     protected function getFeedCollection()
     {
-        $feedCollectionName = $this->getMongFb()->getFeedCollectionName();
-        return $this->getMongFb()->getMongoCollection($feedCollectionName);
+        return $this->getFbDM()->getFeedCollection();
     }
 
     /**

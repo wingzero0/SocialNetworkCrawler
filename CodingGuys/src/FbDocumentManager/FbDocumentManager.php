@@ -20,10 +20,8 @@ class FbDocumentManager
 {
     private $dbName;
     private $mongoClient;
-    protected $pageCollectionName = "FacebookPage";
     protected $exceptionPageCollectionName = "FacebookExceptionPage";
     protected $feedTimestampCollectionName = "FacebookFeedTimestamp";
-    protected $pageTimestampCollectionName = "FacebookPageTimestamp";
     // TODO change all name attribute into const, add get collection function directly
 
     const DEFAULT_DB_NAME = 'Mnemono';
@@ -50,13 +48,15 @@ class FbDocumentManager
         $col = $this->getMongoCollection($collectionName);
 
         $serialize = $obj->toArray();
+        ksort($serialize);
         if ($obj->getId() instanceof \MongoId)
         {
-            $col->findAndModify(array("_id" => $obj->getId()), $serialize);
+            $result = $col->findAndModify(array("_id" => $obj->getId()), $serialize);
         } else
         {
-            $col->insert($serialize);
+            $result = $col->insert($serialize);
         }
+        return $result;
     }
 
     /**
