@@ -289,6 +289,16 @@ class FacebookFeed extends BaseObj
     public function setFbResponse($fbResponse)
     {
         $this->fbResponse = $fbResponse;
+        if (!empty($fbResponse))
+        {
+            foreach (FacebookFeed::$dbMapping as $field => $fbCol)
+            {
+                if (isset($fbResponse[$fbCol]))
+                {
+                    $this->{"set" . ucfirst($field)}($fbResponse[$fbCol]);
+                }
+            }
+        }
     }
 
     /**

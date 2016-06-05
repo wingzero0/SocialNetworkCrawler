@@ -40,21 +40,62 @@ class FbDocumentManager
 
     public function writeToDB(BaseObj $obj)
     {
-        $collectionName = $obj->getCollectionName();
-        if (empty ($collectionName))
-        {
-            throw new CollectionNotExist;
-        }
-        $col = $this->getMongoCollection($collectionName);
+        $col = $this->getObjCollection($obj);
 
         $serialize = $obj->toArray();
         ksort($serialize);
         if ($obj->getId() instanceof \MongoId)
         {
-            $result = $col->findAndModify(array("_id" => $obj->getId()), $serialize);
+            $result = $col->findAndModify(
+                array("_id" => $obj->getId()),
+                $serialize
+            );
         } else
         {
             $result = $col->insert($serialize);
+        }
+        return $result;
+    }
+
+    /**
+     * @param BaseObj $obj
+     * @return \MongoCollection
+     * @throws CollectionNotExist
+     */
+    private function getObjCollection(BaseObj $obj)
+    {
+        $collectionName = $obj->getCollectionName();
+        if (empty ($collectionName))
+        {
+            throw new CollectionNotExist;
+        }
+        return $this->getMongoCollection($collectionName);
+    }
+
+    /**
+     * @param BaseObj $obj
+     * @param $queryCondition
+     * @return array
+     * @throws CollectionNotExist
+     * @throws \Exception
+     */
+    public function upsertDB(BaseObj $obj, $queryCondition)
+    {
+        $col = $this->getObjCollection($obj);
+
+        $serialize = $obj->toArray();
+        ksort($serialize);
+        if ($obj->getId() != null)
+        {
+            throw new \UnexpectedValueException();
+        } else
+        {
+            $result = $col->findAndModify(
+                $queryCondition,
+                $serialize,
+                null,
+                array("upsert" => true)
+            );
         }
         return $result;
     }

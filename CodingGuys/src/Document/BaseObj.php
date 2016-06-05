@@ -50,6 +50,9 @@ abstract class BaseObj
 
     protected abstract function init();
 
+    /**
+     * @return array
+     */
     public abstract function toArray();
 
     public abstract function getCollectionName();

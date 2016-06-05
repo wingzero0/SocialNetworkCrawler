@@ -64,6 +64,25 @@ class FbFeedRepo extends FbRepo
     }
 
     /**
+     * @param string $fbId
+     * @return array|null
+     */
+    public function findOneByFbId($fbId)
+    {
+        $cursor = $this->getFeedCollection()
+            ->find(array("fbID" => $fbId))
+            ->limit(1);
+
+        if ($cursor->hasNext())
+        {
+            return $cursor->getNext();
+        } else
+        {
+            return null;
+        }
+    }
+
+    /**
      * @return \MongoCollection
      */
     private function getFeedCollection()
