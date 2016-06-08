@@ -89,6 +89,7 @@ class FacebookFeedTimestamp extends BaseObj
         {
             $arr[$dbCol] = $this->{"get" . ucfirst($field)}();
         }
+        $arr = array_filter($arr, array($this, 'filterNonNullValue'));
         return $arr;
     }
 
@@ -150,7 +151,7 @@ class FacebookFeedTimestamp extends BaseObj
     /**
      * @param \MongoDBRef $fbPage
      */
-    public function setFbPage(\MongoDBRef $fbPage)
+    public function setFbPage($fbPage)
     {
         $this->fbPage = $fbPage;
     }
@@ -166,7 +167,7 @@ class FacebookFeedTimestamp extends BaseObj
     /**
      * @param \MongoDBRef $fbFeed
      */
-    public function setFbFeed(\MongoDBRef $fbFeed)
+    public function setFbFeed($fbFeed)
     {
         $this->fbFeed = $fbFeed;
     }

@@ -112,6 +112,7 @@ class FacebookFeed extends BaseObj
         {
             $arr[$dbCol] = $this->{"get" . ucfirst($field)}();
         }
+        $arr = array_filter($arr, array($this, 'filterNonNullValue'));
         return $arr;
     }
 

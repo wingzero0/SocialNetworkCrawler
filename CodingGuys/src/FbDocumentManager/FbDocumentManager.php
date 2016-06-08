@@ -53,6 +53,7 @@ class FbDocumentManager
         } else
         {
             $result = $col->insert($serialize);
+            $obj->setMongoRawData($serialize);
         }
         return $result;
     }
