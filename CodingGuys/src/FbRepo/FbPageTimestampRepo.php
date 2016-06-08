@@ -42,6 +42,6 @@ class FbPageTimestampRepo extends FbRepo
 
     private function getPageTimestampCollection()
     {
-        return $this->getFbDM()->getMongoCollection($this->getFbDM()->getPageTimestampCollectionName());
+        return $this->getFbDM()->getPageTimestampCollection();
     }
 }

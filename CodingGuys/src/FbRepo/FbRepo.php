@@ -15,11 +15,17 @@ class FbRepo
 
     /**
      * FbRepo constructor.
-     * @param $dbName
+     * @param $fbDM
      */
-    public function __construct($dbName = null)
+    public function __construct(FbDocumentManager $fbDM = null)
     {
-        $this->fbDM = new FbDocumentManager($dbName);
+        if ($fbDM != null)
+        {
+            $this->fbDM = $fbDM;
+        } else
+        {
+            $this->fbDM = new FbDocumentManager();
+        }
     }
 
     /**

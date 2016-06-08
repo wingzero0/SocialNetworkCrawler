@@ -91,7 +91,7 @@ class FbStat
     {
         if ($this->pageRepo == null)
         {
-            $this->pageRepo = new FbPageRepo();
+            $this->pageRepo = new FbPageRepo($this->getFbDocumentManager());
         }
         return $this->pageRepo;
     }
@@ -112,7 +112,7 @@ class FbStat
     {
         if ($this->pageTimestampRepo == null)
         {
-            $this->pageTimestampRepo = new FbPageTimestampRepo();
+            $this->pageTimestampRepo = new FbPageTimestampRepo($this->getFbDocumentManager());
         }
         return $this->pageTimestampRepo;
     }

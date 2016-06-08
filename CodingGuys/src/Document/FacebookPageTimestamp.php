@@ -14,76 +14,65 @@ use CodingGuys\Utility\DateUtility;
 class FacebookPageTimestamp extends BaseObj
 {
     private $_id;
-    private $were_here_count;
-    private $talking_about_count;
+    private $wereHereCount;
+    private $talkingAboutCount;
     private $likes;
     private $fbPage;
     private $updateTime;
     private $batchTime;
 
+    const TARGET_COLLECTION = "FacebookPageTimestamp";
+
+    const KEY_ID = "_id";
+    const KEY_WERE_HERE_COUNT = "were_here_count";
+    const KEY_TALKING_ABOUT_COUNT = "talking_about_count";
+    const KEY_LIKES = "likes";
+    const KEY_FB_PAGE = "fbPage";
+    const KEY_UPDATE_TIME = "updateTime";
+    const KEY_BATCH_TIME = "batchTime";
+
+    const FIELD_ID = "id";
+    const FIELD_WERE_HERE_COUNT = "wereHereCount";
+    const FIELD_TALKING_ABOUT_COUNT = "talkingAboutCount";
+    const FIELD_LIKES = "likes";
+    const FIELD_FB_PAGE = "fbPage";
+    const FIELD_UPDATE_TIME = "updateTime";
+    const FIELD_BATCH_TIME = "batchTime";
+
+    private static $dbMapping = array(
+        FacebookPageTimestamp::FIELD_ID => FacebookPageTimestamp::KEY_ID,
+        FacebookPageTimestamp::FIELD_WERE_HERE_COUNT => FacebookPageTimestamp::KEY_WERE_HERE_COUNT,
+        FacebookPageTimestamp::FIELD_TALKING_ABOUT_COUNT => FacebookPageTimestamp::KEY_TALKING_ABOUT_COUNT,
+        FacebookPageTimestamp::FIELD_LIKES => FacebookPageTimestamp::KEY_LIKES,
+        FacebookPageTimestamp::FIELD_FB_PAGE => FacebookPageTimestamp::KEY_FB_PAGE,
+        FacebookPageTimestamp::FIELD_UPDATE_TIME => FacebookPageTimestamp::KEY_UPDATE_TIME,
+        FacebookPageTimestamp::FIELD_BATCH_TIME => FacebookPageTimestamp::KEY_BATCH_TIME,
+    );
+
     protected function init()
     {
-        try
+        foreach (FacebookPageTimestamp::$dbMapping as $field => $dbCol)
         {
-            $id = $this->getFromRaw("_id");
-            $this->setId($id);
-        } catch (KeyNotExistsException $e)
-        {
-            $this->setId(null);
-        }
-
-        try
-        {
-            $this->setWereHereCount($this->getFromRaw("were_here_count"));
-        } catch (KeyNotExistsException $e)
-        {
-            $this->setWereHereCount(0);
-        }
-
-        try
-        {
-            $this->setTalkingAboutCount($this->getFromRaw("talking_about_count"));
-        } catch (KeyNotExistsException $e)
-        {
-            $this->setTalkingAboutCount(0);
-        }
-
-        try
-        {
-            $this->setLikes($this->getFromRaw("likes"));
-        } catch (KeyNotExistsException $e)
-        {
-            $this->setLikes(0);
-        }
-
-        try
-        {
-            $this->setFbPage($this->getFromRaw("fbPage"));
-        } catch (KeyNotExistsException $e)
-        {
-            $this->setFbPage(null);
-        }
-
-        try
-        {
-            $this->setUpdateTime($this->getFromRaw("updateTime"));
-        } catch (KeyNotExistsException $e)
-        {
-            $this->setUpdateTime(null);
-        }
-
-        try
-        {
-            $this->setBatchTime($this->getFromRaw("batchTime"));
-        } catch (KeyNotExistsException $e)
-        {
-            $this->setBatchTime(null);
+            try
+            {
+                $val = $this->getFromRaw($dbCol);
+                $this->{"set" . ucfirst($field)}($val);
+            } catch (KeyNotExistsException $e)
+            {
+                $this->{"set" . ucfirst($field)}(null);
+            }
         }
     }
 
     public function toArray()
     {
-        // TODO: Implement toArray() method.
+        $arr = $this->getMongoRawData();
+        foreach (FacebookPageTimestamp::$dbMapping as $field => $dbCol)
+        {
+            $arr[$dbCol] = $this->{"get" . ucfirst($field)}();
+        }
+        $arr = array_filter($arr, array($this, 'filterNonNullValue'));
+        return $arr;
     }
 
     /**
@@ -107,15 +96,15 @@ class FacebookPageTimestamp extends BaseObj
      */
     public function getWereHereCount()
     {
-        return $this->were_here_count;
+        return $this->wereHereCount;
     }
 
     /**
-     * @param int $were_here_count
+     * @param int $wereHereCount
      */
-    public function setWereHereCount($were_here_count)
+    public function setWereHereCount($wereHereCount)
     {
-        $this->were_here_count = $were_here_count;
+        $this->wereHereCount = intval($wereHereCount);
     }
 
     /**
@@ -123,15 +112,15 @@ class FacebookPageTimestamp extends BaseObj
      */
     public function getTalkingAboutCount()
     {
-        return $this->talking_about_count;
+        return $this->talkingAboutCount;
     }
 
     /**
-     * @param int $talking_about_count
+     * @param int $talkingAboutCount
      */
-    public function setTalkingAboutCount($talking_about_count)
+    public function setTalkingAboutCount($talkingAboutCount)
     {
-        $this->talking_about_count = $talking_about_count;
+        $this->talkingAboutCount = intval($talkingAboutCount);
     }
 
     /**
@@ -147,7 +136,7 @@ class FacebookPageTimestamp extends BaseObj
      */
     public function setLikes($likes)
     {
-        $this->likes = $likes;
+        $this->likes = intval($likes);
     }
 
     /**
@@ -207,5 +196,10 @@ class FacebookPageTimestamp extends BaseObj
             return $isoStr;
         }
         return "";
+    }
+
+    public function getCollectionName()
+    {
+        return FacebookPageTimestamp::TARGET_COLLECTION;
     }
 }

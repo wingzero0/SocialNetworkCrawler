@@ -22,10 +22,17 @@ class FbFeedRepo extends FbRepo
         $orderQ = array(
             "created_time" => -1
         );
-        return $this->getFeedCollection()
+        $cursor = $this->getFeedCollection()
             ->find($query)
             ->sort($orderQ)
-            ->limit(1)->getNext();
+            ->limit(1);
+        if ($cursor->hasNext())
+        {
+            return $cursor->getNext();
+        } else
+        {
+            return null;
+        }
     }
 
     /**
@@ -57,12 +64,30 @@ class FbFeedRepo extends FbRepo
     }
 
     /**
+     * @param string $fbId
+     * @return array|null
+     */
+    public function findOneByFbId($fbId)
+    {
+        $cursor = $this->getFeedCollection()
+            ->find(array("fbID" => $fbId))
+            ->limit(1);
+
+        if ($cursor->hasNext())
+        {
+            return $cursor->getNext();
+        } else
+        {
+            return null;
+        }
+    }
+
+    /**
      * @return \MongoCollection
      */
     private function getFeedCollection()
     {
-        $fbDM = $this->getFbDM();
-        return $fbDM->getMongoCollection($fbDM->getFeedCollectionName());
+        return $this->getFbDM()->getFeedCollection();
     }
 
 }

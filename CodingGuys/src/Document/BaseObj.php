@@ -22,12 +22,20 @@ abstract class BaseObj
         return $this->mongoRawData;
     }
 
+    /**
+     * @param array $mongoRawData
+     */
+    public function setMongoRawData($mongoRawData)
+    {
+        $this->mongoRawData = $mongoRawData;
+        $this->init();
+    }
+
     public function __construct($mongoRawData = null)
     {
         if (is_array($mongoRawData) && !empty($mongoRawData))
         {
-            $this->mongoRawData = $mongoRawData;
-            $this->init();
+            $this->setMongoRawData($mongoRawData);
         } else
         {
             $this->mongoRawData = array();
@@ -46,9 +54,19 @@ abstract class BaseObj
         }
     }
 
-    protected abstract function getId();
+    public abstract function getId();
 
     protected abstract function init();
 
+    /**
+     * @return array
+     */
     public abstract function toArray();
+
+    public abstract function getCollectionName();
+
+    public function filterNonNullValue($value)
+    {
+        return !($value === null);
+    }
 }

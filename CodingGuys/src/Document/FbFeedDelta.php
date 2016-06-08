@@ -17,6 +17,8 @@ class FbFeedDelta extends BaseObj
     private $_id;
     private $fbFeedRef;
 
+    const TARGET_COLLECTION = "FacebookFeedDelta";
+
     protected function init()
     {
         try
@@ -163,5 +165,10 @@ class FbFeedDelta extends BaseObj
     {
         $this->fbFeedRef = $fbFeedRef;
         return $this;
+    }
+
+    public function getCollectionName()
+    {
+        return FbFeedDelta::TARGET_COLLECTION;
     }
 }

@@ -9,6 +9,9 @@ namespace CodingGuys\FbDocumentManager;
 
 
 use CodingGuys\Document\BaseObj;
+use CodingGuys\Document\FacebookFeed;
+use CodingGuys\Document\FacebookPage;
+use CodingGuys\Document\FacebookPageTimestamp;
 use CodingGuys\Document\FbFeedDelta;
 use CodingGuys\Document\FbPageDelta;
 use CodingGuys\Exception\CollectionNotExist;
@@ -17,14 +20,9 @@ class FbDocumentManager
 {
     private $dbName;
     private $mongoClient;
-    protected $pageCollectionName = "FacebookPage";
     protected $exceptionPageCollectionName = "FacebookExceptionPage";
-    protected $feedCollectionName = "FacebookFeed";
     protected $feedTimestampCollectionName = "FacebookFeedTimestamp";
-    protected $pageTimestampCollectionName = "FacebookPageTimestamp";
     // TODO change all name attribute into const, add get collection function directly
-    const PAGE_DELTA_COLLECTION_NAME = "FacebookPageDelta";
-    const FEED_DELTA_COLLECTION_NAME = "FacebookFeedDelta";
 
     const DEFAULT_DB_NAME = 'Mnemono';
 
@@ -42,25 +40,65 @@ class FbDocumentManager
 
     public function writeToDB(BaseObj $obj)
     {
-        if ($obj instanceof FbPageDelta)
-        {
-            $col = $this->getPageDeltaCollection();
-        } else if ($obj instanceof FbFeedDelta)
-        {
-            $col = $this->getFeedDeltaCollection();
-        } else
-        {
-            throw new CollectionNotExist();
-        }
+        $col = $this->getObjCollection($obj);
 
         $serialize = $obj->toArray();
+        ksort($serialize);
         if ($obj->getId() instanceof \MongoId)
         {
-            $col->findAndModify(array("_id" => $obj->getId()), $serialize);
+            $result = $col->findAndModify(
+                array("_id" => $obj->getId()),
+                $serialize
+            );
         } else
         {
-            $col->insert($serialize);
+            $result = $col->insert($serialize);
+            $obj->setMongoRawData($serialize);
         }
+        return $result;
+    }
+
+    /**
+     * @param BaseObj $obj
+     * @return \MongoCollection
+     * @throws CollectionNotExist
+     */
+    private function getObjCollection(BaseObj $obj)
+    {
+        $collectionName = $obj->getCollectionName();
+        if (empty ($collectionName))
+        {
+            throw new CollectionNotExist;
+        }
+        return $this->getMongoCollection($collectionName);
+    }
+
+    /**
+     * @param BaseObj $obj
+     * @param $queryCondition
+     * @return array
+     * @throws CollectionNotExist
+     * @throws \Exception
+     */
+    public function upsertDB(BaseObj $obj, $queryCondition)
+    {
+        $col = $this->getObjCollection($obj);
+
+        $serialize = $obj->toArray();
+        ksort($serialize);
+        if ($obj->getId() != null)
+        {
+            throw new \UnexpectedValueException();
+        } else
+        {
+            $result = $col->findAndModify(
+                $queryCondition,
+                $serialize,
+                null,
+                array("upsert" => true)
+            );
+        }
+        return $result;
     }
 
     /**
@@ -68,7 +106,7 @@ class FbDocumentManager
      */
     public function getFeedDeltaCollection()
     {
-        return $this->getMongoCollection(FbDocumentManager::FEED_DELTA_COLLECTION_NAME);
+        return $this->getMongoCollection(FbFeedDelta::TARGET_COLLECTION);
     }
 
     /**
@@ -76,7 +114,23 @@ class FbDocumentManager
      */
     public function getPageDeltaCollection()
     {
-        return $this->getMongoCollection(FbDocumentManager::PAGE_DELTA_COLLECTION_NAME);
+        return $this->getMongoCollection(FbPageDelta::TARGET_COLLECTION);
+    }
+
+    /**
+     * @return \MongoCollection
+     */
+    public function getFeedCollection()
+    {
+        return $this->getMongoCollection(FacebookFeed::TARGET_COLLECTION);
+    }
+
+    /**
+     * @return \MongoCollection
+     */
+    public function getPageCollection()
+    {
+        return $this->getMongoCollection(FacebookPage::TARGET_COLLECTION);
     }
 
     public function dropTmpCollection()
@@ -98,22 +152,6 @@ class FbDocumentManager
     /**
      * @return string
      */
-    public function getPageCollectionName()
-    {
-        return $this->pageCollectionName;
-    }
-
-    /**
-     * @param string $pageCollectionName
-     */
-    public function setPageCollectionName($pageCollectionName)
-    {
-        $this->pageCollectionName = $pageCollectionName;
-    }
-
-    /**
-     * @return string
-     */
     public function getExceptionPageCollectionName()
     {
         return $this->exceptionPageCollectionName;
@@ -125,22 +163,6 @@ class FbDocumentManager
     public function setExceptionPageCollectionName($collectionName)
     {
         $this->exceptionPageCollectionName = $collectionName;
-    }
-
-    /**
-     * @return string
-     */
-    public function getFeedCollectionName()
-    {
-        return $this->feedCollectionName;
-    }
-
-    /**
-     * @param string $feedCollectionName
-     */
-    public function setFeedCollectionName($feedCollectionName)
-    {
-        $this->feedCollectionName = $feedCollectionName;
     }
 
     /**
@@ -160,19 +182,11 @@ class FbDocumentManager
     }
 
     /**
-     * @return string
+     * @return \MongoCollection
      */
-    public function getPageTimestampCollectionName()
+    public function getPageTimestampCollection()
     {
-        return $this->pageTimestampCollectionName;
-    }
-
-    /**
-     * @param string $pageTimestampCollectionName
-     */
-    public function setPageTimestampCollectionName($pageTimestampCollectionName)
-    {
-        $this->pageTimestampCollectionName = $pageTimestampCollectionName;
+        return $this->getMongoCollection(FacebookPageTimestamp::TARGET_COLLECTION);
     }
 
     /**
@@ -214,7 +228,7 @@ class FbDocumentManager
      */
     public function createPageRef(\MongoId $mongoId)
     {
-        return \MongoDBRef::create($this->getPageCollectionName(), $mongoId);
+        return \MongoDBRef::create(FacebookPage::TARGET_COLLECTION, $mongoId);
     }
 
     /**
@@ -223,9 +237,13 @@ class FbDocumentManager
      */
     public function createFeedRef(\MongoId $mongoId)
     {
-        return \MongoDBRef::create($this->getFeedCollectionName(), $mongoId);
+        return \MongoDBRef::create(FacebookFeed::TARGET_COLLECTION, $mongoId);
     }
 
+    /**
+     * @param \MongoDate $mongoDate
+     * @return string
+     */
     protected function convertMongoDateToISODate(\MongoDate $mongoDate)
     {
         $batchTime = new \DateTime();
