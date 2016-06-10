@@ -7,6 +7,7 @@
 
 namespace CodingGuys\Stat;
 
+use CodingGuys\Document\FacebookFeed;
 use CodingGuys\Document\FacebookPageTimestamp;
 use CodingGuys\Exception\ClassTypeException;
 use CodingGuys\FbRepo\FbFeedDeltaRepo;
@@ -122,7 +123,7 @@ class FbTimestampReport extends FbFeedStat
 
     /**
      * @param string $fbID
-     * @return CGMongoFbFeed|null
+     * @return FacebookFeed|null
      */
     private function getCGFbFeed($fbID)
     {
@@ -197,9 +198,9 @@ class FbTimestampReport extends FbFeedStat
         $this->outputString("\n");
     }
 
-    private function outputFeedDelta(CGMongoFbFeed $cgFbFeed)
+    private function outputFeedDelta(FacebookFeed $fbFeed)
     {
-        $deltas = $this->findFeedDeltaByFeedId($cgFbFeed->getId());
+        $deltas = $this->findFeedDeltaByFeedId($fbFeed->getId());
         $batchTimeIndexes = $this->batchTimeIndexes;
 
         foreach ($batchTimeIndexes as $batchTimeString => $value)
@@ -307,7 +308,7 @@ class FbTimestampReport extends FbFeedStat
      */
     private function storeInPoolAndGenDelta($feed, $page)
     {
-        $this->feedPool[$feed["fbID"]] = new CGMongoFbFeed($feed);
+        $this->feedPool[$feed["fbID"]] = new FacebookFeed($feed);
         if (!isset($this->pagePool[$page["fbID"]]))
         {
             $this->pagePool[$page["fbID"]] = new CGMongoFbPage($page);

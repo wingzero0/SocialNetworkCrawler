@@ -10,6 +10,7 @@ namespace CodingGuys\FbDocumentManager;
 
 use CodingGuys\Document\BaseObj;
 use CodingGuys\Document\FacebookFeed;
+use CodingGuys\Document\FacebookFeedTimestamp;
 use CodingGuys\Document\FacebookPage;
 use CodingGuys\Document\FacebookPageTimestamp;
 use CodingGuys\Document\FbFeedDelta;
@@ -165,20 +166,9 @@ class FbDocumentManager
         $this->exceptionPageCollectionName = $collectionName;
     }
 
-    /**
-     * @return string
-     */
-    public function getFeedTimestampCollectionName()
+    public function getFeedTimestampCollection()
     {
-        return $this->feedTimestampCollectionName;
-    }
-
-    /**
-     * @param string $feedTimestampCollectionName
-     */
-    public function setFeedTimestampCollectionName($feedTimestampCollectionName)
-    {
-        $this->feedTimestampCollectionName = $feedTimestampCollectionName;
+        return $this->getMongoCollection(FacebookFeedTimestamp::TARGET_COLLECTION);
     }
 
     /**
