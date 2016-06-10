@@ -7,6 +7,8 @@
 
 namespace CodingGuys;
 
+use CodingGuys\FbDocumentManager\FbDocumentManager;
+use CodingGuys\FbRepo\FbPageRepo;
 use CodingGuys\MongoFb\CGMongoFb;
 use Facebook\FacebookRequest;
 use Facebook\FacebookResponse;
@@ -14,15 +16,20 @@ use Facebook\FacebookSession;
 use Facebook\FacebookRequestException;
 use Facebook\FacebookThrottleException;
 
-class CGFbCrawler {
+class CGFbCrawler
+{
     private $mongFb;
     private $fbSession;
+    private $fbDM;
 
-    public function __construct($appId, $appSecret){
+    public function __construct($appId, $appSecret)
+    {
         $this->setMongFb(new CGMongoFb());
         FacebookSession::setDefaultApplication($appId, $appSecret);
         $this->setFbSession(FacebookSession::newAppSession());
+        $this->setFbDM(new FbDocumentManager());
     }
+
     /**
      * @param FacebookRequest $request
      * @param string $headerMessage message that will be dump to stderr if exception occurs
@@ -30,38 +37,47 @@ class CGFbCrawler {
      *
      * @TODO catch api limit exception, send mail to user and sleep a long time.
      */
-    protected function tryRequest(FacebookRequest $request, $headerMessage){
+    protected function tryRequest(FacebookRequest $request, $headerMessage)
+    {
         $response = null;
         $counter = 0;
-        do{
+        do
+        {
             $counter++;
-            try{
+            try
+            {
                 $response = $request->execute();
-            }catch(FacebookThrottleException $e){
+            } catch (FacebookThrottleException $e)
+            {
                 $this->dumpErr($e, $headerMessage);
                 $response = null;
                 sleep(600);
-            }catch (FacebookRequestException $e){
+            } catch (FacebookRequestException $e)
+            {
                 $this->dumpErr($e, $headerMessage);
                 $response = null;
                 sleep(10);
-            }catch (\Exception $e){
+            } catch (\Exception $e)
+            {
                 $this->dumpErr($e, $headerMessage);
                 $response = null;
                 break;
             }
-        }while($response == null && $counter < 2);
+        } while ($response == null && $counter < 2);
 
         return $response;
     }
 
-    protected function dumpErr(\Exception $e, $headerMessage){
+    protected function dumpErr(\Exception $e, $headerMessage)
+    {
         $stderr = fopen('php://stderr', 'w');
         $dateObj = new \DateTime();
         fprintf($stderr, $dateObj->format(\DateTime::ISO8601) . ": " . $headerMessage . "\n");
-        if ($e instanceof FacebookRequestException) {
+        if ($e instanceof FacebookRequestException)
+        {
             fprintf($stderr, $e->getRawResponse() . "\n");
-        } else {
+        } else
+        {
             fprintf($stderr, $e->getMessage() . "\n");
         }
         fclose($stderr);
@@ -85,6 +101,7 @@ class CGFbCrawler {
 
     /**
      * @return CGMongoFb
+     * @deprecated
      */
     protected function getMongFb()
     {
@@ -102,15 +119,16 @@ class CGFbCrawler {
     /**
      * @return \MongoCollection
      */
-    protected function getFeedCollection(){
-        $feedCollectionName = $this->getMongFb()->getFeedCollectionName();
-        return $this->getMongFb()->getMongoCollection($feedCollectionName);
+    protected function getFeedCollection()
+    {
+        return $this->getFbDM()->getFeedCollection();
     }
 
     /**
      * @return \MongoCollection
      */
-    protected function getFeedTimestampCollection(){
+    protected function getFeedTimestampCollection()
+    {
         $feedTimestampCollectionName = $this->getMongFb()->getFeedTimestampCollectionName();
         return $this->getMongFb()->getMongoCollection($feedTimestampCollectionName);
     }
@@ -118,16 +136,50 @@ class CGFbCrawler {
     /**
      * @return \MongoCollection
      */
-    protected function getPageCollection(){
-        $pageCollectionName = $this->getMongFb()->getPageCollectionName();
-        return $this->getMongFb()->getMongoCollection($pageCollectionName);
+    protected function getPageCollection()
+    {
+        return $this->getFbDM()->getPageCollection();
     }
 
     /**
      * @return \MongoCollection
      */
-    protected function getExceptionPageCollection(){
+    protected function getPageTimestampCollection()
+    {
+        $colName = $this->getMongFb()->getPageTimestampCollectionName();
+        return $this->getMongFb()->getMongoCollection($colName);
+    }
+
+    /**
+     * @return \MongoCollection
+     */
+    protected function getExceptionPageCollection()
+    {
         $exceptionPageCollectionName = $this->getMongFb()->getExceptionPageCollectionName();
         return $this->getMongFb()->getMongoCollection($exceptionPageCollectionName);
+    }
+
+    /**
+     * @return FbDocumentManager
+     */
+    protected function getFbDM()
+    {
+        return $this->fbDM;
+    }
+
+    /**
+     * @param FbDocumentManager $fbDM
+     */
+    protected function setFbDM(FbDocumentManager $fbDM)
+    {
+        $this->fbDM = $fbDM;
+    }
+
+    /**
+     * @return FbPageRepo
+     */
+    protected function getFbPageRepo()
+    {
+        return new FbPageRepo($this->getFbDM());
     }
 }
