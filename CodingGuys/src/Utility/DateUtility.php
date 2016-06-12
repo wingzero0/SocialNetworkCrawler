@@ -10,12 +10,20 @@ namespace CodingGuys\Utility;
 
 class DateUtility
 {
+    /**
+     * @param \MongoDate $mongoDate
+     * @return string
+     */
     static function convertMongoDateToISODate(\MongoDate $mongoDate)
     {
         $dateTime = DateUtility::convertMongoDateToDateTime($mongoDate);
         return $dateTime->format(\DateTime::ISO8601);
     }
 
+    /**
+     * @param \MongoDate $mongoDate
+     * @return \DateTime
+     */
     static function convertMongoDateToDateTime(\MongoDate $mongoDate)
     {
         $dateTime = new \DateTime();

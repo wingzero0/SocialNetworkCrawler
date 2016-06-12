@@ -7,8 +7,8 @@
 
 namespace CodingGuys\Stat;
 
+use CodingGuys\FbRepo\FbFeedTimestampRepo;
 use CodingGuys\FbRepo\FbPageTimestampRepo;
-use CodingGuys\MongoFb\CGMongoFb;
 use CodingGuys\FbRepo\FbPageRepo;
 use CodingGuys\FbRepo\FbFeedRepo;
 use CodingGuys\FbDocumentManager\FbDocumentManager;
@@ -17,11 +17,11 @@ class FbStat
 {
     protected $STDERR;
 
-    private $mongoFb;
     private $pageRepo;
     private $feedRepo;
     private $fbDm;
     private $pageTimestampRepo;
+    private $feedTimestampRepo;
 
     public function __construct()
     {
@@ -29,50 +29,19 @@ class FbStat
     }
 
     /**
-     * @param $colName
-     * @return \MongoCollection
-     */
-    protected function getMongoCollection($colName)
-    {
-        return $this->getMongoFb()->getMongoCollection($colName);
-    }
-
-    /**
      * @return \MongoDB
      */
     protected function getMongoDB()
     {
-        return $this->getMongoFb()->getMongoDB();
-    }
-
-    /**
-     * @return \MongoClient
-     */
-    protected function getMongoClient()
-    {
-        return $this->getMongoFb()->getMongoClient();
-    }
-
-    /**
-     * @return CGMongoFb
-     * @deprecated
-     */
-    protected function getMongoFb()
-    {
-        if ($this->mongoFb == null)
-        {
-            $this->mongoFb = new CGMongoFb();
-        }
-        return $this->mongoFb;
+        return $this->getFbDocumentManager()->getMongoDB();
     }
 
     /**
      * @return \MongoCollection
-     * @deprecated
      */
     protected function getFbFeedCol()
     {
-        return $this->getMongoCollection($this->getMongoFb()->getFeedCollectionName());
+        return $this->getFbDocumentManager()->getFeedCollection();
     }
 
     /**
@@ -80,7 +49,7 @@ class FbStat
      */
     protected function getFbFeedTimestampCol()
     {
-        return $this->getMongoCollection($this->getMongoFb()->getFeedTimestampCollectionName());
+        return $this->getFbDocumentManager()->getFeedTimestampCollection();
     }
 
 
@@ -108,6 +77,9 @@ class FbStat
         return $this->feedRepo;
     }
 
+    /**
+     * @return FbPageTimestampRepo
+     */
     protected function getPageTimestampRepo()
     {
         if ($this->pageTimestampRepo == null)
@@ -115,6 +87,18 @@ class FbStat
             $this->pageTimestampRepo = new FbPageTimestampRepo($this->getFbDocumentManager());
         }
         return $this->pageTimestampRepo;
+    }
+
+    /**
+     * @return FbFeedTimestampRepo
+     */
+    protected function getFeedTimestampRepo()
+    {
+        if ($this->feedTimestampRepo == null)
+        {
+            $this->feedTimestampRepo = new FbFeedTimestampRepo($this->getFbDocumentManager());
+        }
+        return $this->feedTimestampRepo;
     }
 
 

@@ -7,7 +7,7 @@
 
 namespace CodingGuys\Stat;
 
-use CodingGuys\MongoFb\CGMongoFbFeedTimestamp;
+use CodingGuys\Document\FacebookFeedTimestamp;
 
 class FbTopNReport extends FbFeedStat
 {
@@ -20,7 +20,7 @@ class FbTopNReport extends FbFeedStat
         echo "count of max Records:" . count($maxRecords) . "\n";
         foreach ($maxRecords as $record)
         {
-            if (!($record instanceof CGMongoFbFeedTimestamp))
+            if (!($record instanceof FacebookFeedTimestamp))
             {
                 echo "get invalid object\n";
             }
@@ -86,6 +86,7 @@ class FbTopNReport extends FbFeedStat
         $maxCommentRecord = array();
         foreach ($cursor as $feed)
         {
+            // TODO Replace CGMongoFbFeedTimestamp with FacebookFeedTimestamp 
             $timestampRecords = $this->findTimestampByFeed($feed["_id"]);
             if (empty($timestampRecords))
             {
@@ -98,7 +99,7 @@ class FbTopNReport extends FbFeedStat
         return array('maxLikeRecord' => $maxLikeRecord, 'maxCommentRecord' => $maxCommentRecord);
     }
 
-    private function extractTimestampNecessaryField(CGMongoFbFeedTimestamp $t)
+    private function extractTimestampNecessaryField(FacebookFeedTimestamp $t)
     {
         $fbFeed = \MongoDBRef::get($this->getMongoDB(), $t->getFbFeed());
         $updateTime = new \DateTime();
@@ -155,8 +156,8 @@ class FbTopNReport extends FbFeedStat
         {
             $lastRecord = $sortedTimestamp[$i - 1];
             $currentRecord = $sortedTimestamp[$i];
-            if (!($lastRecord instanceof CGMongoFbFeedTimestamp)
-                || !($currentRecord instanceof CGMongoFbFeedTimestamp)
+            if (!($lastRecord instanceof FacebookFeedTimestamp)
+                || !($currentRecord instanceof FacebookFeedTimestamp)
             )
             {
                 break;
@@ -181,21 +182,21 @@ class FbTopNReport extends FbFeedStat
     }
 
     /**
-     * @param CGMongoFbFeedTimestamp $a
-     * @param CGMongoFbFeedTimestamp $b
+     * @param FacebookFeedTimestamp $a
+     * @param FacebookFeedTimestamp $b
      * @return bool
      */
-    public static function cmpLikeRecord(CGMongoFbFeedTimestamp $a, CGMongoFbFeedTimestamp $b)
+    public static function cmpLikeRecord(FacebookFeedTimestamp $a, FacebookFeedTimestamp $b)
     {
         return $a->getLikesTotalCount() < $b->getLikesTotalCount();
     }
 
     /**
-     * @param CGMongoFbFeedTimestamp $a
-     * @param CGMongoFbFeedTimestamp $b
+     * @param FacebookFeedTimestamp $a
+     * @param FacebookFeedTimestamp $b
      * @return bool
      */
-    public static function cmpCommentRecord(CGMongoFbFeedTimestamp $a, CGMongoFbFeedTimestamp $b)
+    public static function cmpCommentRecord(FacebookFeedTimestamp $a, FacebookFeedTimestamp $b)
     {
         return $a->getCommentsTotalCount() < $b->getCommentsTotalCount();
     }

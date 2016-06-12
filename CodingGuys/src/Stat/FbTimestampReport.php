@@ -13,9 +13,7 @@ use CodingGuys\Document\FacebookPage;
 use CodingGuys\Document\FacebookPageTimestamp;
 use CodingGuys\Exception\ClassTypeException;
 use CodingGuys\FbRepo\FbFeedDeltaRepo;
-use CodingGuys\FbRepo\FbFeedTimestampRepo;
 use CodingGuys\FbRepo\FbPageDeltaRepo;
-use CodingGuys\MongoFb\CGMongoFbFeedTimestamp;
 use CodingGuys\Document\FbPageDelta;
 use CodingGuys\Document\FbFeedDelta;
 
@@ -37,8 +35,8 @@ class FbTimestampReport extends FbFeedStat
         parent::__construct($startDate, $endDate);
         $this->filename = $filename;
         $this->batchTimeIndexes = array();
-        $this->feedDeltaRepo = new FbFeedDeltaRepo();
-        $this->pageDeltaRepo = new FbPageDeltaRepo();
+        $this->feedDeltaRepo = new FbFeedDeltaRepo($this->getFbDocumentManager());
+        $this->pageDeltaRepo = new FbPageDeltaRepo($this->getFbDocumentManager());
     }
 
     public function timestampSeriesCount($city = "mo")
@@ -89,8 +87,8 @@ class FbTimestampReport extends FbFeedStat
 
     private function getFirstBatchAverageFeedLikes(FacebookPage $fbPage)
     {
-        $repo = new FbFeedTimestampRepo($this->getFbDocumentManager());
-        $batchTime = $repo->getFirstBatchTimeWithinWindow($fbPage->getId(), $this->getStartDateMongoDate(), $this->getEndDateMongoDate());
+        $repo = $this->getFeedTimestampRepo();
+        $batchTime = $repo->findFirstBatchByPageAndDateRange($fbPage->getId(), $this->getStartDateMongoDate(), $this->getEndDateMongoDate());
 
         if ($batchTime instanceof \MongoDate)
         {
@@ -108,15 +106,15 @@ class FbTimestampReport extends FbFeedStat
         foreach ($cursor as $timestampRecord)
         {
             $cgMongoFbFeedTimestamp = new FacebookFeedTimestamp($timestampRecord);
-            $total += $cgMongoFbFeedTimestamp->getLikeTotalCount();
+            $total += $cgMongoFbFeedTimestamp->getLikesTotalCount();
         }
         return $total / $numOfRecord;
     }
 
     private function getFirstBatchAverageFeedComments(FacebookPage $fbPage)
     {
-        $repo = new FbFeedTimestampRepo($this->getFbDocumentManager());
-        $batchTime = $repo->getFirstBatchTimeWithinWindow($fbPage->getId(), $this->getStartDateMongoDate(), $this->getEndDateMongoDate());
+        $repo = $this->getFeedTimestampRepo();
+        $batchTime = $repo->findFirstBatchByPageAndDateRange($fbPage->getId(), $this->getStartDateMongoDate(), $this->getEndDateMongoDate());
 
         if ($batchTime instanceof \MongoDate)
         {
@@ -317,7 +315,7 @@ class FbTimestampReport extends FbFeedStat
 
     /**
      * @param FacebookPage $fbPage mongo raw data of fb page
-     * @param array $feedTimestampRecords array of CGMongoFbFeedTimestamp
+     * @param array $feedTimestampRecords array of FacebookFeedTimestamp
      */
     private function accumulatePageLikeAndComment(FacebookPage $fbPage, $feedTimestampRecords)
     {
@@ -325,17 +323,15 @@ class FbTimestampReport extends FbFeedStat
 
         $ret = $this->getIndexOfMaxRecord($feedTimestampRecords);
         $record = $feedTimestampRecords[$ret['indexOfMaxLike']];
-        if (!$record instanceof CGMongoFbFeedTimestamp)
+        if (!$record instanceof FacebookFeedTimestamp)
         {
-            //TODO throw exception
-            return;
+            throw new \UnexpectedValueException();
         }
         $maxLike = $record->getLikesTotalCount();
         $record = $feedTimestampRecords[$ret['indexOfMaxComment']];
-        if (!$record instanceof CGMongoFbFeedTimestamp)
+        if (!$record instanceof FacebookFeedTimestamp)
         {
-            //TODO throw exception
-            return;
+            throw new \UnexpectedValueException();
         }
         $maxComment = $record->getCommentsTotalCount();
 
@@ -382,7 +378,7 @@ class FbTimestampReport extends FbFeedStat
 
         foreach ($sortedFeedTimestampRecords as $timestampRecord)
         {
-            if ($timestampRecord instanceof CGMongoFbFeedTimestamp)
+            if ($timestampRecord instanceof FacebookFeedTimestamp)
             {
                 $batchTimeString = $timestampRecord->getBatchTimeInISO();
                 $totalLike = $timestampRecord->getLikesTotalCount();

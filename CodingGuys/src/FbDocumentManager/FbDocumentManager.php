@@ -22,7 +22,6 @@ class FbDocumentManager
     private $dbName;
     private $mongoClient;
     protected $exceptionPageCollectionName = "FacebookExceptionPage";
-    protected $feedTimestampCollectionName = "FacebookFeedTimestamp";
     // TODO change all name attribute into const, add get collection function directly
 
     const DEFAULT_DB_NAME = 'Mnemono';
@@ -145,9 +144,9 @@ class FbDocumentManager
     public function createTmpCollectionIndex()
     {
         $col = $this->getPageDeltaCollection();
-        $col->ensureIndex(array("fbPage.\$id" => 1));
+        $col->createIndex(array("fbPage.\$id" => 1));
         $col = $this->getFeedDeltaCollection();
-        $col->ensureIndex(array("fbFeed.\$id" => 1));
+        $col->createIndex(array("fbFeed.\$id" => 1));
     }
 
     /**
@@ -166,6 +165,9 @@ class FbDocumentManager
         $this->exceptionPageCollectionName = $collectionName;
     }
 
+    /**
+     * @return \MongoCollection
+     */
     public function getFeedTimestampCollection()
     {
         return $this->getMongoCollection(FacebookFeedTimestamp::TARGET_COLLECTION);
@@ -228,16 +230,5 @@ class FbDocumentManager
     public function createFeedRef(\MongoId $mongoId)
     {
         return \MongoDBRef::create(FacebookFeed::TARGET_COLLECTION, $mongoId);
-    }
-
-    /**
-     * @param \MongoDate $mongoDate
-     * @return string
-     */
-    protected function convertMongoDateToISODate(\MongoDate $mongoDate)
-    {
-        $batchTime = new \DateTime();
-        $batchTime->setTimestamp($mongoDate->sec);
-        return $batchTime->format(\DateTime::ISO8601);
     }
 } 

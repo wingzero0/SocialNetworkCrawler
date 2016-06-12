@@ -7,6 +7,9 @@
 
 namespace CodingGuys\MongoFb;
 
+/**
+ * @deprecated
+ */
 class CGMongoFb
 {
     private $dbName;

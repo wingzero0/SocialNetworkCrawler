@@ -26,12 +26,44 @@ class FbFeedTimestampRepo extends FbRepo
     }
 
     /**
+     * @param \MongoId $feedId
+     * @param \MongoDate $start
+     * @param \MongoDate $end
+     * @return \MongoCursor
+     */
+    public function findByFeedIdAndDateRange(\MongoId $feedId, \MongoDate $start, \MongoDate $end)
+    {
+        $col = $this->getFbDM()->getFeedTimestampCollection();
+        $query = array(
+            "fbFeed.\$id" => $feedId,
+            "batchTime" => $this->createDateRangeQuery($start, $end)
+        );
+        $cursor = $col->find($query)->sort(array("batchTime" => 1));
+        return $cursor;
+    }
+
+    /**
+     * @param \DateTime $start
+     * @param \DateTime $end
+     * @return \MongoCursor
+     */
+    public function findByDateRange(\DateTime $start, \DateTime $end)
+    {
+        $col = $this->getFbDM()->getFeedTimestampCollection();
+        $query = array(
+            "batchTime" => $this->createDateRangeQuery($start, $end)
+        );
+        $cursor = $col->find($query);
+        return $cursor;
+    }
+
+    /**
      * @param \MongoId $pageId
      * @param \MongoDate $start
      * @param \MongoDate $end
      * @return \MongoDate|null
      */
-    public function getFirstBatchTimeWithinWindow(\MongoId $pageId, \MongoDate $start, \MongoDate $end)
+    public function findFirstBatchByPageAndDateRange(\MongoId $pageId, \MongoDate $start, \MongoDate $end)
     {
         $col = $this->getFbDM()->getFeedTimestampCollection();
         $query = array(
