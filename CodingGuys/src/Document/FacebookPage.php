@@ -16,6 +16,9 @@ class FacebookPage extends BaseObj
     private $_id;
     private $fbID;
     private $fbResponse;
+    private $feedCount;
+    private $accumulateComment;
+    private $accumulateLike;
 
     const TARGET_COLLECTION = "FacebookPage";
 
@@ -129,5 +132,100 @@ class FacebookPage extends BaseObj
     public function setFbResponse($fbResponse)
     {
         $this->fbResponse = $fbResponse;
+    }
+
+
+    /**
+     * @return int
+     */
+    public function getFeedCount()
+    {
+        return $this->feedCount;
+    }
+
+    /**
+     * @param int $feedCount
+     * @return self
+     */
+    public function setFeedCount($feedCount)
+    {
+        $this->feedCount = $feedCount;
+        return $this;
+    }
+
+    /**
+     * @return int
+     */
+    public function getAccumulateLike()
+    {
+        return $this->accumulateLike;
+    }
+
+    /**
+     * @param int $accumulateLike
+     * @return self
+     */
+    public function setAccumulateLike($accumulateLike)
+    {
+        $this->accumulateLike = $accumulateLike;
+        return $this;
+    }
+
+    /**
+     * @return int
+     */
+    public function getAccumulateComment()
+    {
+        return $this->accumulateComment;
+    }
+
+    /**
+     * @param int $accumulateComment
+     * @return self
+     */
+    public function setAccumulateComment($accumulateComment)
+    {
+        $this->accumulateComment = $accumulateComment;
+        return $this;
+    }
+
+    /**
+     * @return double
+     */
+    public function getFeedAverageLike()
+    {
+        return $this->getAccumulateLike() / $this->getFeedCount();
+    }
+
+    /**
+     * @return double
+     */
+    public function getFeedAverageComment()
+    {
+        return $this->getAccumulateComment() / $this->getFeedCount();
+    }
+
+
+    /**
+     * @return string|null
+     */
+    public function getMnemonoCategory()
+    {
+        $mnemono = $this->getMnemono();
+        if (isset($mnemono["category"]))
+        {
+            return $mnemono["category"];
+        } else
+        {
+            return null;
+        }
+    }
+
+    /**
+     * @return string
+     */
+    public function getShortLink()
+    {
+        return "https://www.facebook.com/" . $this->getFbID();
     }
 }
