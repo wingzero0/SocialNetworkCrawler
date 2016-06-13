@@ -90,7 +90,7 @@ class FbTimestampReport extends FbFeedStat
         $repo = $this->getFeedTimestampRepo();
         $batchTime = $repo->findFirstBatchByPageAndDateRange($fbPage->getId(), $this->getStartDateMongoDate(), $this->getEndDateMongoDate());
 
-        if ($batchTime instanceof \MongoDate)
+        if (!($batchTime instanceof \MongoDate))
         {
             throw new \UnexpectedValueException();
         }
@@ -116,7 +116,7 @@ class FbTimestampReport extends FbFeedStat
         $repo = $this->getFeedTimestampRepo();
         $batchTime = $repo->findFirstBatchByPageAndDateRange($fbPage->getId(), $this->getStartDateMongoDate(), $this->getEndDateMongoDate());
 
-        if ($batchTime instanceof \MongoDate)
+        if (!($batchTime instanceof \MongoDate))
         {
             throw new \UnexpectedValueException();
         }
