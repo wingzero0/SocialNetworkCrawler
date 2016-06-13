@@ -6,7 +6,10 @@
  */
 require_once(__DIR__ . '/CodingGuys/autoload.php');
 
-use CodingGuys\MongoFb\CGMongoFb;
+use CodingGuys\Document\FacebookPage;
+use CodingGuys\Document\FacebookExceptionPage;
+use CodingGuys\FbDocumentManager\FbDocumentManager;
+use CodingGuys\FbRepo\FbPageRepo;
 
 $options = getopt("", array("id:", "message::"));
 if (is_array($options["id"]))
@@ -20,33 +23,26 @@ if (is_array($options["id"]))
 $message = $options["message"];
 print_r($options);
 
-$mongoFb = new CGMongoFb();
-$col = $mongoFb->getMongoCollection($mongoFb->getPageCollectionName());
-$exceptionCol = $mongoFb->getMongoCollection($mongoFb->getExceptionPageCollectionName());
+$fbDM = new FbDocumentManager();
+$fbPageRepo = new FbPageRepo($fbDM);
 
 foreach ($queryId as $id)
 {
-    $query = array("_id" => new MongoId($id));
-    $cursor = $col->find($query);
-    foreach ($cursor as $page)
-    {
-        var_dump($page);
-        $exceptionCol->update(
-            array("_id" => $page["_id"]),
-            array_merge($page, array("error" => array("message" => $message))),
-            array("upsert" => true)
-        );
-        $col->update(
-            array("_id" => $page["_id"]),
-            array_merge(
-                array(
-                    "fbID" => $page["fbID"],
-                    "exception" => true
-                ),
-                array("error" => array("message" => $message))
-            )
-        );
+    $pageRaw = $fbPageRepo->findOneById(new MongoId($id));
+    if ($pageRaw === null){
+        throw new UnexpectedValueException();
     }
+
+    $exPage = new FacebookExceptionPage($pageRaw);
+    $exPage->setError(array("error" => array("message" => $message)));
+    $fbDM->upsertDB($exPage,array("_id" => $exPage->getId()));
+
+    var_dump($pageRaw);
+
+    $page = new FacebookPage($pageRaw);
+    $page->setException(true);
+    $page->setError(array("error" => array("message" => $message)));
+    $fbDM->writeToDB($page);
 }
 
 

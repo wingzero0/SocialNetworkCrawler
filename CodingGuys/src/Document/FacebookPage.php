@@ -15,25 +15,33 @@ class FacebookPage extends BaseObj
     private $mnemono;
     private $_id;
     private $fbID;
+    private $exception;
     private $fbResponse;
     private $feedCount;
     private $accumulateComment;
     private $accumulateLike;
+    private $error;
 
     const TARGET_COLLECTION = "FacebookPage";
 
     const KEY_ID = "_id";
     const KEY_FB_ID = "fbID";
     const KEY_MNEMONO = "mnemono";
+    const KEY_EXCEPTION = "exception";
+    const KEY_ERROR = "error";
 
     const FIELD_ID = "id";
     const FIELD_FB_ID = "fbId";
     const FIELD_MNEMONO = "mnemono";
+    const FIELD_EXCEPTION = "exception";
+    const FIELD_ERROR = "error";
 
     private static $dbMapping = array(
         FacebookPage::FIELD_ID => FacebookPage::KEY_ID,
         FacebookPage::FIELD_FB_ID => FacebookPage::KEY_FB_ID,
         FacebookPage::FIELD_MNEMONO => FacebookPage::KEY_MNEMONO,
+        FacebookPage::FIELD_EXCEPTION => FacebookPage::KEY_EXCEPTION,
+        FacebookPage::FIELD_ERROR => FacebookPage::KEY_ERROR,
     );
 
     protected function init()
@@ -227,5 +235,37 @@ class FacebookPage extends BaseObj
     public function getShortLink()
     {
         return "https://www.facebook.com/" . $this->getFbID();
+    }
+
+    /**
+     * @return bool
+     */
+    public function getException()
+    {
+        return $this->exception;
+    }
+
+    /**
+     * @param bool $exception
+     */
+    public function setException($exception)
+    {
+        $this->exception = $exception;
+    }
+
+    /**
+     * @return array
+     */
+    public function getError()
+    {
+        return $this->error;
+    }
+
+    /**
+     * @param array $error
+     */
+    public function setError($error)
+    {
+        $this->error = $error;
     }
 }

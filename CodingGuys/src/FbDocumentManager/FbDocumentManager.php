@@ -9,6 +9,7 @@ namespace CodingGuys\FbDocumentManager;
 
 
 use CodingGuys\Document\BaseObj;
+use CodingGuys\Document\FacebookExceptionPage;
 use CodingGuys\Document\FacebookFeed;
 use CodingGuys\Document\FacebookFeedTimestamp;
 use CodingGuys\Document\FacebookPage;
@@ -75,7 +76,7 @@ class FbDocumentManager
 
     /**
      * @param BaseObj $obj
-     * @param $queryCondition
+     * @param array $queryCondition
      * @return array
      * @throws CollectionNotExist
      * @throws \Exception
@@ -86,7 +87,9 @@ class FbDocumentManager
 
         $serialize = $obj->toArray();
         ksort($serialize);
-        if ($obj->getId() != null)
+        if ($obj->getId() !== null
+            && isset($queryCondition["_id"])
+            && $obj->getId() != $queryCondition["_id"])
         {
             throw new \UnexpectedValueException();
         } else
@@ -149,20 +152,9 @@ class FbDocumentManager
         $col->createIndex(array("fbFeed.\$id" => 1));
     }
 
-    /**
-     * @return string
-     */
-    public function getExceptionPageCollectionName()
+    public function getFacebookExceptionPageCollection()
     {
-        return $this->exceptionPageCollectionName;
-    }
-
-    /**
-     * @param $collectionName
-     */
-    public function setExceptionPageCollectionName($collectionName)
-    {
-        $this->exceptionPageCollectionName = $collectionName;
+        return $this->getMongoCollection(FacebookExceptionPage::TARGET_COLLECTION);
     }
 
     /**
