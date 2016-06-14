@@ -22,8 +22,6 @@ class FbDocumentManager
 {
     private $dbName;
     private $mongoClient;
-    protected $exceptionPageCollectionName = "FacebookExceptionPage";
-    // TODO change all name attribute into const, add get collection function directly
 
     const DEFAULT_DB_NAME = 'Mnemono';
 
@@ -89,7 +87,8 @@ class FbDocumentManager
         ksort($serialize);
         if ($obj->getId() !== null
             && isset($queryCondition["_id"])
-            && $obj->getId() != $queryCondition["_id"])
+            && $obj->getId() != $queryCondition["_id"]
+        )
         {
             throw new \UnexpectedValueException();
         } else

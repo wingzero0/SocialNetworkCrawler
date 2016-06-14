@@ -11,7 +11,7 @@ use CodingGuys\Document\FacebookExceptionPage;
 use CodingGuys\FbDocumentManager\FbDocumentManager;
 use CodingGuys\FbRepo\FbPageRepo;
 
-$options = getopt("", array("id:", "message::"));
+$options = getopt("", array("id:", "message:"));
 if (is_array($options["id"]))
 {
     $queryId = $options["id"];
@@ -21,7 +21,6 @@ if (is_array($options["id"]))
 }
 
 $message = $options["message"];
-print_r($options);
 
 $fbDM = new FbDocumentManager();
 $fbPageRepo = new FbPageRepo($fbDM);
@@ -34,14 +33,12 @@ foreach ($queryId as $id)
     }
 
     $exPage = new FacebookExceptionPage($pageRaw);
-    $exPage->setError(array("error" => array("message" => $message)));
+    $exPage->setError(array("message" => $message));
     $fbDM->upsertDB($exPage,array("_id" => $exPage->getId()));
-
-    var_dump($pageRaw);
 
     $page = new FacebookPage($pageRaw);
     $page->setException(true);
-    $page->setError(array("error" => array("message" => $message)));
+    $page->setError(array("message" => $message));
     $fbDM->writeToDB($page);
 }
 

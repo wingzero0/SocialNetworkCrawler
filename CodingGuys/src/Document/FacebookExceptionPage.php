@@ -11,4 +11,8 @@ namespace CodingGuys\Document;
 class FacebookExceptionPage extends FacebookPage
 {
     const TARGET_COLLECTION = "FacebookExceptionPage";
+    public function getCollectionName()
+    {
+        return FacebookExceptionPage::TARGET_COLLECTION;
+    }
 }
