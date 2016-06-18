@@ -140,8 +140,17 @@ class FacebookPage extends BaseObj
     public function setFbResponse($fbResponse)
     {
         $this->fbResponse = $fbResponse;
+        if (!empty($fbResponse))
+        {
+            foreach (FacebookPage::$dbMapping as $field => $fbCol)
+            {
+                if (isset($fbResponse[$fbCol]))
+                {
+                    $this->{"set" . ucfirst($field)}($fbResponse[$fbCol]);
+                }
+            }
+        }
     }
-
 
     /**
      * @return int

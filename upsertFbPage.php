@@ -34,14 +34,17 @@ while ($line = fgets($fp))
     $mongoId = $pageCrawler->getFbMongoId($fbId);
     if ($mongoId)
     {
-        $pageCrawler->updateMeta($mongoId, $category, $city, $country, $crawlTime);
-        // TODO it may be an existing exception page, should recrawl or anything?
-        //syncPage($fbId, false);
+        $ret = $pageCrawler->reCrawlData($mongoId, $category, $city, $country, $crawlTime);
+        echo "crawler status" . $ret . "\n";
+        if ($ret == CGPageCrawler::SUCCESS)
+        {
+            syncPage($fbId, false);
+        }
     } else
     {
         $ret = $pageCrawler->crawlNewPage($fbId, $category, $city, $country, $crawlTime);
-        echo "crawler status" . $ret;
-        if ($ret == "success")
+        echo "crawler status" . $ret . "\n";
+        if ($ret == CGPageCrawler::SUCCESS)
         {
             syncPage($fbId, true);
         }

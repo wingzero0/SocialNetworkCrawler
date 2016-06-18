@@ -17,6 +17,8 @@ use Facebook\FacebookThrottleException;
 // TODO migrate query to FacebookPageRepo
 class CGPageCrawler extends CGFbCrawler
 {
+    const FAIL = "fail";
+    const SUCCESS = "success";
     /**
      * @param string $pageFbId
      * @param string $category
@@ -34,9 +36,9 @@ class CGPageCrawler extends CGFbCrawler
         {
             return "fail";
         }
-        $pageMainContent = $response->getResponse();
-        $pageMainContent->fbID = $pageMainContent->id;
-        unset($pageMainContent->id);
+        $pageMainContent = json_decode(json_encode($response->getResponse()),true);
+        $pageMainContent["fbID"] = $pageMainContent["id"];
+        unset($pageMainContent["id"]);
 
         $page = new FacebookPage();
         $page->setFbResponse($pageMainContent);
@@ -48,7 +50,7 @@ class CGPageCrawler extends CGFbCrawler
 
         $this->getFbDM()->writeToDB($page);
 
-        return "success";
+        return CGPageCrawler::SUCCESS;
     }
 
     /**
@@ -58,7 +60,7 @@ class CGPageCrawler extends CGFbCrawler
      * @param string $country
      * @param array $crawlTime
      */
-    public function updateMeta(\MongoId $id, $category, $city, $country, $crawlTime)
+    public function reCrawlData(\MongoId $id, $category, $city, $country, $crawlTime)
     {
         $repo = $this->getFbPageRepo();
         $raw = $repo->findOneById($id);
@@ -66,15 +68,30 @@ class CGPageCrawler extends CGFbCrawler
         {
             throw new \UnexpectedValueException();
         }
-        $page = new FacebookPage($raw);
-        $page->setMnemono(array(
+        $fbPage = new FacebookPage($raw);
+
+        $request = new FacebookRequest($this->getFbSession(), 'GET', '/' . $fbPage->getFbID());
+        $headerMsg = "get error while crawling page:" . $fbPage->getFbID();
+        $response = $this->tryRequest($request, $headerMsg);
+        if ($response == null)
+        {
+            return CGPageCrawler::FAIL;
+        }
+        $pageMainContent = json_decode(json_encode($response->getResponse()),true);
+        $pageMainContent["fbID"] = $pageMainContent["id"];
+        unset($pageMainContent["id"]);
+
+        $fbPage->setException(false);
+        $fbPage->setError(null);
+        $fbPage->setFbResponse($pageMainContent);
+        $fbPage->setMnemono(array(
             "category" => $category,
             "location" => array("city" => $city, "country" => $country),
             "crawlTime" => $crawlTime,
         ));
-        $this->getFbDM()->writeToDB($page);
+        $this->getFbDM()->writeToDB($fbPage);
+        return CGPageCrawler::SUCCESS;
     }
-
 
     /**
      * @param $fbId

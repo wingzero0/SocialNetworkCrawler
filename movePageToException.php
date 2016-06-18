@@ -33,8 +33,11 @@ foreach ($queryId as $id)
     }
 
     $exPage = new FacebookExceptionPage($pageRaw);
+    $exPage->setId(null);
     $exPage->setError(array("message" => $message));
-    $fbDM->upsertDB($exPage,array("_id" => $exPage->getId()));
+    $exPage->setExceptionTime(new \MongoDate());
+    $exPage->setException(true);
+    $fbDM->writeToDB($exPage);
 
     $page = new FacebookPage($pageRaw);
     $page->setException(true);
