@@ -21,7 +21,8 @@ class FacebookExceptionPage extends FacebookPage
         FacebookExceptionPage::FIELD_EXCEPTION_TIME => FacebookExceptionPage::KEY_EXCEPION_TIME,
     );
 
-    protected function init(){
+    protected function init()
+    {
         parent::init();
         foreach (FacebookExceptionPage::$dbMapping as $field => $dbCol)
         {
@@ -35,6 +36,7 @@ class FacebookExceptionPage extends FacebookPage
             }
         }
     }
+
     public function toArray()
     {
         $arr = parent::toArray();
@@ -45,6 +47,7 @@ class FacebookExceptionPage extends FacebookPage
         $arr = array_filter($arr, array($this, 'filterNonNullValue'));
         return $arr;
     }
+
     public function getCollectionName()
     {
         return FacebookExceptionPage::TARGET_COLLECTION;

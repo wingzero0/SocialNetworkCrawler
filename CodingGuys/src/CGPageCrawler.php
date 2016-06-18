@@ -19,6 +19,7 @@ class CGPageCrawler extends CGFbCrawler
 {
     const FAIL = "fail";
     const SUCCESS = "success";
+
     /**
      * @param string $pageFbId
      * @param string $category
@@ -34,9 +35,9 @@ class CGPageCrawler extends CGFbCrawler
         $response = $this->tryRequest($request, $headerMsg);
         if ($response == null)
         {
-            return "fail";
+            return CGPageCrawler::FAIL;
         }
-        $pageMainContent = json_decode(json_encode($response->getResponse()),true);
+        $pageMainContent = json_decode(json_encode($response->getResponse()), true);
         $pageMainContent["fbID"] = $pageMainContent["id"];
         unset($pageMainContent["id"]);
 
@@ -59,6 +60,7 @@ class CGPageCrawler extends CGFbCrawler
      * @param string $city
      * @param string $country
      * @param array $crawlTime
+     * @return string
      */
     public function reCrawlData(\MongoId $id, $category, $city, $country, $crawlTime)
     {
@@ -77,7 +79,7 @@ class CGPageCrawler extends CGFbCrawler
         {
             return CGPageCrawler::FAIL;
         }
-        $pageMainContent = json_decode(json_encode($response->getResponse()),true);
+        $pageMainContent = json_decode(json_encode($response->getResponse()), true);
         $pageMainContent["fbID"] = $pageMainContent["id"];
         unset($pageMainContent["id"]);
 
@@ -125,9 +127,6 @@ class CGPageCrawler extends CGFbCrawler
             $newID = $matches[2];
             $this->handleMigration($page, $newID);
         }
-        $this->setPageAsException($page["fbID"]);
-        $page["error"] = $errorMsg->error;
-        $this->backupExceptionPage($page);
     }
 
     private function handleMigration($oldPage, $newID)
@@ -143,26 +142,6 @@ class CGPageCrawler extends CGFbCrawler
         {
             // Let it go
         }
-    }
-
-    /**
-     * @param string $fbID
-     */
-    private function setPageAsException($fbID)
-    {
-        $this->getPageCollection()->update(
-            array("fbID" => $fbID),
-            array("exception" => true, "fbID" => $fbID)
-        );
-    }
-
-    /**
-     * @param array $page the page record fetch from mongoDB;
-     */
-    private function backupExceptionPage($page)
-    {
-        echo "backup " . $page["fbID"] . "\n";
-        $this->getExceptionPageCollection()->update(array("_id" => $page["_id"]), $page, array("upsert" => true));
     }
 
     /**

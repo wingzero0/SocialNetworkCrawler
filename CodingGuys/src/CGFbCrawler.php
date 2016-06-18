@@ -17,15 +17,31 @@ use Facebook\FacebookThrottleException;
 
 class CGFbCrawler
 {
-    private $mongFb;
     private $fbSession;
     private $fbDM;
+    private $lastException;
 
     public function __construct($appId, $appSecret)
     {
         FacebookSession::setDefaultApplication($appId, $appSecret);
         $this->setFbSession(FacebookSession::newAppSession());
         $this->setFbDM(new FbDocumentManager());
+    }
+
+    /**
+     * @return \Exception
+     */
+    public function getLastException()
+    {
+        return $this->lastException;
+    }
+
+    /**
+     * @param \Exception $lastFbException
+     */
+    public function setLastException($lastFbException)
+    {
+        $this->lastException = $lastFbException;
     }
 
     /**
@@ -78,6 +94,7 @@ class CGFbCrawler
         {
             fprintf($stderr, $e->getMessage() . "\n");
         }
+        $this->setLastException($e);
         fclose($stderr);
     }
 

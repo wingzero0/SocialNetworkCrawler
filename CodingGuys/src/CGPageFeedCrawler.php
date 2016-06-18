@@ -7,18 +7,15 @@
 
 namespace CodingGuys;
 
+use CodingGuys\Document\FacebookExceptionPage;
 use CodingGuys\Document\FacebookFeed;
 use CodingGuys\Document\FacebookFeedTimestamp;
 use CodingGuys\Document\FacebookPage;
 use CodingGuys\Document\FacebookPageTimestamp;
 use CodingGuys\FbRepo\FbFeedRepo;
 use Facebook\FacebookRequest;
-use Facebook\FacebookResponse;
-use Facebook\FacebookSession;
 use Facebook\FacebookRequestException;
-use Facebook\FacebookThrottleException;
 
-// TODO rename to PageFeedCrawler
 class CGPageFeedCrawler extends CGFbCrawler
 {
     private $pageFbId;
@@ -69,6 +66,7 @@ class CGPageFeedCrawler extends CGFbCrawler
         $response = $this->tryRequest($request, $headerMsg);
         if ($response == null)
         {
+            $this->handleErrorPage($this->getLastException(), $this->pageFbId);
             return CGPageFeedCrawler::FAIL;
         }
         $this->findAndModifyPage($this->pageFbId, $response->getResponse()); // test from var dump , $response->getResponse() is a stdClass
@@ -331,8 +329,6 @@ class CGPageFeedCrawler extends CGFbCrawler
         {
             $job_handle = $client->doBackground("MnemonoBackgroundServiceBundleServicesSyncFbFeedService~updatePost", $workload);
         }
-
-
     }
 
     /**
@@ -406,6 +402,83 @@ class CGPageFeedCrawler extends CGFbCrawler
             return $feed["_id"];
         }
         return null;
+    }
+
+    /**
+     * @param \Exception $e
+     * @param string $pageFbId
+     */
+    private function handleErrorPage(\Exception $e, $pageFbId)
+    {
+        $pageRaw = $this->getFbPageRepo()->findOneByFbId($pageFbId);
+        $errPage = new FacebookExceptionPage($pageRaw);
+        $errPage->setException(true);
+        $errPage->setExceptionTime(new \MongoDate());
+        $errPage->setId(null);
+
+        if ($e instanceof FacebookRequestException)
+        {
+            $errorResponse = json_decode($e->getRawResponse(), true);
+            $code = $errorResponse["error"]["code"];
+            $hit = preg_match("/Page ID (.+) was migrated to page ID (.+)\\./", $errorResponse["error"]["message"], $matches);
+
+            $oldPage = new FacebookPage($pageRaw);
+            if ($code == 21 && $hit > 0)
+            {
+                $newID = $matches[2];
+                $this->handleMigration($oldPage, $newID);
+                $this->markAsException($oldPage, $errorResponse["error"]);
+            } else if ($code == 100)
+            {
+                $this->markAsException($oldPage, $errorResponse["error"]);
+            }
+            $errPage->setError($errorResponse["error"]);
+        } else
+        {
+            $errPage->setError(array("message" => $e->getMessage(), "trace" => $e->getTrace()));
+        }
+        $this->getFbDM()->writeToDB($errPage);
+    }
+
+    private function markAsException(FacebookPage $oldPage, $errorArr)
+    {
+        $oldPage->setError($errorArr);
+        $oldPage->setException(true);
+        $this->getFbDM()->writeToDB($oldPage);
+    }
+
+    /**
+     * @param FacebookPage $oldPage
+     * @param string $newPageFbId
+     * @return string
+     */
+    private function handleMigration(FacebookPage $oldPage, $newPageFbId)
+    {
+        if ($this->getFbPageRepo()->findOneByFbId($newPageFbId) === null)
+        {
+            $request = new FacebookRequest($this->getFbSession(), 'GET', '/' . $newPageFbId);
+            $headerMsg = "get error while migrating page:" . $newPageFbId;
+            $response = $this->tryRequest($request, $headerMsg);
+            if ($response == null)
+            {
+                return CGPageCrawler::FAIL;
+            }
+            $pageMainContent = json_decode(json_encode($response->getResponse()), true);
+            $pageMainContent["fbID"] = $pageMainContent["id"];
+            unset($pageMainContent["id"]);
+
+            $mnemono = $oldPage->getMnemono();
+            $page = new FacebookPage();
+            $page->setFbResponse($pageMainContent);
+            $page->setMnemono($mnemono);
+            $this->getFbDM()->writeToDB($page);
+
+            $client = new \GearmanClient();
+            $client->addServer();
+            $workload = json_encode(array("fbId" => $newPageFbId));
+            $job_handle = $client->doBackground("MnemonoBackgroundServiceBundleServicesSyncFbPageService~createBiz", $workload);
+        }
+        return CGPageCrawler::SUCCESS;
     }
 
 }
