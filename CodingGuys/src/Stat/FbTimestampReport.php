@@ -411,7 +411,7 @@ class FbTimestampReport extends FbFeedStat
     private function genPageTimestampDeltasToTmp(\MongoId $pageId)
     {
         $cursor = $this->getPageTimestampRepo()
-            ->findTimestampByPageAndDate(
+            ->findByPageAndDate(
                 $pageId,
                 $this->getStartDateMongoDate(),
                 $this->getEndDateMongoDate()

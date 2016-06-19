@@ -30,4 +30,13 @@ class DateUtility
         $dateTime->setTimestamp($mongoDate->sec);
         return $dateTime;
     }
+
+    /**
+     * @param \DateTime $dateTime
+     * @return \MongoDate
+     */
+    static function convertDateTimeToMongoDate(\DateTime $dateTime)
+    {
+        return new \MongoDate($dateTime->getTimestamp());
+    }
 }

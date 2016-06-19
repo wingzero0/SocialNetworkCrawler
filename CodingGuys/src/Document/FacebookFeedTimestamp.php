@@ -142,7 +142,7 @@ class FacebookFeedTimestamp extends BaseObj
     }
 
     /**
-     * @return \MongoDBRef
+     * @return \MongoDBRef|array|null
      */
     public function getFbPage()
     {
