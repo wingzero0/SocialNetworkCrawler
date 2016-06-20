@@ -12,9 +12,12 @@ db.FacebookFeedTimestamp.createIndex({ "fbFeed.$id" : -1 , "batchTime" : -1});
 
 db.FacebookPage.dropIndexes();
 db.FacebookPage.createIndex({ "fbID" : 1});
-
+db.FacebookPage.createIndex({ "exception" : 1});
 
 db.FacebookPageTimestamp.dropIndexes();
 db.FacebookPageTimestamp.createIndex({ "fbPage.$id" : -1});
 db.FacebookPageTimestamp.createIndex({ "batchTime" : -1});
 db.FacebookPageTimestamp.createIndex({ "fbPage.$id" : -1 , "batchTime" : -1});
+
+db.FacebookExceptionPage.dropIndexes();
+db.FacebookExceptionPage.createIndex({ "fbID" : 1});

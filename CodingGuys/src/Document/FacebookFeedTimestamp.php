@@ -8,11 +8,12 @@
 namespace CodingGuys\Document;
 
 use CodingGuys\Exception\KeyNotExistsException;
+use CodingGuys\Utility\DateUtility;
 
 class FacebookFeedTimestamp extends BaseObj
 {
     private $id;
-    private $likeTotalCount;
+    private $likesTotalCount;
     private $commentsTotalCount;
     private $shareTotalCount;
     private $fbPage;
@@ -23,7 +24,7 @@ class FacebookFeedTimestamp extends BaseObj
     const TARGET_COLLECTION = "FacebookFeedTimestamp";
 
     const FIELD_ID = "id";
-    const FIELD_LIKES_TOTAL_COUNT = "likeTotalCount";
+    const FIELD_LIKES_TOTAL_COUNT = "likesTotalCount";
     const FIELD_COMMENTS_TOTAL_COUNT = "commentsTotalCount";
     const FIELD_SHARES_TOTAL_COUNT = "shareTotalCount";
     const FIELD_FB_PAGE = "fbPage";
@@ -101,22 +102,22 @@ class FacebookFeedTimestamp extends BaseObj
     /**
      * @return int
      */
-    public function getLikeTotalCount()
+    public function getLikesTotalCount()
     {
-        return $this->likeTotalCount;
+        return $this->likesTotalCount;
     }
 
     /**
-     * @param int $likeTotalCount
+     * @param int $likesTotalCount
      */
-    public function setLikeTotalCount($likeTotalCount)
+    public function setLikesTotalCount($likesTotalCount)
     {
-        if ($likeTotalCount === null)
+        if ($likesTotalCount === null)
         {
-            $this->likeTotalCount = 0;
+            $this->likesTotalCount = 0;
         } else
         {
-            $this->likeTotalCount = $likeTotalCount;
+            $this->likesTotalCount = $likesTotalCount;
         }
     }
 
@@ -141,7 +142,7 @@ class FacebookFeedTimestamp extends BaseObj
     }
 
     /**
-     * @return \MongoDBRef
+     * @return \MongoDBRef|array|null
      */
     public function getFbPage()
     {
@@ -157,7 +158,7 @@ class FacebookFeedTimestamp extends BaseObj
     }
 
     /**
-     * @return \MongoDBRef
+     * @return \MongoDBRef|array
      */
     public function getFbFeed()
     {
@@ -165,7 +166,7 @@ class FacebookFeedTimestamp extends BaseObj
     }
 
     /**
-     * @param \MongoDBRef $fbFeed
+     * @param \MongoDBRef|array $fbFeed
      */
     public function setFbFeed($fbFeed)
     {
@@ -222,5 +223,18 @@ class FacebookFeedTimestamp extends BaseObj
             $this->shareTotalCount = 0;
         }
         $this->shareTotalCount = $shareTotalCount;
+    }
+
+    /**
+     * @return string
+     */
+    public function getBatchTimeInISO()
+    {
+        $batchTime = $this->getBatchTime();
+        if ($batchTime == null)
+        {
+            return "";
+        }
+        return DateUtility::convertMongoDateToISODate($batchTime);
     }
 }

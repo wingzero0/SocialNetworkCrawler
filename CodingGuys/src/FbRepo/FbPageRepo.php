@@ -69,6 +69,24 @@ class FbPageRepo extends FbRepo
     }
 
     /**
+     * @param int $crawlTimeH
+     * @return \MongoCursor
+     */
+    public function findAllWorkingPageByCrawlTime($crawlTimeH)
+    {
+        $query = array(
+            "\$or" => array(
+                array(
+                    "exception" => array("\$exists" => false),
+                ),
+                array("exception" => false),
+            ),
+            "mnemono.crawlTime" => $crawlTimeH,
+        );
+        return $this->getPageCollection()->find($query);
+    }
+
+    /**
      * @return \MongoCollection
      */
     private function getPageCollection()

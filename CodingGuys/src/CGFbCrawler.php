@@ -9,7 +9,6 @@ namespace CodingGuys;
 
 use CodingGuys\FbDocumentManager\FbDocumentManager;
 use CodingGuys\FbRepo\FbPageRepo;
-use CodingGuys\MongoFb\CGMongoFb;
 use Facebook\FacebookRequest;
 use Facebook\FacebookResponse;
 use Facebook\FacebookSession;
@@ -18,16 +17,31 @@ use Facebook\FacebookThrottleException;
 
 class CGFbCrawler
 {
-    private $mongFb;
     private $fbSession;
     private $fbDM;
+    private $lastException;
 
     public function __construct($appId, $appSecret)
     {
-        $this->setMongFb(new CGMongoFb());
         FacebookSession::setDefaultApplication($appId, $appSecret);
         $this->setFbSession(FacebookSession::newAppSession());
         $this->setFbDM(new FbDocumentManager());
+    }
+
+    /**
+     * @return \Exception
+     */
+    public function getLastException()
+    {
+        return $this->lastException;
+    }
+
+    /**
+     * @param \Exception $lastFbException
+     */
+    public function setLastException($lastFbException)
+    {
+        $this->lastException = $lastFbException;
     }
 
     /**
@@ -80,6 +94,7 @@ class CGFbCrawler
         {
             fprintf($stderr, $e->getMessage() . "\n");
         }
+        $this->setLastException($e);
         fclose($stderr);
     }
 
@@ -100,37 +115,11 @@ class CGFbCrawler
     }
 
     /**
-     * @return CGMongoFb
-     * @deprecated
-     */
-    protected function getMongFb()
-    {
-        return $this->mongFb;
-    }
-
-    /**
-     * @param CGMongoFb $mongFb
-     */
-    private function setMongFb($mongFb)
-    {
-        $this->mongFb = $mongFb;
-    }
-
-    /**
      * @return \MongoCollection
      */
     protected function getFeedCollection()
     {
         return $this->getFbDM()->getFeedCollection();
-    }
-
-    /**
-     * @return \MongoCollection
-     */
-    protected function getFeedTimestampCollection()
-    {
-        $feedTimestampCollectionName = $this->getMongFb()->getFeedTimestampCollectionName();
-        return $this->getMongFb()->getMongoCollection($feedTimestampCollectionName);
     }
 
     /**
@@ -144,19 +133,9 @@ class CGFbCrawler
     /**
      * @return \MongoCollection
      */
-    protected function getPageTimestampCollection()
-    {
-        $colName = $this->getMongFb()->getPageTimestampCollectionName();
-        return $this->getMongFb()->getMongoCollection($colName);
-    }
-
-    /**
-     * @return \MongoCollection
-     */
     protected function getExceptionPageCollection()
     {
-        $exceptionPageCollectionName = $this->getMongFb()->getExceptionPageCollectionName();
-        return $this->getMongFb()->getMongoCollection($exceptionPageCollectionName);
+        return $this->getFbDM()->getFacebookExceptionPageCollection();
     }
 
     /**
