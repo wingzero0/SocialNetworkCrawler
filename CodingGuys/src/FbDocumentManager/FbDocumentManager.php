@@ -9,7 +9,9 @@ namespace CodingGuys\FbDocumentManager;
 
 
 use CodingGuys\Document\BaseObj;
+use CodingGuys\Document\FacebookExceptionPage;
 use CodingGuys\Document\FacebookFeed;
+use CodingGuys\Document\FacebookFeedTimestamp;
 use CodingGuys\Document\FacebookPage;
 use CodingGuys\Document\FacebookPageTimestamp;
 use CodingGuys\Document\FbFeedDelta;
@@ -20,9 +22,6 @@ class FbDocumentManager
 {
     private $dbName;
     private $mongoClient;
-    protected $exceptionPageCollectionName = "FacebookExceptionPage";
-    protected $feedTimestampCollectionName = "FacebookFeedTimestamp";
-    // TODO change all name attribute into const, add get collection function directly
 
     const DEFAULT_DB_NAME = 'Mnemono';
 
@@ -75,7 +74,7 @@ class FbDocumentManager
 
     /**
      * @param BaseObj $obj
-     * @param $queryCondition
+     * @param array $queryCondition
      * @return array
      * @throws CollectionNotExist
      * @throws \Exception
@@ -86,7 +85,10 @@ class FbDocumentManager
 
         $serialize = $obj->toArray();
         ksort($serialize);
-        if ($obj->getId() != null)
+        if ($obj->getId() !== null
+            && isset($queryCondition["_id"])
+            && $obj->getId() != $queryCondition["_id"]
+        )
         {
             throw new \UnexpectedValueException();
         } else
@@ -144,41 +146,22 @@ class FbDocumentManager
     public function createTmpCollectionIndex()
     {
         $col = $this->getPageDeltaCollection();
-        $col->ensureIndex(array("fbPage.\$id" => 1));
+        $col->createIndex(array("fbPage.\$id" => 1));
         $col = $this->getFeedDeltaCollection();
-        $col->ensureIndex(array("fbFeed.\$id" => 1));
+        $col->createIndex(array("fbFeed.\$id" => 1));
+    }
+
+    public function getFacebookExceptionPageCollection()
+    {
+        return $this->getMongoCollection(FacebookExceptionPage::TARGET_COLLECTION);
     }
 
     /**
-     * @return string
+     * @return \MongoCollection
      */
-    public function getExceptionPageCollectionName()
+    public function getFeedTimestampCollection()
     {
-        return $this->exceptionPageCollectionName;
-    }
-
-    /**
-     * @param $collectionName
-     */
-    public function setExceptionPageCollectionName($collectionName)
-    {
-        $this->exceptionPageCollectionName = $collectionName;
-    }
-
-    /**
-     * @return string
-     */
-    public function getFeedTimestampCollectionName()
-    {
-        return $this->feedTimestampCollectionName;
-    }
-
-    /**
-     * @param string $feedTimestampCollectionName
-     */
-    public function setFeedTimestampCollectionName($feedTimestampCollectionName)
-    {
-        $this->feedTimestampCollectionName = $feedTimestampCollectionName;
+        return $this->getMongoCollection(FacebookFeedTimestamp::TARGET_COLLECTION);
     }
 
     /**
@@ -238,16 +221,5 @@ class FbDocumentManager
     public function createFeedRef(\MongoId $mongoId)
     {
         return \MongoDBRef::create(FacebookFeed::TARGET_COLLECTION, $mongoId);
-    }
-
-    /**
-     * @param \MongoDate $mongoDate
-     * @return string
-     */
-    protected function convertMongoDateToISODate(\MongoDate $mongoDate)
-    {
-        $batchTime = new \DateTime();
-        $batchTime->setTimestamp($mongoDate->sec);
-        return $batchTime->format(\DateTime::ISO8601);
     }
 } 

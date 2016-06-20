@@ -28,6 +28,7 @@ class FacebookFeed extends BaseObj
     private $attachments;
     private $fbPage;
     private $fbResponse;
+    private $story;
 
     const TARGET_COLLECTION = "FacebookFeed";
 
@@ -47,6 +48,7 @@ class FacebookFeed extends BaseObj
     const KEY_COMMENTS = "comments";
     const KEY_ATTACHMENTS = "attachments";
     const KEY_FB_PAGE = "fbPage";
+    const KEY_STORY = "story";
 
     const FIELD_ID = "id";
     const FIELD_FB_ID = "fbId";
@@ -64,6 +66,7 @@ class FacebookFeed extends BaseObj
     const FIELD_COMMENTS = "comments";
     const FIELD_ATTACHMENTS = "attachments";
     const FIELD_FB_PAGE = "fbPage";
+    const FIELD_STORY = "story";
 
     private static $dbMapping = array(
         FacebookFeed::FIELD_ID => FacebookFeed::KEY_ID,
@@ -82,7 +85,72 @@ class FacebookFeed extends BaseObj
         FacebookFeed::FIELD_COMMENTS => FacebookFeed::KEY_COMMENTS,
         FacebookFeed::FIELD_ATTACHMENTS => FacebookFeed::KEY_ATTACHMENTS,
         FacebookFeed::FIELD_FB_PAGE => FacebookFeed::KEY_FB_PAGE,
+        FacebookFeed::FIELD_STORY => FacebookFeed::KEY_STORY,
     );
+
+    public function getShortLink()
+    {
+        return "https://www.facebook.com/" . $this->getFbId();
+    }
+
+    public function guessLink()
+    {
+        if ($this->getStatusType() == "added_video")
+        {
+            return $this->getLink();
+        }
+
+        $story = $this->getStory();
+        if (empty($story))
+        {
+            return $this->getShortLink();
+        }
+
+        $pattern = "/new photos to the album:/";
+        $ret = preg_match($pattern, $story);
+        if ($ret > 0)
+        {
+            return $this->getLink();
+        }
+
+        $pattern = "/cover photo./";
+        $ret = preg_match($pattern, $story);
+        if ($ret > 0)
+        {
+            return $this->getLink();
+        }
+
+        return $this->getShortLink();
+    }
+
+    /**
+     * @return int
+     */
+    public function getSharesCount()
+    {
+        $shares = $this->getShares();
+        if (isset($shares["count"]))
+        {
+            return $shares["count"];
+        }
+        return 0;
+    }
+
+    /**
+     * @return string
+     */
+    public function getStory()
+    {
+        return $this->story;
+    }
+
+    /**
+     * @param string $story
+     */
+    public function setStory($story)
+    {
+        $this->story = $story;
+    }
 
     protected function init()
     {

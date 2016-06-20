@@ -7,13 +7,13 @@
 
 namespace CodingGuys\Stat;
 
+use CodingGuys\Document\FacebookFeed;
+use CodingGuys\Document\FacebookFeedTimestamp;
+use CodingGuys\Document\FacebookPage;
 use CodingGuys\Document\FacebookPageTimestamp;
 use CodingGuys\Exception\ClassTypeException;
 use CodingGuys\FbRepo\FbFeedDeltaRepo;
 use CodingGuys\FbRepo\FbPageDeltaRepo;
-use CodingGuys\MongoFb\CGMongoFbFeed;
-use CodingGuys\MongoFb\CGMongoFbFeedTimestamp;
-use CodingGuys\MongoFb\CGMongoFbPage;
 use CodingGuys\Document\FbPageDelta;
 use CodingGuys\Document\FbFeedDelta;
 
@@ -35,8 +35,8 @@ class FbTimestampReport extends FbFeedStat
         parent::__construct($startDate, $endDate);
         $this->filename = $filename;
         $this->batchTimeIndexes = array();
-        $this->feedDeltaRepo = new FbFeedDeltaRepo();
-        $this->pageDeltaRepo = new FbPageDeltaRepo();
+        $this->feedDeltaRepo = new FbFeedDeltaRepo($this->getFbDocumentManager());
+        $this->pageDeltaRepo = new FbPageDeltaRepo($this->getFbDocumentManager());
     }
 
     public function timestampSeriesCount($city = "mo")
@@ -85,16 +85,56 @@ class FbTimestampReport extends FbFeedStat
         $this->outputCountArray($countArray);
     }
 
-    private function getFirstBatchAverageFeedLikes(CGMongoFbPage $cgMongoFbPage)
+    private function getFirstBatchAverageFeedLikes(FacebookPage $fbPage)
     {
-        $batchTime = $cgMongoFbPage->getFirstBatchTimeWithInWindow($this->getStartDateMongoDate(), $this->getEndDateMongoDate());
-        return $cgMongoFbPage->getAverageFeedLikesInTheBatch($batchTime);
+        $repo = $this->getFeedTimestampRepo();
+        $batchTime = $repo->findFirstBatchByPageAndDateRange($fbPage->getId(), $this->getStartDateMongoDate(), $this->getEndDateMongoDate());
+
+        if (!($batchTime instanceof \MongoDate))
+        {
+            throw new \UnexpectedValueException();
+        }
+
+        $cursor = $repo->findByPageIdAndBatchTime($fbPage->getId(), $batchTime);
+
+        $total = 0;
+        $numOfRecord = $cursor->count();
+        if ($numOfRecord <= 0)
+        {
+            return 0;
+        }
+        foreach ($cursor as $timestampRecord)
+        {
+            $cgMongoFbFeedTimestamp = new FacebookFeedTimestamp($timestampRecord);
+            $total += $cgMongoFbFeedTimestamp->getLikesTotalCount();
+        }
+        return $total / $numOfRecord;
     }
 
-    private function getFirstBatchAverageFeedComments(CGMongoFbPage $cgMongoFbPage)
+    private function getFirstBatchAverageFeedComments(FacebookPage $fbPage)
     {
-        $batchTime = $cgMongoFbPage->getFirstBatchTimeWithInWindow($this->getStartDateMongoDate(), $this->getEndDateMongoDate());
-        return $cgMongoFbPage->getAverageFeedCommentsInTheBatch($batchTime);
+        $repo = $this->getFeedTimestampRepo();
+        $batchTime = $repo->findFirstBatchByPageAndDateRange($fbPage->getId(), $this->getStartDateMongoDate(), $this->getEndDateMongoDate());
+
+        if (!($batchTime instanceof \MongoDate))
+        {
+            throw new \UnexpectedValueException();
+        }
+
+        $cursor = $repo->findByPageIdAndBatchTime($fbPage->getId(), $batchTime);
+
+        $total = 0;
+        $numOfRecord = $cursor->count();
+        if ($numOfRecord <= 0)
+        {
+            return 0;
+        }
+        foreach ($cursor as $timestampRecord)
+        {
+            $cgMongoFbFeedTimestamp = new FacebookFeedTimestamp($timestampRecord);
+            $total += $cgMongoFbFeedTimestamp->getCommentsTotalCount();
+        }
+        return $total / $numOfRecord;
     }
 
     private function skipNColumn($n)
@@ -109,7 +149,7 @@ class FbTimestampReport extends FbFeedStat
 
     /**
      * @param string $fbID
-     * @return CGMongoFbPage|null
+     * @return FacebookPage|null
      */
     private function getCGFbPage($fbID)
     {
@@ -122,7 +162,7 @@ class FbTimestampReport extends FbFeedStat
 
     /**
      * @param string $fbID
-     * @return CGMongoFbFeed|null
+     * @return FacebookFeed|null
      */
     private function getCGFbFeed($fbID)
     {
@@ -163,7 +203,7 @@ class FbTimestampReport extends FbFeedStat
         $this->outputString("", true);
     }
 
-    private function outputPageDelta(CGMongoFbPage $cgFbPage)
+    private function outputPageDelta(FacebookPage $cgFbPage)
     {
         // TODO should page static only in page?
         $this->outputString($cgFbPage->getShortLink() . ",");
@@ -197,9 +237,9 @@ class FbTimestampReport extends FbFeedStat
         $this->outputString("\n");
     }
 
-    private function outputFeedDelta(CGMongoFbFeed $cgFbFeed)
+    private function outputFeedDelta(FacebookFeed $fbFeed)
     {
-        $deltas = $this->findFeedDeltaByFeedId($cgFbFeed->getId());
+        $deltas = $this->findFeedDeltaByFeedId($fbFeed->getId());
         $batchTimeIndexes = $this->batchTimeIndexes;
 
         foreach ($batchTimeIndexes as $batchTimeString => $value)
@@ -274,31 +314,29 @@ class FbTimestampReport extends FbFeedStat
     }
 
     /**
-     * @param CGMongoFbPage $cgMongoFbPage mongo raw data of fb page
-     * @param array $feedTimestampRecords array of CGMongoFbFeedTimestamp
+     * @param FacebookPage $fbPage mongo raw data of fb page
+     * @param array $feedTimestampRecords array of FacebookFeedTimestamp
      */
-    private function accumulatePageLikeAndComment(CGMongoFbPage $cgMongoFbPage, $feedTimestampRecords)
+    private function accumulatePageLikeAndComment(FacebookPage $fbPage, $feedTimestampRecords)
     {
-        $cgMongoFbPage->setFeedCount($cgMongoFbPage->getFeedCount() + 1);
+        $fbPage->setFeedCount($fbPage->getFeedCount() + 1);
 
         $ret = $this->getIndexOfMaxRecord($feedTimestampRecords);
         $record = $feedTimestampRecords[$ret['indexOfMaxLike']];
-        if (!$record instanceof CGMongoFbFeedTimestamp)
+        if (!$record instanceof FacebookFeedTimestamp)
         {
-            //TODO throw exception
-            return;
+            throw new \UnexpectedValueException();
         }
         $maxLike = $record->getLikesTotalCount();
         $record = $feedTimestampRecords[$ret['indexOfMaxComment']];
-        if (!$record instanceof CGMongoFbFeedTimestamp)
+        if (!$record instanceof FacebookFeedTimestamp)
         {
-            //TODO throw exception
-            return;
+            throw new \UnexpectedValueException();
         }
         $maxComment = $record->getCommentsTotalCount();
 
-        $cgMongoFbPage->setAccumulateLike($cgMongoFbPage->getAccumulateLike() + $maxLike);
-        $cgMongoFbPage->setAccumulateComment($cgMongoFbPage->getAccumulateComment() + $maxComment);
+        $fbPage->setAccumulateLike($fbPage->getAccumulateLike() + $maxLike);
+        $fbPage->setAccumulateComment($fbPage->getAccumulateComment() + $maxComment);
     }
 
     /**
@@ -307,10 +345,10 @@ class FbTimestampReport extends FbFeedStat
      */
     private function storeInPoolAndGenDelta($feed, $page)
     {
-        $this->feedPool[$feed["fbID"]] = new CGMongoFbFeed($feed);
+        $this->feedPool[$feed["fbID"]] = new FacebookFeed($feed);
         if (!isset($this->pagePool[$page["fbID"]]))
         {
-            $this->pagePool[$page["fbID"]] = new CGMongoFbPage($page);
+            $this->pagePool[$page["fbID"]] = new FacebookPage($page);
             $this->genPageTimestampDeltasToTmp($page["_id"]);
         }
 
@@ -340,7 +378,7 @@ class FbTimestampReport extends FbFeedStat
 
         foreach ($sortedFeedTimestampRecords as $timestampRecord)
         {
-            if ($timestampRecord instanceof CGMongoFbFeedTimestamp)
+            if ($timestampRecord instanceof FacebookFeedTimestamp)
             {
                 $batchTimeString = $timestampRecord->getBatchTimeInISO();
                 $totalLike = $timestampRecord->getLikesTotalCount();
@@ -373,7 +411,7 @@ class FbTimestampReport extends FbFeedStat
     private function genPageTimestampDeltasToTmp(\MongoId $pageId)
     {
         $cursor = $this->getPageTimestampRepo()
-            ->findTimestampByPageAndDate(
+            ->findByPageAndDate(
                 $pageId,
                 $this->getStartDateMongoDate(),
                 $this->getEndDateMongoDate()

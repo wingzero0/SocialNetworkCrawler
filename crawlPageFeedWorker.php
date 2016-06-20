@@ -9,7 +9,7 @@
 require_once(__DIR__ . '/facebook-php-sdk-v4/autoload.php');
 require_once(__DIR__ . '/CodingGuys/autoload.php');
 
-use CodingGuys\CGFeedCrawler;
+use CodingGuys\CGPageFeedCrawler;
 
 $options = getopt("", array("appId:", "appSecret:"));
 
@@ -43,7 +43,7 @@ function fbCrawler_fn(GearmanJob $job, &$options)
     echo "Received job: " . $job->handle() . "\n";
     echo "Workload: \n";
     var_dump($workload);
-    $crawler = new CGFeedCrawler($workload["fbID"], $mID, $batchTime, $appId, $appSecret);
+    $crawler = new CGPageFeedCrawler($workload["fbID"], $mID, $batchTime, $appId, $appSecret);
     echo "crawling:" . $crawler->crawl();
 
     return "Finish";

@@ -7,7 +7,7 @@
 
 namespace CodingGuys\Stat;
 
-use CodingGuys\MongoFb\CGMongoFbFeedTimestamp;
+use CodingGuys\Document\FacebookFeedTimestamp;
 
 class FbFeedStat extends FbStat
 {
@@ -100,7 +100,7 @@ class FbFeedStat extends FbStat
         $maxComment = -1;
         foreach ($timestampRecords as $record)
         {
-            if ($record instanceof CGMongoFbFeedTimestamp)
+            if ($record instanceof FacebookFeedTimestamp)
             {
                 if ($maxLike < $record->getLikesTotalCount())
                 {
@@ -121,7 +121,7 @@ class FbFeedStat extends FbStat
     }
 
     /**
-     * @param $timestampRecords array of CGMongoFbFeedTimestamp
+     * @param $timestampRecords array of FacebookFeedTimestamp
      * @return array the index of maximum record in input
      */
     protected function getIndexOfMaxRecord($timestampRecords)
@@ -132,7 +132,7 @@ class FbFeedStat extends FbStat
         $indexOfMaxComment = 0;
         foreach ($timestampRecords as $i => $record)
         {
-            if ($record instanceof CGMongoFbFeedTimestamp)
+            if ($record instanceof FacebookFeedTimestamp)
             {
                 if ($maxLike < $record->getLikesTotalCount())
                 {
@@ -154,43 +154,17 @@ class FbFeedStat extends FbStat
 
     /**
      * @param \MongoId $feedId
-     * @return array array of CGMongoFbFeedTimestamp
+     * @return array array of FacebookFeedTimestamp
      */
     protected function findTimestampByFeed(\MongoId $feedId)
     {
-        $col = $this->getFbFeedTimestampCol();
-        $query = array(
-            "batchTime" => $this->getFacebookTimestampDateRangeQuery(),
-            "fbFeed.\$id" => $feedId
-        );
-        $cursor = $col->find($query)->sort(array("batchTime" => 1));
+        $cursor = $this->getFeedTimestampRepo()->findByFeedIdAndDateRange($feedId, $this->getStartDateMongoDate(), $this->getEndDateMongoDate());
         $ret = array();
         foreach ($cursor as $feedTimestamp)
         {
-            $ret[] = new CGMongoFbFeedTimestamp($feedTimestamp);
+            $ret[] = new FacebookFeedTimestamp($feedTimestamp);
         }
         return $ret;
-    }
-
-    /**
-     * @return array mongo date query with range of $this->getStartDate() and $this->getEndDate()
-     */
-    private function getFacebookTimestampDateRangeQuery()
-    {
-        $dateRange = array();
-        if ($this->getStartDateMongoDate() != null)
-        {
-            $dateRange["\$gte"] = $this->getStartDateMongoDate();
-        }
-        if ($this->getEndDateMongoDate() != null)
-        {
-            $dateRange["\$lte"] = $this->getEndDateMongoDate();
-        }
-        if (empty($dateRange))
-        {
-            return array();
-        }
-        return $dateRange;
     }
 
     /**

@@ -140,7 +140,7 @@ class FacebookPageTimestamp extends BaseObj
     }
 
     /**
-     * @return \MongoDBRef|null
+     * @return \MongoDBRef|array|null
      */
     public function getFbPage()
     {
@@ -148,7 +148,7 @@ class FacebookPageTimestamp extends BaseObj
     }
 
     /**
-     * @param \MongoDBRef $fbPage
+     * @param \MongoDBRef|array $fbPage
      */
     public function setFbPage($fbPage)
     {
