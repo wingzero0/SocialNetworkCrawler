@@ -79,7 +79,7 @@ class FbFeedStat extends FbStat
     }
 
     /**
-     * @return \MongoCursor
+     * @return \MongoDB\Driver\Cursor
      */
     protected function findFeedByDateRange()
     {
@@ -153,10 +153,10 @@ class FbFeedStat extends FbStat
     }
 
     /**
-     * @param \MongoId $feedId
+     * @param \MongoDB\BSON\ObjectID $feedId
      * @return array array of FacebookFeedTimestamp
      */
-    protected function findTimestampByFeed(\MongoId $feedId)
+    protected function findTimestampByFeed(\MongoDB\BSON\ObjectID $feedId)
     {
         $cursor = $this->getFeedTimestampRepo()->findByFeedIdAndDateRange($feedId, $this->getStartDateMongoDate(), $this->getEndDateMongoDate());
         $ret = array();

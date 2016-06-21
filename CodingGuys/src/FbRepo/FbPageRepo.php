@@ -7,24 +7,20 @@
 
 namespace CodingGuys\FbRepo;
 
+use MongoDB\Collection as MongoDBCollection;
 
 class FbPageRepo extends FbRepo
 {
     /**
-     * @param \MongoId $mongoId
+     * @param \MongoDB\BSON\ObjectID $mongoId
      * @return array|null
      */
-    public function findOneById(\MongoId $mongoId)
+    public function findOneById(\MongoDB\BSON\ObjectID $mongoId)
     {
         $query = array("_id" => $mongoId);
-        $cursor = $this->getPageCollection()->find($query)->limit(1);
-        if ($cursor->hasNext())
-        {
-            return $cursor->getNext();
-        } else
-        {
-            return null;
-        }
+        $options = array("limit" => 1);
+        $arr = $this->getPageCollection()->find($query, $options);
+        return $arr;
     }
 
     /**
@@ -34,18 +30,13 @@ class FbPageRepo extends FbRepo
     public function findOneByFbId($fbId)
     {
         $query = array("fbID" => $fbId);
-        $cursor = $this->getPageCollection()->find($query)->limit(1);
-        if ($cursor->hasNext())
-        {
-            return $cursor->getNext();
-        } else
-        {
-            return null;
-        }
+        $options = array("limit" => 1);
+        $arr = $this->getPageCollection()->find($query, $options);
+        return $arr;
     }
 
     /**
-     * @return \MongoCursor
+     * @return \MongoDB\Driver\Cursor
      */
     public function findAll()
     {
@@ -53,7 +44,7 @@ class FbPageRepo extends FbRepo
     }
 
     /**
-     * @return \MongoCursor
+     * @return \MongoDB\Driver\Cursor
      */
     public function findAllWorkingPage()
     {
@@ -70,7 +61,7 @@ class FbPageRepo extends FbRepo
 
     /**
      * @param int $crawlTimeH
-     * @return \MongoCursor
+     * @return \MongoDB\Driver\Cursor
      */
     public function findAllWorkingPageByCrawlTime($crawlTimeH)
     {
@@ -87,7 +78,7 @@ class FbPageRepo extends FbRepo
     }
 
     /**
-     * @return \MongoCollection
+     * @return MongoDBCollection
      */
     private function getPageCollection()
     {

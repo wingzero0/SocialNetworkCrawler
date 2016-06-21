@@ -53,7 +53,7 @@ class FacebookFeedTimestamp extends BaseObj
     );
 
     /**
-     * @return \MongoId
+     * @return \MongoDB\BSON\ObjectID
      */
     public function getId()
     {
@@ -61,7 +61,7 @@ class FacebookFeedTimestamp extends BaseObj
     }
 
     /**
-     * @param \MongoId $id
+     * @param \MongoDB\BSON\ObjectID $id
      */
     public function setId($id)
     {

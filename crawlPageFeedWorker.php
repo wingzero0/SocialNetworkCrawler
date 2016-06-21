@@ -38,7 +38,7 @@ function fbCrawler_fn(GearmanJob $job, &$options)
     $appId = $options["appId"];
     $appSecret = $options["appSecret"];
     $workload = unserialize($job->workload());
-    $mID = new \MongoID($workload["_id"]);
+    $mID = new \MongoDB\BSON\ObjectID($workload["_id"]);
     $batchTime = $workload["batchTime"];
     echo "Received job: " . $job->handle() . "\n";
     echo "Workload: \n";

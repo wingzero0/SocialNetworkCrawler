@@ -264,10 +264,10 @@ class FbTimestampReport extends FbFeedStat
     }
 
     /**
-     * @param \MongoId $pageId
+     * @param \MongoDB\BSON\ObjectID $pageId
      * @return array array of FbPageDelta
      */
-    private function findPageDeltaByPageId(\MongoId $pageId)
+    private function findPageDeltaByPageId(\MongoDB\BSON\ObjectID $pageId)
     {
         $cursor = $this->pageDeltaRepo->findByPageId($pageId);
         $ret = array();
@@ -280,10 +280,10 @@ class FbTimestampReport extends FbFeedStat
     }
 
     /**
-     * @param \MongoId $feedId
+     * @param \MongoDB\BSON\ObjectID $feedId
      * @return array array of FbFeedDelta
      */
-    private function findFeedDeltaByFeedId(\MongoId $feedId)
+    private function findFeedDeltaByFeedId(\MongoDB\BSON\ObjectID $feedId)
     {
         $cursor = $this->feedDeltaRepo->findByFeedId($feedId);
         $ret = array();
@@ -366,10 +366,10 @@ class FbTimestampReport extends FbFeedStat
     }
 
     /**
-     * @param \MongoId $feedId
+     * @param \MongoDB\BSON\ObjectID $feedId
      * @return array $sortedFeedTimestampRecords
      */
-    private function genFeedTimestampDeltaToTmp(\MongoId $feedId)
+    private function genFeedTimestampDeltaToTmp(\MongoDB\BSON\ObjectID $feedId)
     {
         $sortedFeedTimestampRecords = $this->findTimestampByFeed($feedId);
 
@@ -406,9 +406,9 @@ class FbTimestampReport extends FbFeedStat
     }
 
     /**
-     * @param \MongoId $pageId
+     * @param \MongoDB\BSON\ObjectID $pageId
      */
-    private function genPageTimestampDeltasToTmp(\MongoId $pageId)
+    private function genPageTimestampDeltasToTmp(\MongoDB\BSON\ObjectID $pageId)
     {
         $cursor = $this->getPageTimestampRepo()
             ->findByPageAndDate(

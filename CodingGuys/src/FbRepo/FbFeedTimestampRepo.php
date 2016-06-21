@@ -11,11 +11,11 @@ namespace CodingGuys\FbRepo;
 class FbFeedTimestampRepo extends FbRepo
 {
     /**
-     * @param \MongoId $pageId
+     * @param \MongoDB\BSON\ObjectID $pageId
      * @param \MongoDate $batchTime
-     * @return \MongoCursor
+     * @return \MongoDB\Driver\Cursor
      */
-    public function findByPageIdAndBatchTime(\MongoId $pageId, \MongoDate $batchTime)
+    public function findByPageIdAndBatchTime(\MongoDB\BSON\ObjectID $pageId, \MongoDate $batchTime)
     {
         $col = $this->getFbDM()->getFeedTimestampCollection();
         $cursor = $col->find(array(
@@ -26,26 +26,29 @@ class FbFeedTimestampRepo extends FbRepo
     }
 
     /**
-     * @param \MongoId $feedId
+     * @param \MongoDB\BSON\ObjectID $feedId
      * @param \MongoDate $start
      * @param \MongoDate $end
-     * @return \MongoCursor
+     * @return \MongoDB\Driver\Cursor
      */
-    public function findByFeedIdAndDateRange(\MongoId $feedId, \MongoDate $start, \MongoDate $end)
+    public function findByFeedIdAndDateRange(\MongoDB\BSON\ObjectID $feedId, \MongoDate $start, \MongoDate $end)
     {
         $col = $this->getFbDM()->getFeedTimestampCollection();
         $query = array(
             "fbFeed.\$id" => $feedId,
             "batchTime" => $this->createDateRangeQuery($start, $end)
         );
-        $cursor = $col->find($query)->sort(array("batchTime" => 1));
+        $options = array(
+            "sort" => array("batchTime" => 1)
+        );
+        $cursor = $col->find($query, $options);
         return $cursor;
     }
 
     /**
      * @param \DateTime $start
      * @param \DateTime $end
-     * @return \MongoCursor
+     * @return \MongoDB\Driver\Cursor
      */
     public function findByDateRange(\DateTime $start, \DateTime $end)
     {
@@ -58,25 +61,27 @@ class FbFeedTimestampRepo extends FbRepo
     }
 
     /**
-     * @param \MongoId $pageId
+     * @param \MongoDB\BSON\ObjectID $pageId
      * @param \MongoDate $start
      * @param \MongoDate $end
      * @return \MongoDate|null
      */
-    public function findFirstBatchByPageAndDateRange(\MongoId $pageId, \MongoDate $start, \MongoDate $end)
+    public function findFirstBatchByPageAndDateRange(\MongoDB\BSON\ObjectID $pageId, \MongoDate $start, \MongoDate $end)
     {
         $col = $this->getFbDM()->getFeedTimestampCollection();
         $query = array(
             "fbPage.\$id" => $pageId,
             "batchTime" => $this->createDateRangeQuery($start, $end)
         );
-        $cursor = $col->find($query)->limit(1)->sort(array("updateTime" => 1));
-        if ($cursor->hasNext())
-        {
-            $v = $cursor->getNext();
-            return $v["batchTime"];
+        $options = array(
+            "sort" => array("updateTime" => 1)
+        );
+        $arr = $col->findOne($query, $options);
+        if ($arr != null){
+            return $arr["batchTime"];
+        } else {
+            return null;
         }
-        return null;
     }
 
     /**

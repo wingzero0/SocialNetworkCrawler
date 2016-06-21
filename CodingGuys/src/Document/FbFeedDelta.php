@@ -114,7 +114,7 @@ class FbFeedDelta extends BaseObj
     }
 
     /**
-     * @return \MongoId
+     * @return \MongoDB\BSON\ObjectID
      */
     public function getId()
     {
@@ -122,10 +122,10 @@ class FbFeedDelta extends BaseObj
     }
 
     /**
-     * @param \MongoId $id
+     * @param \MongoDB\BSON\ObjectID $id
      * @return self
      */
-    public function setId(\MongoId $id)
+    public function setId(\MongoDB\BSON\ObjectID $id)
     {
         $this->_id = $id;
         return $this;

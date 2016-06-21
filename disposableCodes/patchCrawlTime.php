@@ -35,7 +35,7 @@ foreach ($cursor as $pageRaw)
 echo "\ntotal updated:" . $updateCount . "\n";
 
 /**
- * @param \MongoId $mongoId
+ * @param \MongoDB\BSON\ObjectID $mongoId
  * @param array $crawlTime
  * @return int
  */

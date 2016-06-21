@@ -28,7 +28,7 @@ class CGPageFeedCrawler extends CGFbCrawler
 
     /**
      * @param string $pageFbId
-     * @param \MongoId $pageMongoId
+     * @param \MongoDB\BSON\ObjectID $pageMongoId
      * @param \MongoDate $batchTime
      * @param string $appId
      * @param string $appSecret
@@ -351,7 +351,7 @@ class CGPageFeedCrawler extends CGFbCrawler
 
     /**
      * @param FacebookFeed $feedObj
-     * @param \MongoId $feedMongoId
+     * @param \MongoDB\BSON\ObjectID $feedMongoId
      * @return FacebookFeedTimestamp
      */
     private function createFeedTimestamp($feedObj, $feedMongoId = null)
@@ -377,7 +377,7 @@ class CGPageFeedCrawler extends CGFbCrawler
 
         $fbDM = $this->getFbDM();
         $timestamp->setFbPage($fbDM->createPageRef($this->pageMongoId));
-        if (!($feedMongoId instanceof \MongoId))
+        if (!($feedMongoId instanceof \MongoDB\BSON\ObjectID))
         {
             $feedMongoId = $this->getFeedMongoId($feedObj->getFbId());
         }
@@ -391,7 +391,7 @@ class CGPageFeedCrawler extends CGFbCrawler
 
     /**
      * @param string $fbID
-     * @return \MongoId|null
+     * @return \MongoDB\BSON\ObjectID|null
      */
     private function getFeedMongoId($fbID)
     {

@@ -11,12 +11,12 @@ namespace CodingGuys\FbRepo;
 class FbPageTimestampRepo extends FbRepo
 {
     /**
-     * @param \MongoId $pageId
+     * @param \MongoDB\BSON\ObjectID $pageId
      * @param \MongoDate $endDate
      * @param \MongoDate $startDate
-     * @return \MongoCursor
+     * @return \MongoDB\Driver\Cursor
      */
-    public function findByPageAndDate(\MongoId $pageId, \MongoDate $startDate = null, \MongoDate $endDate = null)
+    public function findByPageAndDate(\MongoDB\BSON\ObjectID $pageId, \MongoDate $startDate = null, \MongoDate $endDate = null)
     {
         $col = $this->getPageTimestampCollection();
         $query = array(
@@ -29,21 +29,28 @@ class FbPageTimestampRepo extends FbRepo
             $query = array_merge($dateRange, $query);
         }
 
-        return $col->find($query)->sort(array("batchTime" => 1));
+        $options = array( "sort" => array("batchTime" => 1));
+        return $col->find($query, $options);
     }
 
     /**
      * @param \MongoDate|null $startDate
      * @param \MongoDate|null $endDate
-     * @return \MongoCursor
+     * @return \MongoDB\Driver\Cursor
      */
     public function findByDateRange(\MongoDate $startDate = null, \MongoDate $endDate = null)
     {
         $col = $this->getPageTimestampCollection();
         $dateRange = $this->createBatchDateRangeQuery($startDate, $endDate);
-        return $col->find($dateRange)->sort(array("batchTime" => 1));
+        $options = array( "sort" => array("batchTime" => 1));
+        return $col->find($dateRange, $options);
     }
 
+    /**
+     * @param \MongoDate|null $startDate
+     * @param \MongoDate|null $endDate
+     * @return array
+     */
     private function createBatchDateRangeQuery(\MongoDate $startDate = null, \MongoDate $endDate = null)
     {
         $dateRange = array();
@@ -64,6 +71,9 @@ class FbPageTimestampRepo extends FbRepo
         }
     }
 
+    /**
+     * @return \MongoDB\Collection
+     */
     private function getPageTimestampCollection()
     {
         return $this->getFbDM()->getPageTimestampCollection();
