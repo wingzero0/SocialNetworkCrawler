@@ -52,19 +52,14 @@ class FbTimestampReport extends FbFeedStat
         while (1)
         {
             // TODO should start from Page, not from feed
-            $cursor = $this->findFeedByDateRange()->skip($i)->limit(100);
-            if (!$cursor->hasNext())
-            {
-                break;
-            } else
-            {
-                //$this->checkTime(false, "working on feed:" . $i . "\n");
-                fprintf($this->STDERR, "working on feed:" . $i . "\n");
-            }
+            $cursor = $this->findFeedByDateRange($i, 100);
+
+            fprintf($this->STDERR, "working on feed:" . $i . "\n");
+            $lastCount = $i;
             foreach ($cursor as $feed)
             {
                 $i++;
-                $page = \MongoDBRef::get($this->getFbDocumentManager()->getMongoDB(), $feed["fbPage"]);
+                $page = $this->getFbDocumentManager()->dbRefHelper($feed["fbPage"]);
                 if ($page["mnemono"]["location"]["city"] != $city)
                 {
                     continue;
@@ -75,8 +70,11 @@ class FbTimestampReport extends FbFeedStat
                     $countArray[$page["fbID"]][$feed["fbID"]] = 1;
                 } catch (\UnexpectedValueException $e)
                 {
-                    $this->logToSTDERR($e->getTraceAsString());
+                    $this->logToSTDERR($e->getMessage() . " " . $e->getTraceAsString());
                 }
+            }
+            if ($lastCount == $i){
+                break;
             }
         }
 
@@ -90,7 +88,7 @@ class FbTimestampReport extends FbFeedStat
         $repo = $this->getFeedTimestampRepo();
         $batchTime = $repo->findFirstBatchByPageAndDateRange($fbPage->getId(), $this->getStartDateMongoDate(), $this->getEndDateMongoDate());
 
-        if (!($batchTime instanceof \MongoDate))
+        if (!($batchTime instanceof \MongoDB\BSON\UTCDateTime))
         {
             throw new \UnexpectedValueException();
         }
@@ -98,15 +96,15 @@ class FbTimestampReport extends FbFeedStat
         $cursor = $repo->findByPageIdAndBatchTime($fbPage->getId(), $batchTime);
 
         $total = 0;
-        $numOfRecord = $cursor->count();
-        if ($numOfRecord <= 0)
-        {
-            return 0;
-        }
+        $numOfRecord = 0;
         foreach ($cursor as $timestampRecord)
         {
+            $numOfRecord++;
             $cgMongoFbFeedTimestamp = new FacebookFeedTimestamp($timestampRecord);
             $total += $cgMongoFbFeedTimestamp->getLikesTotalCount();
+        }
+        if ($numOfRecord ==0){
+            return 0;
         }
         return $total / $numOfRecord;
     }
@@ -116,7 +114,7 @@ class FbTimestampReport extends FbFeedStat
         $repo = $this->getFeedTimestampRepo();
         $batchTime = $repo->findFirstBatchByPageAndDateRange($fbPage->getId(), $this->getStartDateMongoDate(), $this->getEndDateMongoDate());
 
-        if (!($batchTime instanceof \MongoDate))
+        if (!($batchTime instanceof \MongoDB\BSON\UTCDateTime))
         {
             throw new \UnexpectedValueException();
         }
@@ -124,15 +122,15 @@ class FbTimestampReport extends FbFeedStat
         $cursor = $repo->findByPageIdAndBatchTime($fbPage->getId(), $batchTime);
 
         $total = 0;
-        $numOfRecord = $cursor->count();
-        if ($numOfRecord <= 0)
-        {
-            return 0;
-        }
+        $numOfRecord = 0;
         foreach ($cursor as $timestampRecord)
         {
+            $numOfRecord++;
             $cgMongoFbFeedTimestamp = new FacebookFeedTimestamp($timestampRecord);
             $total += $cgMongoFbFeedTimestamp->getCommentsTotalCount();
+        }
+        if ($numOfRecord ==0){
+            return 0;
         }
         return $total / $numOfRecord;
     }
@@ -180,6 +178,7 @@ class FbTimestampReport extends FbFeedStat
         foreach ($matrix as $pageId => $page)
         {
             $cgFbPage = $this->getCGFbPage($pageId);
+            var_dump($cgFbPage);
             $this->outputPageDelta($cgFbPage);
             $firstBatchAvgLikes = $this->getFirstBatchAverageFeedLikes($cgFbPage);
             $firstBatchAvgComments = $this->getFirstBatchAverageFeedComments($cgFbPage);
@@ -349,6 +348,7 @@ class FbTimestampReport extends FbFeedStat
         if (!isset($this->pagePool[$page["fbID"]]))
         {
             $this->pagePool[$page["fbID"]] = new FacebookPage($page);
+            var_dump($this->pagePool[$page["fbID"]]);
             $this->genPageTimestampDeltasToTmp($page["_id"]);
         }
 
@@ -397,7 +397,6 @@ class FbTimestampReport extends FbFeedStat
                     ->setFbFeedRef(
                         $dm->createFeedRef($feedId)
                     );
-
                 $dm->writeToDB($feedDelta);
                 $this->batchTimeIndexes[$feedDelta->getDateStr()] = 1;
             }
@@ -479,6 +478,8 @@ class FbTimestampReport extends FbFeedStat
 
     private function logToSTDERR($msg)
     {
-        fprintf($this->STDERR, $msg);
+        $dateTime = new \DateTime();
+        $dateISO = $dateTime->format(\DateTime::ISO8601);
+        fprintf($this->STDERR, $dateISO . " " . $msg . "\n");
     }
 }

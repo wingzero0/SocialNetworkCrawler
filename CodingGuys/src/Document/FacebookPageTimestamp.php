@@ -156,7 +156,7 @@ class FacebookPageTimestamp extends BaseObj
     }
 
     /**
-     * @return \MongoDate|null
+     * @return \MongoDB\BSON\UTCDateTime|null
      */
     public function getUpdateTime()
     {
@@ -164,15 +164,15 @@ class FacebookPageTimestamp extends BaseObj
     }
 
     /**
-     * @param \MongoDate $updateTime
+     * @param \MongoDB\BSON\UTCDateTime $updateTime
      */
-    public function setUpdateTime(\MongoDate $updateTime = null)
+    public function setUpdateTime(\MongoDB\BSON\UTCDateTime $updateTime = null)
     {
         $this->updateTime = $updateTime;
     }
 
     /**
-     * @return \MongoDate|null
+     * @return \MongoDB\BSON\UTCDateTime|null
      */
     public function getBatchTime()
     {
@@ -180,9 +180,9 @@ class FacebookPageTimestamp extends BaseObj
     }
 
     /**
-     * @param \MongoDate $batchTime
+     * @param \MongoDB\BSON\UTCDateTime $batchTime
      */
-    public function setBatchTime(\MongoDate $batchTime = null)
+    public function setBatchTime(\MongoDB\BSON\UTCDateTime $batchTime = null)
     {
         $this->batchTime = $batchTime;
     }
@@ -190,7 +190,7 @@ class FacebookPageTimestamp extends BaseObj
     public function getBatchTimeInISO()
     {
         $batchTime = $this->getBatchTime();
-        if ($batchTime instanceof \MongoDate)
+        if ($batchTime instanceof \MongoDB\BSON\UTCDateTime)
         {
             $isoStr = DateUtility::convertMongoDateToISODate($batchTime);
             return $isoStr;

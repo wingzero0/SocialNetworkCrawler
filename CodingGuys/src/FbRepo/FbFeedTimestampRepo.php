@@ -8,14 +8,16 @@
 namespace CodingGuys\FbRepo;
 
 
+use CodingGuys\Utility\DateUtility;
+
 class FbFeedTimestampRepo extends FbRepo
 {
     /**
      * @param \MongoDB\BSON\ObjectID $pageId
-     * @param \MongoDate $batchTime
+     * @param \MongoDB\BSON\UTCDateTime $batchTime
      * @return \MongoDB\Driver\Cursor
      */
-    public function findByPageIdAndBatchTime(\MongoDB\BSON\ObjectID $pageId, \MongoDate $batchTime)
+    public function findByPageIdAndBatchTime(\MongoDB\BSON\ObjectID $pageId, \MongoDB\BSON\UTCDateTime $batchTime)
     {
         $col = $this->getFbDM()->getFeedTimestampCollection();
         $cursor = $col->find(array(
@@ -27,11 +29,11 @@ class FbFeedTimestampRepo extends FbRepo
 
     /**
      * @param \MongoDB\BSON\ObjectID $feedId
-     * @param \MongoDate $start
-     * @param \MongoDate $end
+     * @param \MongoDB\BSON\UTCDateTime $start
+     * @param \MongoDB\BSON\UTCDateTime $end
      * @return \MongoDB\Driver\Cursor
      */
-    public function findByFeedIdAndDateRange(\MongoDB\BSON\ObjectID $feedId, \MongoDate $start, \MongoDate $end)
+    public function findByFeedIdAndDateRange(\MongoDB\BSON\ObjectID $feedId, \MongoDB\BSON\UTCDateTime $start, \MongoDB\BSON\UTCDateTime $end)
     {
         $col = $this->getFbDM()->getFeedTimestampCollection();
         $query = array(
@@ -62,11 +64,11 @@ class FbFeedTimestampRepo extends FbRepo
 
     /**
      * @param \MongoDB\BSON\ObjectID $pageId
-     * @param \MongoDate $start
-     * @param \MongoDate $end
-     * @return \MongoDate|null
+     * @param \MongoDB\BSON\UTCDateTime $start
+     * @param \MongoDB\BSON\UTCDateTime $end
+     * @return \MongoDB\BSON\UTCDateTime|null
      */
-    public function findFirstBatchByPageAndDateRange(\MongoDB\BSON\ObjectID $pageId, \MongoDate $start, \MongoDate $end)
+    public function findFirstBatchByPageAndDateRange(\MongoDB\BSON\ObjectID $pageId, \MongoDB\BSON\UTCDateTime $start, \MongoDB\BSON\UTCDateTime $end)
     {
         $col = $this->getFbDM()->getFeedTimestampCollection();
         $query = array(
@@ -85,8 +87,8 @@ class FbFeedTimestampRepo extends FbRepo
     }
 
     /**
-     * @param \MongoDate|\DateTime $start
-     * @param \MongoDate|\DateTime $end
+     * @param \MongoDB\BSON\UTCDateTime|\DateTime $start
+     * @param \MongoDB\BSON\UTCDateTime|\DateTime $end
      * @return array
      */
     private function createDateRangeQuery($start, $end)
@@ -96,9 +98,9 @@ class FbFeedTimestampRepo extends FbRepo
         {
             if ($start instanceof \DateTime)
             {
-                $start = new \MongoDate($start->getTimestamp());
+                $start = DateUtility::convertDateTimeToMongoDate($start);
             }
-            if ($start instanceof \MongoDate)
+            if ($start instanceof \MongoDB\BSON\UTCDateTime)
             {
                 $dateRange["\$gte"] = $start;
             }
@@ -107,9 +109,9 @@ class FbFeedTimestampRepo extends FbRepo
         {
             if ($end instanceof \DateTime)
             {
-                $end = new \MongoDate($end->getTimestamp());
+                $end = DateUtility::convertDateTimeToMongoDate($end);
             }
-            if ($end instanceof \MongoDate)
+            if ($end instanceof \MongoDB\BSON\UTCDateTime)
             {
                 $dateRange["\$lte"] = $end;
             }

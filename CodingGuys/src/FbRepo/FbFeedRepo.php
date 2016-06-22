@@ -33,9 +33,12 @@ class FbFeedRepo extends FbRepo
     /**
      * @param \DateTime $startDate
      * @param \DateTime $endDate
+     * @param int $skip
+     * @param int $limit
      * @return \MongoDB\Driver\Cursor
      */
-    public function findFeedByCreatedTime(\DateTime $startDate = null, \DateTime $endDate = null)
+    public function findFeedByCreatedTime(\DateTime $startDate = null, \DateTime $endDate = null,
+                                          $skip = 0, $limit = 0)
     {
         $dateRange = array();
         if ($startDate != null)
@@ -53,9 +56,13 @@ class FbFeedRepo extends FbRepo
 
         if (empty($dateRange))
         {
-            return $this->getFeedCollection()->find();
+            $query = array();
+        } else
+        {
+            $query = array("created_time" => $dateRange);
         }
-        return $this->getFeedCollection()->find(array("created_time" => $dateRange));
+        $options = array("skip" => $skip, "limit" => $limit);
+        return $this->getFeedCollection()->find($query, $options);
     }
 
     /**

@@ -29,11 +29,11 @@ class CGPageFeedCrawler extends CGFbCrawler
     /**
      * @param string $pageFbId
      * @param \MongoDB\BSON\ObjectID $pageMongoId
-     * @param \MongoDate $batchTime
+     * @param \MongoDB\BSON\UTCDateTime $batchTime
      * @param string $appId
      * @param string $appSecret
      */
-    public function __construct($pageFbId, $pageMongoId, \MongoDate $batchTime, $appId, $appSecret)
+    public function __construct($pageFbId, $pageMongoId, \MongoDB\BSON\UTCDateTime $batchTime, $appId, $appSecret)
     {
         parent::__construct($appId, $appSecret);
         $this->pageFbId = $pageFbId;
@@ -200,7 +200,7 @@ class CGPageFeedCrawler extends CGFbCrawler
         }
 
         $doc->setFbPage($this->getFbDM()->createPageRef($this->pageMongoId));
-        $doc->setUpdateTime(new \MongoDate());
+        $doc->setUpdateTime(new \MongoDB\BSON\UTCDateTime());
         $doc->setBatchTime($this->batchTime);
 
         $this->getFbDM()->writeToDB($doc);
@@ -382,7 +382,7 @@ class CGPageFeedCrawler extends CGFbCrawler
             $feedMongoId = $this->getFeedMongoId($feedObj->getFbId());
         }
         $timestamp->setFbFeed($fbDM->createFeedRef($feedMongoId));
-        $timestamp->setUpdateTime(new \MongoDate());
+        $timestamp->setUpdateTime(new \MongoDB\BSON\UTCDateTime());
         $timestamp->setBatchTime($this->batchTime);
         $fbDM->writeToDB($timestamp);
 
@@ -413,7 +413,7 @@ class CGPageFeedCrawler extends CGFbCrawler
         $pageRaw = $this->getFbPageRepo()->findOneByFbId($pageFbId);
         $errPage = new FacebookExceptionPage($pageRaw);
         $errPage->setException(true);
-        $errPage->setExceptionTime(new \MongoDate());
+        $errPage->setExceptionTime(new \MongoDB\BSON\UTCDateTime());
         $errPage->setId(null);
 
         if ($e instanceof FacebookRequestException)

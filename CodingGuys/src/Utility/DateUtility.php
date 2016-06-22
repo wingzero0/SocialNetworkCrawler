@@ -11,32 +11,30 @@ namespace CodingGuys\Utility;
 class DateUtility
 {
     /**
-     * @param \MongoDate $mongoDate
+     * @param \MongoDB\BSON\UTCDateTime $mongoDate
      * @return string
      */
-    static function convertMongoDateToISODate(\MongoDate $mongoDate)
+    static function convertMongoDateToISODate(\MongoDB\BSON\UTCDateTime $mongoDate)
     {
         $dateTime = DateUtility::convertMongoDateToDateTime($mongoDate);
         return $dateTime->format(\DateTime::ISO8601);
     }
 
     /**
-     * @param \MongoDate $mongoDate
+     * @param \MongoDB\BSON\UTCDateTime $mongoDate
      * @return \DateTime
      */
-    static function convertMongoDateToDateTime(\MongoDate $mongoDate)
+    static function convertMongoDateToDateTime(\MongoDB\BSON\UTCDateTime $mongoDate)
     {
-        $dateTime = new \DateTime();
-        $dateTime->setTimestamp($mongoDate->sec);
-        return $dateTime;
+        return $mongoDate->toDateTime();
     }
 
     /**
      * @param \DateTime $dateTime
-     * @return \MongoDate
+     * @return \MongoDB\BSON\UTCDateTime
      */
     static function convertDateTimeToMongoDate(\DateTime $dateTime)
     {
-        return new \MongoDate($dateTime->getTimestamp());
+        return new \MongoDB\BSON\UTCDateTime($dateTime->getTimestamp() * 1000);
     }
 }

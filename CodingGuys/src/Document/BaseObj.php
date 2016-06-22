@@ -23,17 +23,24 @@ abstract class BaseObj
     }
 
     /**
-     * @param array $mongoRawData
+     * @param array|\ArrayObject $mongoRawData
      */
     public function setMongoRawData($mongoRawData)
     {
-        $this->mongoRawData = $mongoRawData;
+        if ($mongoRawData instanceof \ArrayObject){
+            $this->mongoRawData = $mongoRawData->getArrayCopy();
+        }else if (is_array($mongoRawData)){
+            $this->mongoRawData;
+        }else{
+            throw new \UnexpectedValueException("need an array to init object");
+        }
         $this->init();
     }
 
     public function __construct($mongoRawData = null)
     {
-        if (is_array($mongoRawData) && !empty($mongoRawData))
+        if ( (is_array($mongoRawData)|| $mongoRawData instanceOf \ArrayObject)
+            && !empty($mongoRawData))
         {
             $this->setMongoRawData($mongoRawData);
         } else

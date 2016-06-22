@@ -174,7 +174,7 @@ class FacebookFeedTimestamp extends BaseObj
     }
 
     /**
-     * @return \MongoDate
+     * @return \MongoDB\BSON\UTCDateTime
      */
     public function getUpdateTime()
     {
@@ -182,15 +182,15 @@ class FacebookFeedTimestamp extends BaseObj
     }
 
     /**
-     * @param \MongoDate $updateTime
+     * @param \MongoDB\BSON\UTCDateTime $updateTime
      */
-    public function setUpdateTime(\MongoDate $updateTime)
+    public function setUpdateTime(\MongoDB\BSON\UTCDateTime $updateTime)
     {
         $this->updateTime = $updateTime;
     }
 
     /**
-     * @return \MongoDate
+     * @return \MongoDB\BSON\UTCDateTime
      */
     public function getBatchTime()
     {
@@ -198,9 +198,9 @@ class FacebookFeedTimestamp extends BaseObj
     }
 
     /**
-     * @param \MongoDate $batchTime
+     * @param \MongoDB\BSON\UTCDateTime $batchTime
      */
-    public function setBatchTime(\MongoDate $batchTime)
+    public function setBatchTime(\MongoDB\BSON\UTCDateTime $batchTime)
     {
         $this->batchTime = $batchTime;
     }

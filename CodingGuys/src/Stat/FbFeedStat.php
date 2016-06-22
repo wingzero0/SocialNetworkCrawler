@@ -8,6 +8,7 @@
 namespace CodingGuys\Stat;
 
 use CodingGuys\Document\FacebookFeedTimestamp;
+use CodingGuys\Utility\DateUtility;
 
 class FbFeedStat extends FbStat
 {
@@ -27,7 +28,7 @@ class FbFeedStat extends FbStat
         $this->startDateDateTime = $startDate;
         if ($startDate != null)
         {
-            $this->startDateMongoDate = new \MongoDate($startDate->getTimestamp());
+            $this->startDateMongoDate = DateUtility::convertDateTimeToMongoDate($startDate);
         } else
         {
             $this->startDateMongoDate = null;
@@ -36,7 +37,7 @@ class FbFeedStat extends FbStat
         $this->endDateDateTime = $endDate;
         if ($endDate != null)
         {
-            $this->endDateMongoDate = new \MongoDate($endDate->getTimestamp());
+            $this->endDateMongoDate = DateUtility::convertDateTimeToMongoDate($endDate);
         } else
         {
             $this->endDateMongoDate = null;
@@ -79,12 +80,14 @@ class FbFeedStat extends FbStat
     }
 
     /**
+     * @param int $skip
+     * @param int $limit
      * @return \MongoDB\Driver\Cursor
      */
-    protected function findFeedByDateRange()
+    protected function findFeedByDateRange($skip = 0, $limit = 0)
     {
         $repo = $this->getFeedRepo();
-        return $repo->findFeedByCreatedTime($this->getStartDateDateTime(), $this->getEndDateDateTime());
+        return $repo->findFeedByCreatedTime($this->getStartDateDateTime(), $this->getEndDateDateTime(), $skip, $limit);
     }
 
     /**
@@ -168,7 +171,7 @@ class FbFeedStat extends FbStat
     }
 
     /**
-     * @return \MongoDate|null
+     * @return \MongoDB\BSON\UTCDateTime|null
      */
     public function getStartDateMongoDate()
     {
@@ -176,7 +179,7 @@ class FbFeedStat extends FbStat
     }
 
     /**
-     * @return \MongoDate|null
+     * @return \MongoDB\BSON\UTCDateTime|null
      */
     public function getEndDateMongoDate()
     {

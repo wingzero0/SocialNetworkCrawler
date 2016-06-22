@@ -55,6 +55,7 @@ class FbDocumentManager
         } else
         {
             $result = $col->insertOne($serialize);
+            $serialize["_id"] = $result->getInsertedId();
             $obj->setMongoRawData($serialize);
         }
         return $result;
@@ -226,5 +227,17 @@ class FbDocumentManager
     public function createFeedRef(\MongoDB\BSON\ObjectID $mongoId)
     {
         return array("\$ref" => FacebookFeed::TARGET_COLLECTION, "\$id" => $mongoId);
+    }
+
+    /**
+     * @param array $dbRef
+     * @return array|null|object
+     */
+    public function dbRefHelper($dbRef){
+        if (!isset($dbRef["\$ref"]) || !isset($dbRef["\$id"])){
+            throw new \UnexpectedValueException("required \$ref, \$id in the array");
+        }
+        $col = $this->getMongoCollection($dbRef["\$ref"]);
+        return $col->findOne(array("_id" => $dbRef["\$id"]));
     }
 } 
