@@ -178,7 +178,6 @@ class FbTimestampReport extends FbFeedStat
         foreach ($matrix as $pageId => $page)
         {
             $cgFbPage = $this->getCGFbPage($pageId);
-            var_dump($cgFbPage);
             $this->outputPageDelta($cgFbPage);
             $firstBatchAvgLikes = $this->getFirstBatchAverageFeedLikes($cgFbPage);
             $firstBatchAvgComments = $this->getFirstBatchAverageFeedComments($cgFbPage);
@@ -348,7 +347,6 @@ class FbTimestampReport extends FbFeedStat
         if (!isset($this->pagePool[$page["fbID"]]))
         {
             $this->pagePool[$page["fbID"]] = new FacebookPage($page);
-            var_dump($this->pagePool[$page["fbID"]]);
             $this->genPageTimestampDeltasToTmp($page["_id"]);
         }
 

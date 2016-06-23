@@ -8,6 +8,7 @@
 namespace CodingGuys\Document;
 
 use CodingGuys\Exception\KeyNotExistsException;
+use MongoDB\Exception\UnexpectedValueException;
 
 class FbFeedDelta extends BaseObj
 {
@@ -27,7 +28,7 @@ class FbFeedDelta extends BaseObj
             $this->setId($id);
         } catch (KeyNotExistsException $e)
         {
-            $this->setId(null);
+            throw new \UnexpectedValueException("_id should not be null");
         }
 
         try

@@ -30,7 +30,7 @@ abstract class BaseObj
         if ($mongoRawData instanceof \ArrayObject){
             $this->mongoRawData = $mongoRawData->getArrayCopy();
         }else if (is_array($mongoRawData)){
-            $this->mongoRawData;
+            $this->mongoRawData = $mongoRawData;
         }else{
             throw new \UnexpectedValueException("need an array to init object");
         }

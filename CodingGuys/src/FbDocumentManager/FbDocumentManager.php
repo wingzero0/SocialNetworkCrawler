@@ -44,19 +44,19 @@ class FbDocumentManager
     {
         $col = $this->getObjCollection($obj);
 
-        $serialize = $obj->toArray();
-        ksort($serialize);
+        $arr = $obj->toArray();
+        ksort($arr);
         if ($obj->getId() instanceof \MongoDB\BSON\ObjectID)
         {
             $result = $col->findOneAndUpdate(
                 array("_id" => $obj->getId()),
-                $serialize
+                $arr
             );
         } else
         {
-            $result = $col->insertOne($serialize);
-            $serialize["_id"] = $result->getInsertedId();
-            $obj->setMongoRawData($serialize);
+            $result = $col->insertOne($arr);
+            $arr["_id"] = $result->getInsertedId();
+            $obj->setMongoRawData($arr);
         }
         return $result;
     }
