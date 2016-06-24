@@ -451,7 +451,7 @@ class FacebookFeed extends BaseObj
     }
 
     /**
-     * @return \MongoDBRef
+     * @return array
      */
     public function getFbPage()
     {
@@ -459,7 +459,7 @@ class FacebookFeed extends BaseObj
     }
 
     /**
-     * @param \MongoDBRef $fbPage
+     * @param array $fbPage
      */
     public function setFbPage($fbPage)
     {

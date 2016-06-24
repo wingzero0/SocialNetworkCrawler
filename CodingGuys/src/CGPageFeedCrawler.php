@@ -13,6 +13,7 @@ use CodingGuys\Document\FacebookFeedTimestamp;
 use CodingGuys\Document\FacebookPage;
 use CodingGuys\Document\FacebookPageTimestamp;
 use CodingGuys\FbRepo\FbFeedRepo;
+use CodingGuys\Utility\DateUtility;
 use Facebook\FacebookRequest;
 use Facebook\FacebookRequestException;
 
@@ -200,7 +201,7 @@ class CGPageFeedCrawler extends CGFbCrawler
         }
 
         $doc->setFbPage($this->getFbDM()->createPageRef($this->pageMongoId));
-        $doc->setUpdateTime(new \MongoDB\BSON\UTCDateTime());
+        $doc->setUpdateTime(DateUtility::getCurrentMongoDate());
         $doc->setBatchTime($this->batchTime);
 
         $this->getFbDM()->writeToDB($doc);
@@ -382,7 +383,7 @@ class CGPageFeedCrawler extends CGFbCrawler
             $feedMongoId = $this->getFeedMongoId($feedObj->getFbId());
         }
         $timestamp->setFbFeed($fbDM->createFeedRef($feedMongoId));
-        $timestamp->setUpdateTime(new \MongoDB\BSON\UTCDateTime());
+        $timestamp->setUpdateTime(DateUtility::getCurrentMongoDate());
         $timestamp->setBatchTime($this->batchTime);
         $fbDM->writeToDB($timestamp);
 
@@ -413,7 +414,7 @@ class CGPageFeedCrawler extends CGFbCrawler
         $pageRaw = $this->getFbPageRepo()->findOneByFbId($pageFbId);
         $errPage = new FacebookExceptionPage($pageRaw);
         $errPage->setException(true);
-        $errPage->setExceptionTime(new \MongoDB\BSON\UTCDateTime());
+        $errPage->setExceptionTime(DateUtility::getCurrentMongoDate());
         $errPage->setId(null);
 
         if ($e instanceof FacebookRequestException)

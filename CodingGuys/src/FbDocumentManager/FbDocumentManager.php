@@ -50,7 +50,7 @@ class FbDocumentManager
         {
             $result = $col->findOneAndUpdate(
                 array("_id" => $obj->getId()),
-                $arr
+                array("\$set" => $arr)
             );
         } else
         {
@@ -99,7 +99,7 @@ class FbDocumentManager
         {
             $result = $col->findOneAndUpdate(
                 $queryCondition,
-                $serialize,
+                array("\$set" => $serialize),
                 array("upsert" => true)
             );
         }

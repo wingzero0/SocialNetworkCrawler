@@ -8,8 +8,10 @@
 
 require_once(__DIR__ . '/facebook-php-sdk-v4/autoload.php');
 require_once(__DIR__ . '/CodingGuys/autoload.php');
+require_once(__DIR__ . '/vendor/autoload.php');
 
 use CodingGuys\CGPageFeedCrawler;
+use CodingGuys\Utility\DateUtility;
 
 $options = getopt("", array("appId:", "appSecret:"));
 
@@ -39,7 +41,9 @@ function fbCrawler_fn(GearmanJob $job, &$options)
     $appSecret = $options["appSecret"];
     $workload = unserialize($job->workload());
     $mID = new \MongoDB\BSON\ObjectID($workload["_id"]);
-    $batchTime = $workload["batchTime"];
+    $batchTime = DateUtility::convertDateTimeToMongoDate(
+        DateTime::createFromFormat(DateTime::ISO8601,$workload["batchTime"])
+    );
     echo "Received job: " . $job->handle() . "\n";
     echo "Workload: \n";
     var_dump($workload);

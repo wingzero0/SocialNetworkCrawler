@@ -17,6 +17,7 @@ class DateUtility
     static function convertMongoDateToISODate(\MongoDB\BSON\UTCDateTime $mongoDate)
     {
         $dateTime = DateUtility::convertMongoDateToDateTime($mongoDate);
+        $dateTime->setTimezone(new \DateTimeZone(date_default_timezone_get()));
         return $dateTime->format(\DateTime::ISO8601);
     }
 
@@ -36,5 +37,13 @@ class DateUtility
     static function convertDateTimeToMongoDate(\DateTime $dateTime)
     {
         return new \MongoDB\BSON\UTCDateTime($dateTime->getTimestamp() * 1000);
+    }
+
+    /**
+     * @return \MongoDB\BSON\UTCDateTime
+     */
+    static function getCurrentMongoDate()
+    {
+        return DateUtility::convertDateTimeToMongoDate(new \DateTime());
     }
 }

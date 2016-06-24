@@ -18,8 +18,7 @@ class FbPageRepo extends FbRepo
     public function findOneById(\MongoDB\BSON\ObjectID $mongoId)
     {
         $query = array("_id" => $mongoId);
-        $options = array("limit" => 1);
-        $arr = $this->getPageCollection()->find($query, $options);
+        $arr = $this->getPageCollection()->findOne($query);
         return $arr;
     }
 
@@ -30,8 +29,7 @@ class FbPageRepo extends FbRepo
     public function findOneByFbId($fbId)
     {
         $query = array("fbID" => $fbId);
-        $options = array("limit" => 1);
-        $arr = $this->getPageCollection()->find($query, $options);
+        $arr = $this->getPageCollection()->findOne($query);
         return $arr;
     }
 
