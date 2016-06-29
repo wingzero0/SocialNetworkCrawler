@@ -17,6 +17,9 @@ use CodingGuys\Document\FacebookPageTimestamp;
 use CodingGuys\Document\FbFeedDelta;
 use CodingGuys\Document\FbPageDelta;
 use CodingGuys\Exception\CollectionNotExist;
+use MongoDB\Client as MongoDBClient;
+use MongoDB\Collection as MongoDBCollection;
+use MongoDB\Database as MongoDBDatabase;
 
 class FbDocumentManager
 {
@@ -41,25 +44,26 @@ class FbDocumentManager
     {
         $col = $this->getObjCollection($obj);
 
-        $serialize = $obj->toArray();
-        ksort($serialize);
-        if ($obj->getId() instanceof \MongoId)
+        $arr = $obj->toArray();
+        ksort($arr);
+        if ($obj->getId() instanceof \MongoDB\BSON\ObjectID)
         {
-            $result = $col->findAndModify(
+            $result = $col->findOneAndUpdate(
                 array("_id" => $obj->getId()),
-                $serialize
+                array("\$set" => $arr)
             );
         } else
         {
-            $result = $col->insert($serialize);
-            $obj->setMongoRawData($serialize);
+            $result = $col->insertOne($arr);
+            $arr["_id"] = $result->getInsertedId();
+            $obj->setMongoRawData($arr);
         }
         return $result;
     }
 
     /**
      * @param BaseObj $obj
-     * @return \MongoCollection
+     * @return MongoDBCollection
      * @throws CollectionNotExist
      */
     private function getObjCollection(BaseObj $obj)
@@ -93,10 +97,9 @@ class FbDocumentManager
             throw new \UnexpectedValueException();
         } else
         {
-            $result = $col->findAndModify(
+            $result = $col->findOneAndUpdate(
                 $queryCondition,
-                $serialize,
-                null,
+                array("\$set" => $serialize),
                 array("upsert" => true)
             );
         }
@@ -104,7 +107,7 @@ class FbDocumentManager
     }
 
     /**
-     * @return \MongoCollection
+     * @return MongoDBCollection
      */
     public function getFeedDeltaCollection()
     {
@@ -112,7 +115,7 @@ class FbDocumentManager
     }
 
     /**
-     * @return \MongoCollection
+     * @return MongoDBCollection
      */
     public function getPageDeltaCollection()
     {
@@ -120,7 +123,7 @@ class FbDocumentManager
     }
 
     /**
-     * @return \MongoCollection
+     * @return MongoDBCollection
      */
     public function getFeedCollection()
     {
@@ -128,7 +131,7 @@ class FbDocumentManager
     }
 
     /**
-     * @return \MongoCollection
+     * @return MongoDBCollection
      */
     public function getPageCollection()
     {
@@ -151,13 +154,16 @@ class FbDocumentManager
         $col->createIndex(array("fbFeed.\$id" => 1));
     }
 
+    /**
+     * @return MongoDBCollection
+     */
     public function getFacebookExceptionPageCollection()
     {
         return $this->getMongoCollection(FacebookExceptionPage::TARGET_COLLECTION);
     }
 
     /**
-     * @return \MongoCollection
+     * @return MongoDBCollection
      */
     public function getFeedTimestampCollection()
     {
@@ -165,7 +171,7 @@ class FbDocumentManager
     }
 
     /**
-     * @return \MongoCollection
+     * @return MongoDBCollection
      */
     public function getPageTimestampCollection()
     {
@@ -174,7 +180,7 @@ class FbDocumentManager
 
     /**
      * @param $colName
-     * @return \MongoCollection
+     * @return MongoDBCollection
      */
     public function getMongoCollection($colName)
     {
@@ -184,42 +190,54 @@ class FbDocumentManager
     }
 
     /**
-     * @return \MongoDB
+     * @return MongoDBDatabase
      */
     public function getMongoDB()
     {
         $m = $this->getMongoClient();
-        $db = $m->selectDB($this->dbName);
+        $db = $m->selectDatabase($this->dbName);
         return $db;
     }
 
     /**
-     * @return \MongoClient
+     * @return MongoDBClient
      */
     public function getMongoClient()
     {
         if ($this->mongoClient == null)
         {
-            $this->mongoClient = new \MongoClient();
+            $this->mongoClient = new MongoDBClient();
         }
         return $this->mongoClient;
     }
 
     /**
-     * @param \MongoId $mongoId
-     * @return \MongoDBRef|array
+     * @param \MongoDB\BSON\ObjectID $mongoId
+     * @return array
      */
-    public function createPageRef(\MongoId $mongoId)
+    public function createPageRef(\MongoDB\BSON\ObjectID $mongoId)
     {
-        return \MongoDBRef::create(FacebookPage::TARGET_COLLECTION, $mongoId);
+        return array("\$ref" => FacebookPage::TARGET_COLLECTION, "\$id" => $mongoId);
     }
 
     /**
-     * @param \MongoId $mongoId
-     * @return \MongoDBRef|array
+     * @param \MongoDB\BSON\ObjectID $mongoId
+     * @return array
      */
-    public function createFeedRef(\MongoId $mongoId)
+    public function createFeedRef(\MongoDB\BSON\ObjectID $mongoId)
     {
-        return \MongoDBRef::create(FacebookFeed::TARGET_COLLECTION, $mongoId);
+        return array("\$ref" => FacebookFeed::TARGET_COLLECTION, "\$id" => $mongoId);
+    }
+
+    /**
+     * @param array $dbRef
+     * @return array|null|object
+     */
+    public function dbRefHelper($dbRef){
+        if (!isset($dbRef["\$ref"]) || !isset($dbRef["\$id"])){
+            throw new \UnexpectedValueException("required \$ref, \$id in the array");
+        }
+        $col = $this->getMongoCollection($dbRef["\$ref"]);
+        return $col->findOne(array("_id" => $dbRef["\$id"]));
     }
 } 

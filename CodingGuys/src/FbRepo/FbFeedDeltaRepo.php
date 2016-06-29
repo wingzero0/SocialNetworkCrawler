@@ -12,10 +12,10 @@ namespace CodingGuys\FbRepo;
 class FbFeedDeltaRepo extends FbRepo
 {
     /**
-     * @param \MongoId $feedId
-     * @return \MongoCursor
+     * @param \MongoDB\BSON\ObjectID $feedId
+     * @return \MongoDB\Driver\Cursor
      */
-    public function findByFeedId(\MongoId $feedId)
+    public function findByFeedId(\MongoDB\BSON\ObjectID $feedId)
     {
         $col = $this->getFbDM()->getFeedDeltaCollection();
         $query = array(

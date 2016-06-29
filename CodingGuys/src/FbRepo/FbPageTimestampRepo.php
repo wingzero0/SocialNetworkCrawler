@@ -11,12 +11,12 @@ namespace CodingGuys\FbRepo;
 class FbPageTimestampRepo extends FbRepo
 {
     /**
-     * @param \MongoId $pageId
-     * @param \MongoDate $endDate
-     * @param \MongoDate $startDate
-     * @return \MongoCursor
+     * @param \MongoDB\BSON\ObjectID $pageId
+     * @param \MongoDB\BSON\UTCDateTime $endDate
+     * @param \MongoDB\BSON\UTCDateTime $startDate
+     * @return \MongoDB\Driver\Cursor
      */
-    public function findByPageAndDate(\MongoId $pageId, \MongoDate $startDate = null, \MongoDate $endDate = null)
+    public function findByPageAndDate(\MongoDB\BSON\ObjectID $pageId, \MongoDB\BSON\UTCDateTime $startDate = null, \MongoDB\BSON\UTCDateTime $endDate = null)
     {
         $col = $this->getPageTimestampCollection();
         $query = array(
@@ -29,22 +29,29 @@ class FbPageTimestampRepo extends FbRepo
             $query = array_merge($dateRange, $query);
         }
 
-        return $col->find($query)->sort(array("batchTime" => 1));
+        $options = array( "sort" => array("batchTime" => 1));
+        return $col->find($query, $options);
     }
 
     /**
-     * @param \MongoDate|null $startDate
-     * @param \MongoDate|null $endDate
-     * @return \MongoCursor
+     * @param \MongoDB\BSON\UTCDateTime|null $startDate
+     * @param \MongoDB\BSON\UTCDateTime|null $endDate
+     * @return \MongoDB\Driver\Cursor
      */
-    public function findByDateRange(\MongoDate $startDate = null, \MongoDate $endDate = null)
+    public function findByDateRange(\MongoDB\BSON\UTCDateTime $startDate = null, \MongoDB\BSON\UTCDateTime $endDate = null)
     {
         $col = $this->getPageTimestampCollection();
         $dateRange = $this->createBatchDateRangeQuery($startDate, $endDate);
-        return $col->find($dateRange)->sort(array("batchTime" => 1));
+        $options = array( "sort" => array("batchTime" => 1));
+        return $col->find($dateRange, $options);
     }
 
-    private function createBatchDateRangeQuery(\MongoDate $startDate = null, \MongoDate $endDate = null)
+    /**
+     * @param \MongoDB\BSON\UTCDateTime|null $startDate
+     * @param \MongoDB\BSON\UTCDateTime|null $endDate
+     * @return array
+     */
+    private function createBatchDateRangeQuery(\MongoDB\BSON\UTCDateTime $startDate = null, \MongoDB\BSON\UTCDateTime $endDate = null)
     {
         $dateRange = array();
         if ($startDate != null)
@@ -64,6 +71,9 @@ class FbPageTimestampRepo extends FbRepo
         }
     }
 
+    /**
+     * @return \MongoDB\Collection
+     */
     private function getPageTimestampCollection()
     {
         return $this->getFbDM()->getPageTimestampCollection();

@@ -55,14 +55,14 @@ class CGPageCrawler extends CGFbCrawler
     }
 
     /**
-     * @param \MongoId $id
+     * @param \MongoDB\BSON\ObjectID $id
      * @param string $category
      * @param string $city
      * @param string $country
      * @param array $crawlTime
      * @return string
      */
-    public function reCrawlData(\MongoId $id, $category, $city, $country, $crawlTime)
+    public function reCrawlData(\MongoDB\BSON\ObjectID $id, $category, $city, $country, $crawlTime)
     {
         $repo = $this->getFbPageRepo();
         $raw = $repo->findOneById($id);
@@ -97,7 +97,7 @@ class CGPageCrawler extends CGFbCrawler
 
     /**
      * @param $fbId
-     * @return \MongoId|null
+     * @return \MongoDB\BSON\ObjectID|null
      */
     public function getFbMongoId($fbId)
     {

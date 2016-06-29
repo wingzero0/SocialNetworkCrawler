@@ -13,6 +13,7 @@ use CodingGuys\Document\FacebookFeedTimestamp;
 use CodingGuys\Document\FacebookPage;
 use CodingGuys\Document\FacebookPageTimestamp;
 use CodingGuys\FbRepo\FbFeedRepo;
+use CodingGuys\Utility\DateUtility;
 use Facebook\FacebookRequest;
 use Facebook\FacebookRequestException;
 
@@ -28,12 +29,12 @@ class CGPageFeedCrawler extends CGFbCrawler
 
     /**
      * @param string $pageFbId
-     * @param \MongoId $pageMongoId
-     * @param \MongoDate $batchTime
+     * @param \MongoDB\BSON\ObjectID $pageMongoId
+     * @param \MongoDB\BSON\UTCDateTime $batchTime
      * @param string $appId
      * @param string $appSecret
      */
-    public function __construct($pageFbId, $pageMongoId, \MongoDate $batchTime, $appId, $appSecret)
+    public function __construct($pageFbId, $pageMongoId, \MongoDB\BSON\UTCDateTime $batchTime, $appId, $appSecret)
     {
         parent::__construct($appId, $appSecret);
         $this->pageFbId = $pageFbId;
@@ -200,7 +201,7 @@ class CGPageFeedCrawler extends CGFbCrawler
         }
 
         $doc->setFbPage($this->getFbDM()->createPageRef($this->pageMongoId));
-        $doc->setUpdateTime(new \MongoDate());
+        $doc->setUpdateTime(DateUtility::getCurrentMongoDate());
         $doc->setBatchTime($this->batchTime);
 
         $this->getFbDM()->writeToDB($doc);
@@ -351,7 +352,7 @@ class CGPageFeedCrawler extends CGFbCrawler
 
     /**
      * @param FacebookFeed $feedObj
-     * @param \MongoId $feedMongoId
+     * @param \MongoDB\BSON\ObjectID $feedMongoId
      * @return FacebookFeedTimestamp
      */
     private function createFeedTimestamp($feedObj, $feedMongoId = null)
@@ -377,12 +378,12 @@ class CGPageFeedCrawler extends CGFbCrawler
 
         $fbDM = $this->getFbDM();
         $timestamp->setFbPage($fbDM->createPageRef($this->pageMongoId));
-        if (!($feedMongoId instanceof \MongoId))
+        if (!($feedMongoId instanceof \MongoDB\BSON\ObjectID))
         {
             $feedMongoId = $this->getFeedMongoId($feedObj->getFbId());
         }
         $timestamp->setFbFeed($fbDM->createFeedRef($feedMongoId));
-        $timestamp->setUpdateTime(new \MongoDate());
+        $timestamp->setUpdateTime(DateUtility::getCurrentMongoDate());
         $timestamp->setBatchTime($this->batchTime);
         $fbDM->writeToDB($timestamp);
 
@@ -391,7 +392,7 @@ class CGPageFeedCrawler extends CGFbCrawler
 
     /**
      * @param string $fbID
-     * @return \MongoId|null
+     * @return \MongoDB\BSON\ObjectID|null
      */
     private function getFeedMongoId($fbID)
     {
@@ -413,7 +414,7 @@ class CGPageFeedCrawler extends CGFbCrawler
         $pageRaw = $this->getFbPageRepo()->findOneByFbId($pageFbId);
         $errPage = new FacebookExceptionPage($pageRaw);
         $errPage->setException(true);
-        $errPage->setExceptionTime(new \MongoDate());
+        $errPage->setExceptionTime(DateUtility::getCurrentMongoDate());
         $errPage->setId(null);
 
         if ($e instanceof FacebookRequestException)

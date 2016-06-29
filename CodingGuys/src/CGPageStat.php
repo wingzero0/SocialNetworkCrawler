@@ -38,7 +38,7 @@ class CGPageStat
         return $ret;
     }
 
-    public function pageLastUpdateTime(\MongoId $pageMongoId)
+    public function pageLastUpdateTime(\MongoDB\BSON\ObjectID $pageMongoId)
     {
         $pageRepo = $this->getPageRepo();
         $pageRaw = $pageRepo->findOneById($pageMongoId);
