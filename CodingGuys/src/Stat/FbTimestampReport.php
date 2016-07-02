@@ -73,7 +73,8 @@ class FbTimestampReport extends FbFeedStat
                     $this->logToSTDERR($e->getMessage() . " " . $e->getTraceAsString());
                 }
             }
-            if ($lastCount == $i){
+            if ($lastCount == $i)
+            {
                 break;
             }
         }
@@ -103,7 +104,8 @@ class FbTimestampReport extends FbFeedStat
             $cgMongoFbFeedTimestamp = new FacebookFeedTimestamp($timestampRecord);
             $total += $cgMongoFbFeedTimestamp->getLikesTotalCount();
         }
-        if ($numOfRecord ==0){
+        if ($numOfRecord == 0)
+        {
             return 0;
         }
         return $total / $numOfRecord;
@@ -129,7 +131,8 @@ class FbTimestampReport extends FbFeedStat
             $cgMongoFbFeedTimestamp = new FacebookFeedTimestamp($timestampRecord);
             $total += $cgMongoFbFeedTimestamp->getCommentsTotalCount();
         }
-        if ($numOfRecord ==0){
+        if ($numOfRecord == 0)
+        {
             return 0;
         }
         return $total / $numOfRecord;

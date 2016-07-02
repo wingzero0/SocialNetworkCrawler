@@ -29,7 +29,7 @@ class FbPageTimestampRepo extends FbRepo
             $query = array_merge($dateRange, $query);
         }
 
-        $options = array( "sort" => array("batchTime" => 1));
+        $options = array("sort" => array("batchTime" => 1));
         return $col->find($query, $options);
     }
 
@@ -42,7 +42,7 @@ class FbPageTimestampRepo extends FbRepo
     {
         $col = $this->getPageTimestampCollection();
         $dateRange = $this->createBatchDateRangeQuery($startDate, $endDate);
-        $options = array( "sort" => array("batchTime" => 1));
+        $options = array("sort" => array("batchTime" => 1));
         return $col->find($dateRange, $options);
     }
 

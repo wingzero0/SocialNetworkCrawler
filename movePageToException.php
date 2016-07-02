@@ -5,6 +5,7 @@
  * Time: 2:09 PM
  */
 require_once(__DIR__ . '/CodingGuys/autoload.php');
+require_once(__DIR__ . '/vendor/autoload.php');
 
 use CodingGuys\Document\FacebookPage;
 use CodingGuys\Document\FacebookExceptionPage;
@@ -29,7 +30,8 @@ $fbPageRepo = new FbPageRepo($fbDM);
 foreach ($queryId as $id)
 {
     $pageRaw = $fbPageRepo->findOneById(new \MongoDB\BSON\ObjectID($id));
-    if ($pageRaw === null){
+    if ($pageRaw === null)
+    {
         throw new UnexpectedValueException();
     }
 

@@ -42,7 +42,7 @@ function fbCrawler_fn(GearmanJob $job, &$options)
     $workload = unserialize($job->workload());
     $mID = new \MongoDB\BSON\ObjectID($workload["_id"]);
     $batchTime = DateUtility::convertDateTimeToMongoDate(
-        DateTime::createFromFormat(DateTime::ISO8601,$workload["batchTime"])
+        DateTime::createFromFormat(DateTime::ISO8601, $workload["batchTime"])
     );
     echo "Received job: " . $job->handle() . "\n";
     echo "Workload: \n";

@@ -79,9 +79,11 @@ class FbFeedTimestampRepo extends FbRepo
             "sort" => array("updateTime" => 1)
         );
         $arr = $col->findOne($query, $options);
-        if ($arr != null){
+        if ($arr != null)
+        {
             return $arr["batchTime"];
-        } else {
+        } else
+        {
             return null;
         }
     }

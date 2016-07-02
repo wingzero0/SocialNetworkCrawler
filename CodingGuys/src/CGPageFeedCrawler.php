@@ -114,7 +114,6 @@ class CGPageFeedCrawler extends CGFbCrawler
         if ($different)
         {
             $this->createPageTimestamp($newPage);
-            // TODO sync page
         }
     }
 
@@ -243,7 +242,7 @@ class CGPageFeedCrawler extends CGFbCrawler
             $this->createFeedTimestamp($newDoc);
         } else
         {
-            $oldDoc = new FacebookFeed($oldFeed);
+            $oldDoc = new FacebookFeed(new \ArrayObject($oldFeed));
             $different = $this->checkFeedDiff($oldDoc, $newDoc);
             if ($different)
             {
@@ -284,6 +283,10 @@ class CGPageFeedCrawler extends CGFbCrawler
     private function compareCountAttr($oldFeedAttr, $newFeedAttr)
     {
         $oldFeedTotalCount = 0;
+        if (is_object($oldFeedAttr))
+        {
+            $oldFeedAttr = json_decode(json_encode($oldFeedAttr), true);
+        }
         if (is_array($oldFeedAttr))
         {
             if (isset($oldFeedAttr["summary"]) && isset($oldFeedAttr["summary"]["total_count"]))
@@ -296,6 +299,10 @@ class CGPageFeedCrawler extends CGFbCrawler
         }
 
         $newFeedTotalCount = 0;
+        if (is_object($newFeedAttr))
+        {
+            $newFeedAttr = json_decode(json_encode($newFeedAttr), true);
+        }
         if (is_array($newFeedAttr))
         {
             if (isset($newFeedAttr["summary"]) && isset($newFeedAttr["summary"]["total_count"]))

@@ -79,7 +79,7 @@ class FbDocumentManager
     /**
      * @param BaseObj $obj
      * @param array $queryCondition
-     * @return array
+     * @return object|null
      * @throws CollectionNotExist
      * @throws \Exception
      */
@@ -233,8 +233,10 @@ class FbDocumentManager
      * @param array $dbRef
      * @return array|null|object
      */
-    public function dbRefHelper($dbRef){
-        if (!isset($dbRef["\$ref"]) || !isset($dbRef["\$id"])){
+    public function dbRefHelper($dbRef)
+    {
+        if (!isset($dbRef["\$ref"]) || !isset($dbRef["\$id"]))
+        {
             throw new \UnexpectedValueException("required \$ref, \$id in the array");
         }
         $col = $this->getMongoCollection($dbRef["\$ref"]);

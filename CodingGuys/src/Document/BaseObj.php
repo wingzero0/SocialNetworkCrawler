@@ -27,11 +27,14 @@ abstract class BaseObj
      */
     public function setMongoRawData($mongoRawData)
     {
-        if ($mongoRawData instanceof \ArrayObject){
+        if ($mongoRawData instanceof \ArrayObject)
+        {
             $this->mongoRawData = $mongoRawData->getArrayCopy();
-        }else if (is_array($mongoRawData)){
+        } else if (is_array($mongoRawData))
+        {
             $this->mongoRawData = $mongoRawData;
-        }else{
+        } else
+        {
             throw new \UnexpectedValueException("need an array to init object");
         }
         $this->init();
@@ -39,8 +42,9 @@ abstract class BaseObj
 
     public function __construct($mongoRawData = null)
     {
-        if ( (is_array($mongoRawData)|| $mongoRawData instanceOf \ArrayObject)
-            && !empty($mongoRawData))
+        if ((is_array($mongoRawData) || $mongoRawData instanceOf \ArrayObject)
+            && !empty($mongoRawData)
+        )
         {
             $this->setMongoRawData($mongoRawData);
         } else
