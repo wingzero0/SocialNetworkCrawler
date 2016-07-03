@@ -52,19 +52,14 @@ class FbTimestampReport extends FbFeedStat
         while (1)
         {
             // TODO should start from Page, not from feed
-            $cursor = $this->findFeedByDateRange()->skip($i)->limit(100);
-            if (!$cursor->hasNext())
-            {
-                break;
-            } else
-            {
-                //$this->checkTime(false, "working on feed:" . $i . "\n");
-                fprintf($this->STDERR, "working on feed:" . $i . "\n");
-            }
+            $cursor = $this->findFeedByDateRange($i, 100);
+
+            fprintf($this->STDERR, "working on feed:" . $i . "\n");
+            $lastCount = $i;
             foreach ($cursor as $feed)
             {
                 $i++;
-                $page = \MongoDBRef::get($this->getFbDocumentManager()->getMongoDB(), $feed["fbPage"]);
+                $page = $this->getFbDocumentManager()->dbRefHelper($feed["fbPage"]);
                 if ($page["mnemono"]["location"]["city"] != $city)
                 {
                     continue;
@@ -75,8 +70,12 @@ class FbTimestampReport extends FbFeedStat
                     $countArray[$page["fbID"]][$feed["fbID"]] = 1;
                 } catch (\UnexpectedValueException $e)
                 {
-                    $this->logToSTDERR($e->getTraceAsString());
+                    $this->logToSTDERR($e->getMessage() . " " . $e->getTraceAsString());
                 }
+            }
+            if ($lastCount == $i)
+            {
+                break;
             }
         }
 
@@ -90,7 +89,7 @@ class FbTimestampReport extends FbFeedStat
         $repo = $this->getFeedTimestampRepo();
         $batchTime = $repo->findFirstBatchByPageAndDateRange($fbPage->getId(), $this->getStartDateMongoDate(), $this->getEndDateMongoDate());
 
-        if (!($batchTime instanceof \MongoDate))
+        if (!($batchTime instanceof \MongoDB\BSON\UTCDateTime))
         {
             throw new \UnexpectedValueException();
         }
@@ -98,15 +97,16 @@ class FbTimestampReport extends FbFeedStat
         $cursor = $repo->findByPageIdAndBatchTime($fbPage->getId(), $batchTime);
 
         $total = 0;
-        $numOfRecord = $cursor->count();
-        if ($numOfRecord <= 0)
-        {
-            return 0;
-        }
+        $numOfRecord = 0;
         foreach ($cursor as $timestampRecord)
         {
+            $numOfRecord++;
             $cgMongoFbFeedTimestamp = new FacebookFeedTimestamp($timestampRecord);
             $total += $cgMongoFbFeedTimestamp->getLikesTotalCount();
+        }
+        if ($numOfRecord == 0)
+        {
+            return 0;
         }
         return $total / $numOfRecord;
     }
@@ -116,7 +116,7 @@ class FbTimestampReport extends FbFeedStat
         $repo = $this->getFeedTimestampRepo();
         $batchTime = $repo->findFirstBatchByPageAndDateRange($fbPage->getId(), $this->getStartDateMongoDate(), $this->getEndDateMongoDate());
 
-        if (!($batchTime instanceof \MongoDate))
+        if (!($batchTime instanceof \MongoDB\BSON\UTCDateTime))
         {
             throw new \UnexpectedValueException();
         }
@@ -124,15 +124,16 @@ class FbTimestampReport extends FbFeedStat
         $cursor = $repo->findByPageIdAndBatchTime($fbPage->getId(), $batchTime);
 
         $total = 0;
-        $numOfRecord = $cursor->count();
-        if ($numOfRecord <= 0)
-        {
-            return 0;
-        }
+        $numOfRecord = 0;
         foreach ($cursor as $timestampRecord)
         {
+            $numOfRecord++;
             $cgMongoFbFeedTimestamp = new FacebookFeedTimestamp($timestampRecord);
             $total += $cgMongoFbFeedTimestamp->getCommentsTotalCount();
+        }
+        if ($numOfRecord == 0)
+        {
+            return 0;
         }
         return $total / $numOfRecord;
     }
@@ -264,10 +265,10 @@ class FbTimestampReport extends FbFeedStat
     }
 
     /**
-     * @param \MongoId $pageId
+     * @param \MongoDB\BSON\ObjectID $pageId
      * @return array array of FbPageDelta
      */
-    private function findPageDeltaByPageId(\MongoId $pageId)
+    private function findPageDeltaByPageId(\MongoDB\BSON\ObjectID $pageId)
     {
         $cursor = $this->pageDeltaRepo->findByPageId($pageId);
         $ret = array();
@@ -280,10 +281,10 @@ class FbTimestampReport extends FbFeedStat
     }
 
     /**
-     * @param \MongoId $feedId
+     * @param \MongoDB\BSON\ObjectID $feedId
      * @return array array of FbFeedDelta
      */
-    private function findFeedDeltaByFeedId(\MongoId $feedId)
+    private function findFeedDeltaByFeedId(\MongoDB\BSON\ObjectID $feedId)
     {
         $cursor = $this->feedDeltaRepo->findByFeedId($feedId);
         $ret = array();
@@ -366,10 +367,10 @@ class FbTimestampReport extends FbFeedStat
     }
 
     /**
-     * @param \MongoId $feedId
+     * @param \MongoDB\BSON\ObjectID $feedId
      * @return array $sortedFeedTimestampRecords
      */
-    private function genFeedTimestampDeltaToTmp(\MongoId $feedId)
+    private function genFeedTimestampDeltaToTmp(\MongoDB\BSON\ObjectID $feedId)
     {
         $sortedFeedTimestampRecords = $this->findTimestampByFeed($feedId);
 
@@ -397,7 +398,6 @@ class FbTimestampReport extends FbFeedStat
                     ->setFbFeedRef(
                         $dm->createFeedRef($feedId)
                     );
-
                 $dm->writeToDB($feedDelta);
                 $this->batchTimeIndexes[$feedDelta->getDateStr()] = 1;
             }
@@ -406,9 +406,9 @@ class FbTimestampReport extends FbFeedStat
     }
 
     /**
-     * @param \MongoId $pageId
+     * @param \MongoDB\BSON\ObjectID $pageId
      */
-    private function genPageTimestampDeltasToTmp(\MongoId $pageId)
+    private function genPageTimestampDeltasToTmp(\MongoDB\BSON\ObjectID $pageId)
     {
         $cursor = $this->getPageTimestampRepo()
             ->findByPageAndDate(
@@ -479,6 +479,8 @@ class FbTimestampReport extends FbFeedStat
 
     private function logToSTDERR($msg)
     {
-        fprintf($this->STDERR, $msg);
+        $dateTime = new \DateTime();
+        $dateISO = $dateTime->format(\DateTime::ISO8601);
+        fprintf($this->STDERR, $dateISO . " " . $msg . "\n");
     }
 }

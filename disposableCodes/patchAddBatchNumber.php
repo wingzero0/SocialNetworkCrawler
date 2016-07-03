@@ -1,5 +1,9 @@
 <?php
 
+require_once __DIR__ . "/../CodingGuys/autoload.php";
+
+use CodingGuys\Utility\DateUtility;
+
 $m = new \MongoClient();
 $col = $m->selectCollection("directory", "FacebookTimestampRecord");
 $cursor = $col->find();
@@ -23,6 +27,6 @@ foreach ($cursor as $timestamp)
     $batchTime = clone $dateObj;
     $batchTime->setTime($hour, 0, 0);
     //echo $batchTime->format(\DateTime::ISO8601) . "\n";
-    $timestamp['batchTime'] = new \MongoDate($batchTime->getTimestamp());
+    $timestamp['batchTime'] = DateUtility::convertDateTimeToMongoDate($batchTime);
     $col->update(array('_id' => $timestamp['_id']), $timestamp);
 }

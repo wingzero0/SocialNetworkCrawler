@@ -95,7 +95,7 @@ class FacebookPage extends BaseObj
     }
 
     /**
-     * @return \MongoId|null
+     * @return \MongoDB\BSON\ObjectID|null
      */
     public function getId()
     {
@@ -103,7 +103,7 @@ class FacebookPage extends BaseObj
     }
 
     /**
-     * @param \MongoId $id
+     * @param \MongoDB\BSON\ObjectID $id
      */
     public function setId($id)
     {

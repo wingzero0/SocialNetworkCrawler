@@ -54,7 +54,7 @@ class FacebookExceptionPage extends FacebookPage
     }
 
     /**
-     * @return \MongoDate
+     * @return \MongoDB\BSON\UTCDateTime
      */
     public function getExceptionTime()
     {
@@ -62,9 +62,9 @@ class FacebookExceptionPage extends FacebookPage
     }
 
     /**
-     * @param \MongoDate $exceptionTime
+     * @param \MongoDB\BSON\UTCDateTime $exceptionTime
      */
-    public function setExceptionTime(\MongoDate $exceptionTime = null)
+    public function setExceptionTime(\MongoDB\BSON\UTCDateTime $exceptionTime = null)
     {
         $this->exceptionTime = $exceptionTime;
     }
