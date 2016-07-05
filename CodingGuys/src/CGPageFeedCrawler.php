@@ -443,7 +443,7 @@ class CGPageFeedCrawler extends CGFbCrawler
             $errPage->setError($errorResponse["error"]);
         } else
         {
-            $errPage->setError(array("message" => $e->getMessage(), "trace" => $e->getTrace()));
+            $errPage->setError(array("message" => $e->getMessage(), "trace" => $e->getTraceAsString()));
         }
         $this->getFbDM()->writeToDB($errPage);
     }
