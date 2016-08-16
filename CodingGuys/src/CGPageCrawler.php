@@ -10,8 +10,8 @@ namespace CodingGuys;
 use CodingGuys\Document\FacebookPage;
 use Facebook\FacebookRequest;
 use Facebook\FacebookResponse;
-use Facebook\FacebookRequestException;
-use Facebook\FacebookThrottleException;
+use Facebook\Exceptions\FacebookResponseException;
+use Facebook\Exceptions\FacebookThrottleException;
 
 
 // TODO migrate query to FacebookPageRepo
@@ -30,14 +30,14 @@ class CGPageCrawler extends CGFbCrawler
      */
     public function crawlNewPage($pageFbId, $category, $city, $country, $crawlTime)
     {
-        $request = new FacebookRequest($this->getFbSession(), 'GET', '/' . $pageFbId);
+        $requestEndPoint = '/' . $pageFbId;
         $headerMsg = "get error while crawling page:" . $pageFbId;
-        $response = $this->tryRequest($request, $headerMsg);
+        $response = $this->tryRequest($requestEndPoint, $headerMsg);
         if ($response == null)
         {
             return CGPageCrawler::FAIL;
         }
-        $pageMainContent = json_decode(json_encode($response->getResponse()), true);
+        $pageMainContent = $response->getDecodedBody();
         $pageMainContent["fbID"] = $pageMainContent["id"];
         unset($pageMainContent["id"]);
 
@@ -72,14 +72,14 @@ class CGPageCrawler extends CGFbCrawler
         }
         $fbPage = new FacebookPage($raw);
 
-        $request = new FacebookRequest($this->getFbSession(), 'GET', '/' . $fbPage->getFbID());
+        $requestEndPoint = '/' . $fbPage->getFbID() ;
         $headerMsg = "get error while crawling page:" . $fbPage->getFbID();
-        $response = $this->tryRequest($request, $headerMsg);
+        $response = $this->tryRequest($requestEndPoint, $headerMsg);
         if ($response == null)
         {
             return CGPageCrawler::FAIL;
         }
-        $pageMainContent = json_decode(json_encode($response->getResponse()), true);
+        $pageMainContent = $response->getDecodedBody();
         $pageMainContent["fbID"] = $pageMainContent["id"];
         unset($pageMainContent["id"]);
 
@@ -112,15 +112,15 @@ class CGPageCrawler extends CGFbCrawler
     }
 
     /**
-     * @param FacebookRequestException $e
+     * @param FacebookResponseException $e
      * @param array $page the page record fetch from mongoDB;
      */
-    private function handleErrorPage(FacebookRequestException $e, $page)
+    private function handleErrorPage(FacebookResponseException $e, $page)
     {
         //TODO move error handling to FeedCrawler
         echo $e->getRawResponse() . "\n";
-        $errorMsg = json_decode($e->getRawResponse());
-        $code = $errorMsg->error->code;
+        $errorMsg = json_decode($e->getResponse()->getDecodedBody());
+        $code = $errorMsg['error']['code'];
         $hit = preg_match("/Page ID (.+) was migrated to page ID (.+)\\./", $errorMsg->error->message, $matches);
         if ($code == 21 && $hit > 0)
         {
@@ -158,15 +158,15 @@ class CGPageCrawler extends CGFbCrawler
      */
     private function crawlProfilePicture($pageFbId)
     {
-        $request = new FacebookRequest($this->getFbSession(), 'GET', '/' . $pageFbId . '/picture?type=large&redirect=false');
+        $requestEndPoint = '/' . $pageFbId . '/picture?type=large&redirect=false';
         $headerMsg = "get error while crawling page profile picture:" . $pageFbId;
-        $pictureResponse = $this->tryRequest($request, $headerMsg);
+        $pictureResponse = $this->tryRequest($requestEndPoint, $headerMsg);
         if ($pictureResponse == null)
         {
             return null;
         }
-        $pageProfilePicture = $pictureResponse->getResponse();
-        return $pageProfilePicture->data;
+        $pageProfilePicture = $pictureResponse->getDecodedBody();
+        return $pageProfilePicture['data'];
     }
 
 
