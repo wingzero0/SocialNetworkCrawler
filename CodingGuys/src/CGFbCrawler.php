@@ -16,7 +16,6 @@ use Facebook\Exceptions\FacebookThrottleException;
 
 class CGFbCrawler
 {
-    private $fbSession;
     private $fbAppBase;
     private $fbDM;
     private $lastException;
@@ -117,15 +116,6 @@ class CGFbCrawler
         }
         $this->setLastException($e);
         fclose($stderr);
-    }
-
-    /**
-     * @return FacebookSession
-     */
-    protected function getFbSession()
-    {
-        // TODO remove this method
-        return $this->fbSession;
     }
 
     /**
