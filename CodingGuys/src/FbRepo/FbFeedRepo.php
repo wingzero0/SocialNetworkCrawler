@@ -7,40 +7,38 @@
 
 namespace CodingGuys\FbRepo;
 
+use MongoDB\Collection as MongoDBCollection;
 
 class FbFeedRepo extends FbRepo
 {
     /**
-     * @param \MongoId $pageMongoId
+     * @param \MongoDB\BSON\ObjectID $pageMongoId
      * @return array
      */
-    public function findLatestOneByPageId(\MongoId $pageMongoId)
+    public function findLatestOneByPageId(\MongoDB\BSON\ObjectID $pageMongoId)
     {
         $query = array(
             "fbPage.\$id" => $pageMongoId
         );
-        $orderQ = array(
-            "created_time" => -1
+        $options = array(
+            "sort" => array(
+                "created_time" => -1
+            )
         );
-        $cursor = $this->getFeedCollection()
-            ->find($query)
-            ->sort($orderQ)
-            ->limit(1);
-        if ($cursor->hasNext())
-        {
-            return $cursor->getNext();
-        } else
-        {
-            return null;
-        }
+        $arr = $this->getFeedCollection()
+            ->findOne($query, $options);
+        return $arr;
     }
 
     /**
      * @param \DateTime $startDate
      * @param \DateTime $endDate
-     * @return \MongoCursor
+     * @param int $skip
+     * @param int $limit
+     * @return \MongoDB\Driver\Cursor
      */
-    public function findFeedByCreatedTime(\DateTime $startDate = null, \DateTime $endDate = null)
+    public function findFeedByCreatedTime(\DateTime $startDate = null, \DateTime $endDate = null,
+                                          $skip = 0, $limit = 0)
     {
         $dateRange = array();
         if ($startDate != null)
@@ -58,9 +56,13 @@ class FbFeedRepo extends FbRepo
 
         if (empty($dateRange))
         {
-            return $this->getFeedCollection()->find();
+            $query = array();
+        } else
+        {
+            $query = array("created_time" => $dateRange);
         }
-        return $this->getFeedCollection()->find(array("created_time" => $dateRange));
+        $options = array("skip" => $skip, "limit" => $limit);
+        return $this->getFeedCollection()->find($query, $options);
     }
 
     /**
@@ -69,21 +71,12 @@ class FbFeedRepo extends FbRepo
      */
     public function findOneByFbId($fbId)
     {
-        $cursor = $this->getFeedCollection()
-            ->find(array("fbID" => $fbId))
-            ->limit(1);
-
-        if ($cursor->hasNext())
-        {
-            return $cursor->getNext();
-        } else
-        {
-            return null;
-        }
+        return $this->getFeedCollection()
+            ->findOne(array("fbID" => $fbId));
     }
 
     /**
-     * @return \MongoCollection
+     * @return MongoDBCollection
      */
     private function getFeedCollection()
     {

@@ -10,43 +10,44 @@ namespace CodingGuys\Document;
 
 use CodingGuys\Exception\KeyNotExistsException;
 use CodingGuys\Utility\DateUtility;
+use MongoDB\BSON\ObjectID;
 
 class FacebookPageTimestamp extends BaseObj
 {
     private $_id;
     private $wereHereCount;
     private $talkingAboutCount;
-    private $likes;
+    private $fanCount;
     private $fbPage;
     private $updateTime;
     private $batchTime;
 
     const TARGET_COLLECTION = "FacebookPageTimestamp";
 
-    const KEY_ID = "_id";
-    const KEY_WERE_HERE_COUNT = "were_here_count";
-    const KEY_TALKING_ABOUT_COUNT = "talking_about_count";
-    const KEY_LIKES = "likes";
-    const KEY_FB_PAGE = "fbPage";
-    const KEY_UPDATE_TIME = "updateTime";
-    const KEY_BATCH_TIME = "batchTime";
+    const DB_FIELD_ID = "_id";
+    const DB_FIELD_WERE_HERE_COUNT = "were_here_count";
+    const DB_FIELD_TALKING_ABOUT_COUNT = "talking_about_count";
+    const DB_FIELD_FAN_COUNT = "fan_count";
+    const DB_FIELD_FB_PAGE = "fbPage";
+    const DB_FIELD_UPDATE_TIME = "updateTime";
+    const DB_FIELD_BATCH_TIME = "batchTime";
 
     const FIELD_ID = "id";
     const FIELD_WERE_HERE_COUNT = "wereHereCount";
     const FIELD_TALKING_ABOUT_COUNT = "talkingAboutCount";
-    const FIELD_LIKES = "likes";
+    const FIELD_FAN_COUNT = "fanCount";
     const FIELD_FB_PAGE = "fbPage";
     const FIELD_UPDATE_TIME = "updateTime";
     const FIELD_BATCH_TIME = "batchTime";
 
     private static $dbMapping = array(
-        FacebookPageTimestamp::FIELD_ID => FacebookPageTimestamp::KEY_ID,
-        FacebookPageTimestamp::FIELD_WERE_HERE_COUNT => FacebookPageTimestamp::KEY_WERE_HERE_COUNT,
-        FacebookPageTimestamp::FIELD_TALKING_ABOUT_COUNT => FacebookPageTimestamp::KEY_TALKING_ABOUT_COUNT,
-        FacebookPageTimestamp::FIELD_LIKES => FacebookPageTimestamp::KEY_LIKES,
-        FacebookPageTimestamp::FIELD_FB_PAGE => FacebookPageTimestamp::KEY_FB_PAGE,
-        FacebookPageTimestamp::FIELD_UPDATE_TIME => FacebookPageTimestamp::KEY_UPDATE_TIME,
-        FacebookPageTimestamp::FIELD_BATCH_TIME => FacebookPageTimestamp::KEY_BATCH_TIME,
+        FacebookPageTimestamp::FIELD_ID => FacebookPageTimestamp::DB_FIELD_ID,
+        FacebookPageTimestamp::FIELD_WERE_HERE_COUNT => FacebookPageTimestamp::DB_FIELD_WERE_HERE_COUNT,
+        FacebookPageTimestamp::FIELD_TALKING_ABOUT_COUNT => FacebookPageTimestamp::DB_FIELD_TALKING_ABOUT_COUNT,
+        FacebookPageTimestamp::FIELD_FAN_COUNT => FacebookPageTimestamp::DB_FIELD_FAN_COUNT,
+        FacebookPageTimestamp::FIELD_FB_PAGE => FacebookPageTimestamp::DB_FIELD_FB_PAGE,
+        FacebookPageTimestamp::FIELD_UPDATE_TIME => FacebookPageTimestamp::DB_FIELD_UPDATE_TIME,
+        FacebookPageTimestamp::FIELD_BATCH_TIME => FacebookPageTimestamp::DB_FIELD_BATCH_TIME,
     );
 
     protected function init()
@@ -76,7 +77,7 @@ class FacebookPageTimestamp extends BaseObj
     }
 
     /**
-     * @return \MongoId
+     * @return ObjectID
      */
     public function getId()
     {
@@ -84,9 +85,9 @@ class FacebookPageTimestamp extends BaseObj
     }
 
     /**
-     * @param \MongoId $id
+     * @param ObjectID $id
      */
-    public function setId(\MongoId $id = null)
+    public function setId(ObjectID $id = null)
     {
         $this->_id = $id;
     }
@@ -126,17 +127,17 @@ class FacebookPageTimestamp extends BaseObj
     /**
      * @return int
      */
-    public function getLikes()
+    public function getFanCount()
     {
-        return $this->likes;
+        return $this->fanCount;
     }
 
     /**
-     * @param int $likes
+     * @param int $fanCount
      */
-    public function setLikes($likes)
+    public function setFanCount($fanCount)
     {
-        $this->likes = intval($likes);
+        $this->fanCount = intval($fanCount);
     }
 
     /**
@@ -156,7 +157,7 @@ class FacebookPageTimestamp extends BaseObj
     }
 
     /**
-     * @return \MongoDate|null
+     * @return \MongoDB\BSON\UTCDateTime|null
      */
     public function getUpdateTime()
     {
@@ -164,15 +165,15 @@ class FacebookPageTimestamp extends BaseObj
     }
 
     /**
-     * @param \MongoDate $updateTime
+     * @param \MongoDB\BSON\UTCDateTime $updateTime
      */
-    public function setUpdateTime(\MongoDate $updateTime = null)
+    public function setUpdateTime(\MongoDB\BSON\UTCDateTime $updateTime = null)
     {
         $this->updateTime = $updateTime;
     }
 
     /**
-     * @return \MongoDate|null
+     * @return \MongoDB\BSON\UTCDateTime|null
      */
     public function getBatchTime()
     {
@@ -180,9 +181,9 @@ class FacebookPageTimestamp extends BaseObj
     }
 
     /**
-     * @param \MongoDate $batchTime
+     * @param \MongoDB\BSON\UTCDateTime $batchTime
      */
-    public function setBatchTime(\MongoDate $batchTime = null)
+    public function setBatchTime(\MongoDB\BSON\UTCDateTime $batchTime = null)
     {
         $this->batchTime = $batchTime;
     }
@@ -190,7 +191,7 @@ class FacebookPageTimestamp extends BaseObj
     public function getBatchTimeInISO()
     {
         $batchTime = $this->getBatchTime();
-        if ($batchTime instanceof \MongoDate)
+        if ($batchTime instanceof \MongoDB\BSON\UTCDateTime)
         {
             $isoStr = DateUtility::convertMongoDateToISODate($batchTime);
             return $isoStr;

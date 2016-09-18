@@ -8,6 +8,7 @@
 namespace CodingGuys\Document;
 
 use CodingGuys\Exception\KeyNotExistsException;
+use MongoDB\Exception\UnexpectedValueException;
 
 class FbFeedDelta extends BaseObj
 {
@@ -27,7 +28,7 @@ class FbFeedDelta extends BaseObj
             $this->setId($id);
         } catch (KeyNotExistsException $e)
         {
-            $this->setId(null);
+            throw new \UnexpectedValueException("_id should not be null");
         }
 
         try
@@ -114,7 +115,7 @@ class FbFeedDelta extends BaseObj
     }
 
     /**
-     * @return \MongoId
+     * @return \MongoDB\BSON\ObjectID
      */
     public function getId()
     {
@@ -122,10 +123,10 @@ class FbFeedDelta extends BaseObj
     }
 
     /**
-     * @param \MongoId $id
+     * @param \MongoDB\BSON\ObjectID $id
      * @return self
      */
-    public function setId(\MongoId $id)
+    public function setId(\MongoDB\BSON\ObjectID $id)
     {
         $this->_id = $id;
         return $this;

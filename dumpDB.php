@@ -41,7 +41,7 @@ $newPageCol->createIndex(array("exception" => 1));
 
 $newPageTimestampCol->createIndex(array("fbPage.\$id" => -1));
 $newPageTimestampCol->createIndex(array("batchTime" => -1));
-$newPageTimestampCol->createIndex(array("fbPage.\$id" => -1 , "batchTime" => -1));
+$newPageTimestampCol->createIndex(array("fbPage.\$id" => -1, "batchTime" => -1));
 
 
 $oldDM = new FbDocumentManager();

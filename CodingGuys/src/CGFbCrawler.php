@@ -9,22 +9,26 @@ namespace CodingGuys;
 
 use CodingGuys\FbDocumentManager\FbDocumentManager;
 use CodingGuys\FbRepo\FbPageRepo;
-use Facebook\FacebookRequest;
+use Facebook\Facebook as FacebookBase;
 use Facebook\FacebookResponse;
-use Facebook\FacebookSession;
-use Facebook\FacebookRequestException;
-use Facebook\FacebookThrottleException;
+use Facebook\Exceptions\FacebookResponseException;
+use Facebook\Exceptions\FacebookThrottleException;
 
 class CGFbCrawler
 {
-    private $fbSession;
+    private $fbAppBase;
     private $fbDM;
     private $lastException;
 
     public function __construct($appId, $appSecret)
     {
-        FacebookSession::setDefaultApplication($appId, $appSecret);
-        $this->setFbSession(FacebookSession::newAppSession());
+        $fb = new FacebookBase([
+            'app_id' => $appId,
+            'app_secret' => $appSecret,
+            'default_graph_version' => 'v2.7',
+        ]);
+        $fb->setDefaultAccessToken($appId . '|' . $appSecret);
+        $this->setFbAppBase($fb);
         $this->setFbDM(new FbDocumentManager());
     }
 
@@ -45,13 +49,29 @@ class CGFbCrawler
     }
 
     /**
-     * @param FacebookRequest $request
+     * @return FacebookBase
+     */
+    protected function getFbAppBase()
+    {
+        return $this->fbAppBase;
+    }
+
+    /**
+     * @param FacebookBase $fbAppBase
+     */
+    private function setFbAppBase(FacebookBase $fbAppBase)
+    {
+        $this->fbAppBase = $fbAppBase;
+    }
+
+    /**
+     * @param string $requestEndPoint
      * @param string $headerMessage message that will be dump to stderr if exception occurs
      * @return FacebookResponse|null
      *
      * @TODO catch api limit exception, send mail to user and sleep a long time.
      */
-    protected function tryRequest(FacebookRequest $request, $headerMessage)
+    protected function tryRequest($requestEndPoint, $headerMessage)
     {
         $response = null;
         $counter = 0;
@@ -60,13 +80,13 @@ class CGFbCrawler
             $counter++;
             try
             {
-                $response = $request->execute();
+                $response = $this->getFbAppBase()->get($requestEndPoint);
             } catch (FacebookThrottleException $e)
             {
                 $this->dumpErr($e, $headerMessage);
                 $response = null;
                 sleep(600);
-            } catch (FacebookRequestException $e)
+            } catch (FacebookResponseException $e)
             {
                 $this->dumpErr($e, $headerMessage);
                 $response = null;
@@ -87,7 +107,7 @@ class CGFbCrawler
         $stderr = fopen('php://stderr', 'w');
         $dateObj = new \DateTime();
         fprintf($stderr, $dateObj->format(\DateTime::ISO8601) . ": " . $headerMessage . "\n");
-        if ($e instanceof FacebookRequestException)
+        if ($e instanceof FacebookResponseException)
         {
             fprintf($stderr, $e->getRawResponse() . "\n");
         } else
@@ -96,22 +116,6 @@ class CGFbCrawler
         }
         $this->setLastException($e);
         fclose($stderr);
-    }
-
-    /**
-     * @return FacebookSession
-     */
-    protected function getFbSession()
-    {
-        return $this->fbSession;
-    }
-
-    /**
-     * @param FacebookSession $fbSession
-     */
-    private function setFbSession($fbSession)
-    {
-        $this->fbSession = $fbSession;
     }
 
     /**

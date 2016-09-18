@@ -12,10 +12,10 @@ namespace CodingGuys\FbRepo;
 class FbPageDeltaRepo extends FbRepo
 {
     /**
-     * @param \MongoId $pageId
-     * @return \MongoCursor
+     * @param \MongoDB\BSON\ObjectID $pageId
+     * @return \MongoDB\Driver\Cursor
      */
-    public function findByPageId(\MongoId $pageId)
+    public function findByPageId(\MongoDB\BSON\ObjectID $pageId)
     {
         $col = $this->getFbDM()->getPageDeltaCollection();
         $query = array(

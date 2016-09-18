@@ -185,7 +185,7 @@ class FacebookFeed extends BaseObj
     }
 
     /**
-     * @return \MongoId
+     * @return \MongoDB\BSON\ObjectID
      */
     public function getId()
     {
@@ -193,9 +193,9 @@ class FacebookFeed extends BaseObj
     }
 
     /**
-     * @param \MongoId $id
+     * @param \MongoDB\BSON\ObjectID $id
      */
-    public function setId(\MongoId $id = null)
+    public function setId(\MongoDB\BSON\ObjectID $id = null)
     {
         $this->id = $id;
     }
@@ -451,7 +451,7 @@ class FacebookFeed extends BaseObj
     }
 
     /**
-     * @return \MongoDBRef
+     * @return array
      */
     public function getFbPage()
     {
@@ -459,7 +459,7 @@ class FacebookFeed extends BaseObj
     }
 
     /**
-     * @param \MongoDBRef $fbPage
+     * @param array $fbPage
      */
     public function setFbPage($fbPage)
     {

@@ -2,15 +2,17 @@
 
 
 require_once(__DIR__ . '/CodingGuys/autoload.php');
+require_once(__DIR__ . '/vendor/autoload.php');
+
 use CodingGuys\FbRepo\FbPageRepo;
 use CodingGuys\Document\FacebookPage;
 
-$batchTime = new MongoDate();
 $crawlTime = new \DateTime();
-$crawlTime->setTimestamp($batchTime->sec)->setTimezone(new \DateTimeZone("GMT"));
+$crawlTime->setTimezone(new \DateTimeZone("GMT"));
 $crawlTimeH = intval($crawlTime->format('H'));
 
 echo "crawlTimeH:" . $crawlTimeH . "\n";
+$batchTime = $crawlTime->format(DateTime::ISO8601);
 
 $repo = new FbPageRepo();
 $cursor = $repo->findAllWorkingPageByCrawlTime($crawlTimeH);
