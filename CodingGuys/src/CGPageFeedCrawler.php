@@ -14,8 +14,7 @@ use CodingGuys\Document\FacebookPage;
 use CodingGuys\Document\FacebookPageTimestamp;
 use CodingGuys\FbRepo\FbFeedRepo;
 use CodingGuys\Utility\DateUtility;
-use Facebook\FacebookRequest;
-use Facebook\FacebookRequestException;
+use Facebook\Exceptions\FacebookResponseException;
 
 class CGPageFeedCrawler extends CGFbCrawler
 {
@@ -25,7 +24,8 @@ class CGPageFeedCrawler extends CGFbCrawler
 
     const FAIL = "fail";
     const SUCCESS = "success";
-
+    const PAGE_FIELDS = '?fields=id,about,affiliation,app_id,app_links,artists_we_like,attire,awards,band_interests,band_members,best_page,bio,birthday,booking_agent,built,business,can_checkin,can_post,category,category_list,checkins,company_overview,contact_address,country_page_likes,cover,culinary_team,current_location,description,description_html,directed_by,display_subtext,displayed_message_response_time,emails,engagement,fan_count,featured_video,features,food_styles,founded,general_info,general_manager,genre,global_brand_page_name,global_brand_root_id,has_added_app,hometown,hours,impressum,influences,is_always_open,is_community_page,is_permanently_closed,is_published,is_unclaimed,is_verified,is_webhooks_subscribed,last_used_time,leadgen_tos_accepted,link,location,members,mission,mpg,name,name_with_location_descriptor,network,new_like_count,offer_eligible,parent_page,parking,payment_options,personal_info,personal_interests,pharma_safety_info,phone,place_type,plot_outline,press_contact,price_range,produced_by,products,promotion_ineligible_reason,public_transit,publisher_space,record_label,release_date,restaurant_services,restaurant_specialties,schedule,screenplay_by,season,single_line_address,starring,start_info,store_location_descriptor,store_number,studio,talking_about_count,unread_message_count,unread_notif_count,unseen_message_count,username,verification_status,voip_info,website,were_here_count,written_by';
+    const FEED_FIELDS = '?fields=id,admin_creator,application,call_to_action,caption,created_time,description,feed_targeting,from,icon,instagram_eligibility,is_hidden,is_instagram_eligible,is_published,link,message,message_tags,name,object_id,parent_id,picture,place,privacy,properties,shares,source,status_type,story,story_tags,targeting,to,type,updated_time,with_tags,likes.limit(5).summary(true),comments.limit(5).summary(true),attachments';
 
     /**
      * @param string $pageFbId
@@ -62,48 +62,47 @@ class CGPageFeedCrawler extends CGFbCrawler
 
     private function crawlPage()
     {
-        $request = new FacebookRequest($this->getFbSession(), 'GET', '/' . $this->pageFbId);
+        $requestEndPoint = '/' . $this->pageFbId;
+        $requestEndPoint .= CGPageFeedCrawler::PAGE_FIELDS;
         $headerMsg = "get error while crawling page:" . $this->pageFbId;
-        $response = $this->tryRequest($request, $headerMsg);
+        $response = $this->tryRequest($requestEndPoint, $headerMsg);
         if ($response == null)
         {
             $this->handleErrorPage($this->getLastException(), $this->pageFbId);
             return CGPageFeedCrawler::FAIL;
         }
-        $this->findAndModifyPage($this->pageFbId, $response->getResponse()); // test from var dump , $response->getResponse() is a stdClass
+        $this->findAndModifyPage($this->pageFbId, $response->getDecodedBody());
         return CGPageFeedCrawler::SUCCESS;
     }
 
     private function crawlFeed()
     {
-        $request = new FacebookRequest($this->getFbSession(), 'GET', '/' . $this->pageFbId . '/posts');
+        $requestEndPoint = '/' . $this->pageFbId . '/posts' ;
         $headerMsg = "get error while crawling page:" . $this->pageFbId;
-        $response = $this->tryRequest($request, $headerMsg);
+        $response = $this->tryRequest($requestEndPoint, $headerMsg);
         if ($response == null)
         {
             return CGPageFeedCrawler::FAIL;
         }
 
-        $responseData = $response->getResponse();
+        $responseData = $response->getDecodedBody();
 
-        foreach ($responseData->data as $i => $feed)
+        foreach ($responseData["data"] as $i => $feed)
         {
-            $this->findAndModifyFeed($feed);
+            $this->findAndModifyFeed($feed["id"]);
         }
         return CGPageFeedCrawler::SUCCESS;
     }
 
     /**
-     * @param \stdClass $newPage
      * @param string $oldFbId
+     * @param array $newPage
      */
     private function findAndModifyPage($oldFbId, $newPage)
     {
         $oldPage = $this->queryOldPage($oldFbId);
-
-        $newPage->fbID = $newPage->id;
-        unset($newPage->id);
-        $newPage = json_decode(json_encode($newPage), true);
+        $newPage['fbID'] = $newPage['id'];
+        unset($newPage['id']);
 
         $fbObj = new FacebookPage($oldPage);
         $fbObj->setFbResponse($newPage);
@@ -156,9 +155,8 @@ class CGPageFeedCrawler extends CGFbCrawler
             return true;
         }
 
-        $oldValue = (isset($oldPage["likes"]) ? $oldPage["likes"] : 0);
-        $newValue = (isset($newPage["likes"]) ? $newPage["likes"] : 0);
-        // TODO change to fan_count in fb api 2.6
+        $oldValue = (isset($oldPage["fan_count"]) ? $oldPage["fan_count"] : 0);
+        $newValue = (isset($newPage["fan_count"]) ? $newPage["fan_count"] : 0);
         if ($oldValue != $newValue)
         {
             return true;
@@ -190,13 +188,12 @@ class CGPageFeedCrawler extends CGFbCrawler
             $doc->setTalkingAboutCount(0);
         }
 
-        if (isset($page["likes"]))
+        if (isset($page["fan_count"]))
         {
-            // TODO change to fan_count in fb api 2.6
-            $doc->setLikes($page["likes"]);
+            $doc->setFanCount($page["fan_count"]);
         } else
         {
-            $doc->setLikes(0);
+            $doc->setFanCount(0);
         }
 
         $doc->setFbPage($this->getFbDM()->createPageRef($this->pageMongoId));
@@ -207,32 +204,17 @@ class CGPageFeedCrawler extends CGFbCrawler
     }
 
     /**
-     * @param \stdClass $feed
+     * @param string $feedFbId
      */
-    private function findAndModifyFeed($feed)
+    private function findAndModifyFeed($feedFbId)
     {
-        $feedArr = json_decode(json_encode($feed), true);
-        $feedArr["fbID"] = $feedArr["id"];
-        unset($feedArr["id"]);
         $newDoc = new FacebookFeed();
-        $newDoc->setFbResponse($feedArr);
-        $newDoc->setFbId($feedArr["fbID"]);
-        $newDoc->setFbPage($this->getFbDM()->createPageRef($this->pageMongoId));
 
-        $extraInfo = $this->queryFeedExtraInfo($newDoc->getFbId());
-        $extraInfo = json_decode(json_encode($extraInfo), true);
-        if (isset($extraInfo["likes"]))
-        {
-            $newDoc->setLikes($extraInfo["likes"]);
-        }
-        if (isset($extraInfo["comments"]))
-        {
-            $newDoc->setComments($extraInfo["comments"]);
-        }
-        if (isset($extraInfo["attachments"]))
-        {
-            $newDoc->setAttachments($extraInfo["attachments"]);
-        }
+        $extraInfo = $this->queryFeedExtraInfo($feedFbId);
+        unset($extraInfo["id"]);
+        $newDoc->setFbResponse($extraInfo);
+        $newDoc->setFbId($feedFbId);
+        $newDoc->setFbPage($this->getFbDM()->createPageRef($this->pageMongoId));
 
         $oldFeed = $this->getFbDM()->upsertDB($newDoc, array("fbID" => $newDoc->getFbId()));
         if (empty($oldFeed))
@@ -341,20 +323,21 @@ class CGPageFeedCrawler extends CGFbCrawler
 
     /**
      * Query feed's likes and comment total count
-     * @param $fbID
-     * @return \stdClass extraInfo
+     * @param string $fbID
+     * @return array extraInfo
      */
     private function queryFeedExtraInfo($fbID)
     {
-        $request = new FacebookRequest($this->getFbSession(), 'GET', '/' . $fbID . '/?fields=likes.limit(5).summary(true),comments.limit(5).summary(true),attachments');
+        $requestEndPoint = '/' . $fbID . '';
+        $requestEndPoint .= '?fields=id,admin_creator,application,call_to_action,caption,created_time,description,feed_targeting,from,icon,instagram_eligibility,is_hidden,is_instagram_eligible,is_published,link,message,message_tags,name,object_id,parent_id,picture,place,privacy,properties,shares,source,status_type,story,story_tags,targeting,to,type,updated_time,with_tags,likes.limit(5).summary(true),comments.limit(5).summary(true),attachments';
         $headerMsg = "get error while crawling feed:" . $fbID;
-        $response = $this->tryRequest($request, $headerMsg);
+        $response = $this->tryRequest($requestEndPoint, $headerMsg);
         if ($response == null)
         {
-            return new \stdClass();
+            return array();
         }
 
-        return $response->getResponse();
+        return $response->getDecodedBody();
     }
 
     /**
@@ -424,9 +407,10 @@ class CGPageFeedCrawler extends CGFbCrawler
         $errPage->setExceptionTime(DateUtility::getCurrentMongoDate());
         $errPage->setId(null);
 
-        if ($e instanceof FacebookRequestException)
+        if ($e instanceof FacebookResponseException)
         {
-            $errorResponse = json_decode($e->getRawResponse(), true);
+            // TODO create test case for it, confirm exception type
+            $errorResponse = $e->getResponseData();
             $code = $errorResponse["error"]["code"];
             $hit = preg_match("/Page ID (.+) was migrated to page ID (.+)\\./", $errorResponse["error"]["message"], $matches);
 
@@ -434,7 +418,7 @@ class CGPageFeedCrawler extends CGFbCrawler
             if ($code == 21 && $hit > 0)
             {
                 $newID = $matches[2];
-                $this->handleMigration($oldPage, $newID);
+                $this->migratePage($oldPage, $newID);
                 $this->markAsException($oldPage, $errorResponse["error"]);
             } else if ($code == 100)
             {
@@ -448,9 +432,13 @@ class CGPageFeedCrawler extends CGFbCrawler
         $this->getFbDM()->writeToDB($errPage);
     }
 
-    private function markAsException(FacebookPage $oldPage, $errorArr)
+    /**
+     * @param FacebookPage $oldPage
+     * @param array $error
+     */
+    private function markAsException(FacebookPage $oldPage, $error)
     {
-        $oldPage->setError($errorArr);
+        $oldPage->setError($error);
         $oldPage->setException(true);
         $this->getFbDM()->writeToDB($oldPage);
     }
@@ -460,18 +448,19 @@ class CGPageFeedCrawler extends CGFbCrawler
      * @param string $newPageFbId
      * @return string
      */
-    private function handleMigration(FacebookPage $oldPage, $newPageFbId)
+    private function migratePage(FacebookPage $oldPage, $newPageFbId)
     {
         if ($this->getFbPageRepo()->findOneByFbId($newPageFbId) === null)
         {
-            $request = new FacebookRequest($this->getFbSession(), 'GET', '/' . $newPageFbId);
+            $requestEndPoint = '/' . $newPageFbId;
+            $requestEndPoint .= CGPageFeedCrawler::PAGE_FIELDS;
             $headerMsg = "get error while migrating page:" . $newPageFbId;
-            $response = $this->tryRequest($request, $headerMsg);
+            $response = $this->tryRequest($requestEndPoint, $headerMsg);
             if ($response == null)
             {
                 return CGPageCrawler::FAIL;
             }
-            $pageMainContent = json_decode(json_encode($response->getResponse()), true);
+            $pageMainContent = $response->getDecodedBody();
             $pageMainContent["fbID"] = $pageMainContent["id"];
             unset($pageMainContent["id"]);
 

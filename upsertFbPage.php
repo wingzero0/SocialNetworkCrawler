@@ -14,7 +14,6 @@
  * php upsertFbPage.php fbId.sample.txt
  */
 
-require_once(__DIR__ . '/facebook-php-sdk-v4/autoload.php');
 require_once(__DIR__ . '/CodingGuys/autoload.php');
 require_once(__DIR__ . '/vendor/autoload.php');
 

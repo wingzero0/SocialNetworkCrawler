@@ -422,8 +422,8 @@ class FbTimestampReport extends FbFeedStat
         foreach ($cursor as $record)
         {
             $pageT = new FacebookPageTimestamp($record);
-            $deltaLike = $pageT->getLikes() - $lastLike;
-            $lastLike = $pageT->getLikes();
+            $deltaLike = $pageT->getFanCount() - $lastLike;
+            $lastLike = $pageT->getFanCount();
 
             $deltaHere = $pageT->getWereHereCount() - $lastHere;
             $lastHere = $pageT->getWereHereCount();
