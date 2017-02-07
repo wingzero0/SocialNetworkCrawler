@@ -211,6 +211,10 @@ class CGPageFeedCrawler extends CGFbCrawler
         $newDoc = new FacebookFeed();
 
         $extraInfo = $this->queryFeedExtraInfo($feedFbId);
+        if (empty($extraInfo))
+        {
+            return;
+        }
         unset($extraInfo["id"]);
         $newDoc->setFbResponse($extraInfo);
         $newDoc->setFbId($feedFbId);
@@ -329,7 +333,7 @@ class CGPageFeedCrawler extends CGFbCrawler
     private function queryFeedExtraInfo($fbID)
     {
         $requestEndPoint = '/' . $fbID . '';
-        $requestEndPoint .= '?fields=id,admin_creator,application,call_to_action,caption,created_time,description,feed_targeting,from,icon,instagram_eligibility,is_hidden,is_instagram_eligible,is_published,link,message,message_tags,name,object_id,parent_id,picture,place,privacy,properties,shares,source,status_type,story,story_tags,targeting,to,type,updated_time,with_tags,likes.limit(5).summary(true),comments.limit(5).summary(true),attachments';
+        $requestEndPoint .= CGPageFeedCrawler::FEED_FIELDS;
         $headerMsg = "get error while crawling feed:" . $fbID;
         $response = $this->tryRequest($requestEndPoint, $headerMsg);
         if ($response == null)

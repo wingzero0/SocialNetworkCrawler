@@ -12,7 +12,7 @@ require_once(__DIR__ . '/vendor/autoload.php');
 use CodingGuys\CGPageFeedCrawler;
 use CodingGuys\Utility\DateUtility;
 
-$options = getopt("", array("appId:", "appSecret:"));
+$options = getopt("", array("appId:", "appSecret:", "iteration:"));
 
 // Create our worker object
 $worker = new \GearmanWorker();
@@ -23,7 +23,16 @@ $worker->addServer();
 // Inform the server that this worker can process "reverse" function calls
 $worker->addFunction("fbCrawler", "fbCrawler_fn", $options);
 
-while (1)
+
+if (isset($options["iteration"]))
+{
+    $maxIteration = intval($options["iteration"]);
+}else{
+    $maxIteration = 100;
+}
+
+
+for ($loopCount = 0;  $loopCount < $maxIteration; $loopCount++)
 {
     print "Waiting for job...\n";
     $ret = $worker->work(); // work() will block execution until a job is delivered
@@ -32,6 +41,9 @@ while (1)
         break;
     }
 }
+
+print "worker aging out\n";
+exit(0);
 
 // A much simple reverse function
 function fbCrawler_fn(GearmanJob $job, &$options)

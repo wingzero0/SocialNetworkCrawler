@@ -81,6 +81,11 @@ class CGFbCrawler
             try
             {
                 $response = $this->getFbAppBase()->get($requestEndPoint);
+                if ($response->isError()){
+                    $this->dumpErr($response->getThrownException(), $headerMessage);
+                    $response = null;
+                    sleep(600);
+                }
             } catch (FacebookThrottleException $e)
             {
                 $this->dumpErr($e, $headerMessage);
