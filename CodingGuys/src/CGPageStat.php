@@ -18,6 +18,7 @@ class CGPageStat
 
     public function findAllPageLastUpdateTime()
     {
+        // TODO change the query logic to get field last_post_created_time directly 
         $pageRepo = $this->getPageRepo();
         $cursor = $pageRepo->findAllWorkingPage();
         $ret = array();

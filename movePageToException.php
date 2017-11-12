@@ -4,6 +4,8 @@
  * Date: 22/11/15
  * Time: 2:09 PM
  */
+require_once(__DIR__ . '/config.php');
+setDefaultConfig();
 require_once(__DIR__ . '/CodingGuys/autoload.php');
 require_once(__DIR__ . '/vendor/autoload.php');
 
@@ -38,7 +40,7 @@ foreach ($queryId as $id)
     $exPage = new FacebookExceptionPage($pageRaw);
     $exPage->setId(null);
     $exPage->setError(array("message" => $message));
-    $mongoDate = DateUtility::convertDateTimeToMongoDate(new \DateTime());
+    $mongoDate = DateUtility::getCurrentMongoDate();
     $exPage->setExceptionTime($mongoDate);
     $exPage->setException(true);
     $fbDM->writeToDB($exPage);

@@ -105,10 +105,10 @@ class FbFeedStat extends FbStat
         {
             if ($record instanceof FacebookFeedTimestamp)
             {
-                if ($maxLike < $record->getLikesTotalCount())
+                if ($maxLike < $record->getReactionsLikeTotalCount())
                 {
                     $maxLikeRecord = $record;
-                    $maxLike = $record->getLikesTotalCount();
+                    $maxLike = $record->getReactionsLikeTotalCount();
                 }
                 if ($maxComment < $record->getCommentsTotalCount())
                 {
@@ -137,10 +137,10 @@ class FbFeedStat extends FbStat
         {
             if ($record instanceof FacebookFeedTimestamp)
             {
-                if ($maxLike < $record->getLikesTotalCount())
+                if ($maxLike < $record->getReactionsLikeTotalCount())
                 {
                     $indexOfMaxLike = $i;
-                    $maxLike = $record->getLikesTotalCount();
+                    $maxLike = $record->getReactionsLikeTotalCount();
                 }
                 if ($maxComment < $record->getCommentsTotalCount())
                 {

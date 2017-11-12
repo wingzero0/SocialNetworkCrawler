@@ -106,7 +106,7 @@ class FbTopNReport extends FbFeedStat
         $updateTime->setTimestamp($t->getUpdateTime()->sec);
         return array(
             'shortLink' => $this->extractShortLink($fbFeed),
-            'likes_total_count' => $t->getLikesTotalCount(),
+            'likes_total_count' => $t->getReactionsLikeTotalCount(),
             'comments_total_count' => $t->getCommentsTotalCount(),
             'message' => (isset($fbFeed["message"]) ? mb_substr($fbFeed["message"], 0, 20) . "..." : ""),
             "updateTime" => $updateTime->format(\DateTime::ISO8601),
@@ -169,7 +169,7 @@ class FbTopNReport extends FbFeedStat
             {
                 $ret[] = $sortedTimestamp[$i];
             } else if ($fieldName == FbTopNReport::LIKES_TOTAL_COUNT
-                && $lastRecord->getLikesTotalCount() == $currentRecord->getLikesTotalCount()
+                && $lastRecord->getReactionsLikeTotalCount() == $currentRecord->getReactionsLikeTotalCount()
             )
             {
                 $ret[] = $sortedTimestamp[$i];
@@ -188,7 +188,7 @@ class FbTopNReport extends FbFeedStat
      */
     public static function cmpLikeRecord(FacebookFeedTimestamp $a, FacebookFeedTimestamp $b)
     {
-        return $a->getLikesTotalCount() < $b->getLikesTotalCount();
+        return $a->getReactionsLikeTotalCount() < $b->getReactionsLikeTotalCount();
     }
 
     /**

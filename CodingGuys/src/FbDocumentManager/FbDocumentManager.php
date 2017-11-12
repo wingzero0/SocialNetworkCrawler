@@ -26,18 +26,10 @@ class FbDocumentManager
     private $dbName;
     private $mongoClient;
 
-    const DEFAULT_DB_NAME = 'Mnemono';
-
     public function __construct($dbName = null)
     {
-        if ($dbName == null)
-        {
-            // TODO move db location manually
-            $this->dbName = FbDocumentManager::DEFAULT_DB_NAME;
-        } else
-        {
-            $this->dbName = $dbName;
-        }
+        $this->dbName = empty($dbName) ?
+            $_ENV['MONGODB_DATABASE'] : $dbName;
     }
 
     public function writeToDB(BaseObj $obj)
@@ -76,12 +68,12 @@ class FbDocumentManager
         return $this->getMongoCollection($collectionName);
     }
 
+
     /**
      * @param BaseObj $obj
      * @param array $queryCondition
-     * @return object|null
+     * @return array|null|object
      * @throws CollectionNotExist
-     * @throws \Exception
      */
     public function upsertDB(BaseObj $obj, $queryCondition)
     {
@@ -102,8 +94,8 @@ class FbDocumentManager
                 array("\$set" => $serialize),
                 array("upsert" => true)
             );
+            return $result;
         }
-        return $result;
     }
 
     /**
@@ -206,7 +198,7 @@ class FbDocumentManager
     {
         if ($this->mongoClient == null)
         {
-            $this->mongoClient = new MongoDBClient();
+            $this->mongoClient = new MongoDBClient($_ENV['MONGODB_URI']);
         }
         return $this->mongoClient;
     }

@@ -11,6 +11,7 @@ namespace CodingGuys\Document;
 use CodingGuys\Exception\KeyNotExistsException;
 use CodingGuys\Utility\DateUtility;
 use MongoDB\BSON\ObjectID;
+use MongoDB\BSON\UTCDateTime;
 
 class FacebookPageTimestamp extends BaseObj
 {
@@ -18,6 +19,8 @@ class FacebookPageTimestamp extends BaseObj
     private $wereHereCount;
     private $talkingAboutCount;
     private $fanCount;
+    private $overallStarRating;
+    private $ratingCount;
     private $fbPage;
     private $updateTime;
     private $batchTime;
@@ -28,6 +31,8 @@ class FacebookPageTimestamp extends BaseObj
     const DB_FIELD_WERE_HERE_COUNT = "were_here_count";
     const DB_FIELD_TALKING_ABOUT_COUNT = "talking_about_count";
     const DB_FIELD_FAN_COUNT = "fan_count";
+    const DB_FIELD_OVERALL_STAR_RATING = "overall_star_rating";
+    const DB_FIELD_RATING_COUNT = "rating_count";
     const DB_FIELD_FB_PAGE = "fbPage";
     const DB_FIELD_UPDATE_TIME = "updateTime";
     const DB_FIELD_BATCH_TIME = "batchTime";
@@ -36,6 +41,8 @@ class FacebookPageTimestamp extends BaseObj
     const FIELD_WERE_HERE_COUNT = "wereHereCount";
     const FIELD_TALKING_ABOUT_COUNT = "talkingAboutCount";
     const FIELD_FAN_COUNT = "fanCount";
+    const FIELD_OVERALL_STAR_RATING = "overallStarRating";
+    const FIELD_RATING_COUNT = "ratingCount";
     const FIELD_FB_PAGE = "fbPage";
     const FIELD_UPDATE_TIME = "updateTime";
     const FIELD_BATCH_TIME = "batchTime";
@@ -45,6 +52,8 @@ class FacebookPageTimestamp extends BaseObj
         FacebookPageTimestamp::FIELD_WERE_HERE_COUNT => FacebookPageTimestamp::DB_FIELD_WERE_HERE_COUNT,
         FacebookPageTimestamp::FIELD_TALKING_ABOUT_COUNT => FacebookPageTimestamp::DB_FIELD_TALKING_ABOUT_COUNT,
         FacebookPageTimestamp::FIELD_FAN_COUNT => FacebookPageTimestamp::DB_FIELD_FAN_COUNT,
+        FacebookPageTimestamp::FIELD_OVERALL_STAR_RATING => FacebookPageTimestamp::DB_FIELD_OVERALL_STAR_RATING,
+        FacebookPageTimestamp::FIELD_RATING_COUNT => FacebookPageTimestamp::DB_FIELD_RATING_COUNT,
         FacebookPageTimestamp::FIELD_FB_PAGE => FacebookPageTimestamp::DB_FIELD_FB_PAGE,
         FacebookPageTimestamp::FIELD_UPDATE_TIME => FacebookPageTimestamp::DB_FIELD_UPDATE_TIME,
         FacebookPageTimestamp::FIELD_BATCH_TIME => FacebookPageTimestamp::DB_FIELD_BATCH_TIME,
@@ -141,6 +150,38 @@ class FacebookPageTimestamp extends BaseObj
     }
 
     /**
+     * @return float
+     */
+    public function getOverallStarRating()
+    {
+        return $this->overallStarRating;
+    }
+
+    /**
+     * @param float $overallStarRating
+     */
+    public function setOverallStarRating($overallStarRating)
+    {
+        $this->overallStarRating = floatval($overallStarRating);
+    }
+
+    /**
+     * @return int
+     */
+    public function getRatingCount()
+    {
+        return $this->ratingCount;
+    }
+
+    /**
+     * @param int $ratingCount
+     */
+    public function setRatingCount($ratingCount)
+    {
+        $this->ratingCount = intval($ratingCount);
+    }
+
+    /**
      * @return \MongoDBRef|array|null
      */
     public function getFbPage()
@@ -167,7 +208,7 @@ class FacebookPageTimestamp extends BaseObj
     /**
      * @param \MongoDB\BSON\UTCDateTime $updateTime
      */
-    public function setUpdateTime(\MongoDB\BSON\UTCDateTime $updateTime = null)
+    public function setUpdateTime(UTCDateTime $updateTime = null)
     {
         $this->updateTime = $updateTime;
     }
@@ -183,7 +224,7 @@ class FacebookPageTimestamp extends BaseObj
     /**
      * @param \MongoDB\BSON\UTCDateTime $batchTime
      */
-    public function setBatchTime(\MongoDB\BSON\UTCDateTime $batchTime = null)
+    public function setBatchTime(UTCDateTime $batchTime = null)
     {
         $this->batchTime = $batchTime;
     }
@@ -191,7 +232,7 @@ class FacebookPageTimestamp extends BaseObj
     public function getBatchTimeInISO()
     {
         $batchTime = $this->getBatchTime();
-        if ($batchTime instanceof \MongoDB\BSON\UTCDateTime)
+        if ($batchTime instanceof UTCDateTime)
         {
             $isoStr = DateUtility::convertMongoDateToISODate($batchTime);
             return $isoStr;

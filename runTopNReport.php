@@ -5,9 +5,10 @@
  * Time: 17:15
  */
 
-
-require_once(__DIR__ . '/facebook-php-sdk-v4/autoload.php');
+require_once(__DIR__ . '/config.php');
+setDefaultConfig();
 require_once(__DIR__ . '/CodingGuys/autoload.php');
+require_once(__DIR__ . '/vendor/autoload.php');
 
 use CodingGuys\Stat\FbTopNReport;
 

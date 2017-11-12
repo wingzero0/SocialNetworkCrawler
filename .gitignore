@@ -4,3 +4,6 @@
 /bug/
 /fbReport/*.zip
 /vendor/
+stderr.err
+.env
+.DS_Store

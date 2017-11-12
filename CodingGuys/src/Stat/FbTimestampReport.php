@@ -102,7 +102,7 @@ class FbTimestampReport extends FbFeedStat
         {
             $numOfRecord++;
             $cgMongoFbFeedTimestamp = new FacebookFeedTimestamp($timestampRecord);
-            $total += $cgMongoFbFeedTimestamp->getLikesTotalCount();
+            $total += $cgMongoFbFeedTimestamp->getReactionsLikeTotalCount();
         }
         if ($numOfRecord == 0)
         {
@@ -328,7 +328,7 @@ class FbTimestampReport extends FbFeedStat
         {
             throw new \UnexpectedValueException();
         }
-        $maxLike = $record->getLikesTotalCount();
+        $maxLike = $record->getReactionsLikeTotalCount();
         $record = $feedTimestampRecords[$ret['indexOfMaxComment']];
         if (!$record instanceof FacebookFeedTimestamp)
         {
@@ -382,7 +382,7 @@ class FbTimestampReport extends FbFeedStat
             if ($timestampRecord instanceof FacebookFeedTimestamp)
             {
                 $batchTimeString = $timestampRecord->getBatchTimeInISO();
-                $totalLike = $timestampRecord->getLikesTotalCount();
+                $totalLike = $timestampRecord->getReactionsLikeTotalCount();
                 $deltaLike = $totalLike - $lastLikeCount;
                 $lastLikeCount = $totalLike;
 

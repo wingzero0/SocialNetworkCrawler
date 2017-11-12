@@ -1,37 +1,33 @@
 <?php
 
-
+require_once(__DIR__ . '/config.php');
+setDefaultConfig();
 require_once(__DIR__ . '/CodingGuys/autoload.php');
 require_once(__DIR__ . '/vendor/autoload.php');
 
-use CodingGuys\FbRepo\FbPageRepo;
-use CodingGuys\Document\FacebookPage;
+use CodingGuys\QueueClient;
+use CodingGuys\PageJobDispatcher;
+use CodingGuys\FeedJobDispatcher;
+use CodingGuys\PostJobDispatcher;
 
 $crawlTime = new \DateTime();
-$crawlTime->setTimezone(new \DateTimeZone("GMT"));
+// TODO Patch data, change FacebookPage.mnemono.crawlTime to GMT+8
+$crawlTime->setTimezone(new \DateTimeZone('GMT'));
 $crawlTimeH = intval($crawlTime->format('H'));
 
-echo "crawlTimeH:" . $crawlTimeH . "\n";
-$batchTime = $crawlTime->format(DateTime::ISO8601);
+echo 'crawlTimeH: ' . $crawlTimeH . "\n";
 
-$repo = new FbPageRepo();
-$cursor = $repo->findAllWorkingPageByCrawlTime($crawlTimeH);
+$pageJobDispatcher = new PageJobDispatcher(
+    new QueueClient($_ENV['GEARMAN_HOST'], $_ENV['GEARMAN_PORT'])
+);
+$pageJobDispatcher->dispatchAt($crawlTime);
 
-// Create our client object
-$client = new GearmanClient();
+$feedJobDispatcher = new FeedJobDispatcher(
+    new QueueClient($_ENV['GEARMAN_HOST'], $_ENV['GEARMAN_PORT'])
+);
+$feedJobDispatcher->dispatchAt($crawlTime);
 
-// Add a server
-$client->addServer(); // by default host/port will be "localhost" & 4730
-foreach ($cursor as $doc)
-{
-    $fbPage = new FacebookPage($doc);
-    echo "crawling:" . $fbPage->getFbID() . "\n";
-
-    echo "Sending job\n";
-    // Send reverse job
-    $job_handle = $client->doBackground("fbCrawler", serialize(array(
-        "fbID" => $fbPage->getFbID(),
-        "_id" => $fbPage->getId() . "",
-        "batchTime" => $batchTime,
-    )));
-}
+$postJobDispatcher = new PostJobDispatcher(
+    new QueueClient($_ENV['GEARMAN_HOST'], $_ENV['GEARMAN_PORT'])
+);
+$postJobDispatcher->dispatchAt($crawlTime);

@@ -7,16 +7,173 @@
 
 namespace CodingGuys;
 
+use CodingGuys\Document\FacebookExceptionPage;
 use CodingGuys\Document\FacebookPage;
+use CodingGuys\Document\FacebookPageTimestamp;
+use CodingGuys\Utility\DateUtility;
 use Facebook\Exceptions\FacebookResponseException;
-
 
 // TODO migrate query to FacebookPageRepo
 class CGPageCrawler extends CGFbCrawler
 {
-    const FAIL = "fail";
-    const SUCCESS = "success";
-    const PAGE_FIELDS = '?fields=id,about,affiliation,app_id,app_links,artists_we_like,attire,awards,band_interests,band_members,best_page,bio,birthday,booking_agent,built,business,can_checkin,can_post,category,category_list,checkins,company_overview,contact_address,country_page_likes,cover,culinary_team,current_location,description,description_html,directed_by,display_subtext,displayed_message_response_time,emails,engagement,fan_count,featured_video,features,food_styles,founded,general_info,general_manager,genre,global_brand_page_name,global_brand_root_id,has_added_app,hometown,hours,impressum,influences,is_always_open,is_community_page,is_permanently_closed,is_published,is_unclaimed,is_verified,is_webhooks_subscribed,last_used_time,leadgen_tos_accepted,link,location,members,mission,mpg,name,name_with_location_descriptor,network,new_like_count,offer_eligible,parent_page,parking,payment_options,personal_info,personal_interests,pharma_safety_info,phone,place_type,plot_outline,press_contact,price_range,produced_by,products,promotion_ineligible_reason,public_transit,publisher_space,record_label,release_date,restaurant_services,restaurant_specialties,schedule,screenplay_by,season,single_line_address,starring,start_info,store_location_descriptor,store_number,studio,talking_about_count,unread_message_count,unread_notif_count,unseen_message_count,username,verification_status,voip_info,website,were_here_count,written_by';
+    private $queueClient;
+    private $pageFbId;
+    private $batchTime;
+    private $pageMongoId;
+
+    /**
+     * @param IFacebookSdk $fb
+     * @param IQueueClient $queueClient
+     * @param string $pageFbId
+     * @param \MongoDB\BSON\UTCDateTime $batchTime
+     * @param \MongoDB\BSON\ObjectID $pageMongoId
+     */
+    public function __construct(IFacebookSdk $fb,
+                                IQueueClient $queueClient,
+                                $pageFbId,
+                                \MongoDB\BSON\UTCDateTime $batchTime,
+                                \MongoDB\BSON\ObjectID $pageMongoId = null)
+    {
+        parent::__construct($fb);
+        $this->queueClient = $queueClient;
+        $this->pageFbId = $pageFbId;
+        $this->batchTime = $batchTime;
+        $this->pageMongoId = $pageMongoId;
+    }
+
+    /**
+     * @return string CGFbCrawler::FAIL|CGFbCrawler::SUCCESS
+     */
+    public function crawl()
+    {
+        $requestEndPoint = $this->getPageEndpoint($this->pageFbId);
+        $headerMsg = "get error while crawling page:" . $this->pageFbId;
+        $response = $this->tryRequest($requestEndPoint, $headerMsg);
+        if ($response == null)
+        {
+            $this->handleError($this->getLastException(), $this->pageFbId);
+            return CGFbCrawler::FAIL;
+        }
+        $this->findAndModifyPage($this->pageFbId, $response->getDecodedBody());
+        return CGFbCrawler::SUCCESS;
+    }
+
+    /**
+     * @param string $oldFbId
+     * @param array $fbResponseArray
+     */
+    private function findAndModifyPage($oldFbId, $fbResponseArray)
+    {
+        $prepareToUpdate = FacebookPage::constructByMongoArray($this->findPageByFbId($oldFbId));
+        $prepareToUpdate->setFbResponse($fbResponseArray);
+        $oldPageArray = $this->getFbDM()->upsertDB($prepareToUpdate, array("fbID" => $prepareToUpdate->getFbId()));
+        $oldPage = FacebookPage::constructByMongoArray($oldPageArray);
+        if (true === $_ENV['PAGE_SNAPSHOT_FORCED_SAVE'])
+        {
+            $this->createPageTimestamp($fbResponseArray);
+        }
+        else if ($prepareToUpdate->isDiffMetricFrom($oldPage))
+        {
+            $this->createPageTimestamp($fbResponseArray);
+        }
+        // TODO handle duplicated fbID because of migration / changing fans page
+    }
+
+    /**
+     * @param string $fbId
+     * @return array one of mongo result record
+     * @throws \Exception
+     */
+    private function findPageByFbId($fbId)
+    {
+        $repo = $this->getFbPageRepo();
+        $raw = $repo->findOneByFbId($fbId);
+        if ($raw == null)
+        {
+            $e = new \UnexpectedValueException("unknown page fb id:" . $fbId);
+            $this->dumpErr($e, "find and modify page fb id:" . $fbId);
+            throw $e;
+        }
+        return $raw;
+    }
+
+
+
+    /**
+     * @param \MongoDB\BSON\ObjectID $id
+     * @return array|null
+     */
+    private function findPageByMongoId(\MongoDB\BSON\ObjectID $id)
+    {
+        $repo = $this->getFbPageRepo();
+        $raw = $repo->findOneById($id);
+        if ($raw === null)
+        {
+            $e = new \UnexpectedValueException("unknown mongo id:" . $id);
+            $this->dumpErr($e, "find and modify page fb id:" . $fbId);
+            throw $e;
+        }
+        return $raw;
+    }
+
+    /**
+     * @param array $page
+     */
+    private function createPageTimestamp($page)
+    {
+        $doc = new FacebookPageTimestamp();
+
+        if (isset($page["were_here_count"]))
+        {
+            $doc->setWereHereCount($page["were_here_count"]);
+        }
+        else
+        {
+            $doc->setWereHereCount(0);
+        }
+
+        if (isset($page["talking_about_count"]))
+        {
+            $doc->setTalkingAboutCount($page["talking_about_count"]);
+        }
+        else
+        {
+            $doc->setTalkingAboutCount(0);
+        }
+
+        if (isset($page["fan_count"]))
+        {
+            $doc->setFanCount($page["fan_count"]);
+        }
+        else
+        {
+            $doc->setFanCount(0);
+        }
+
+        if (isset($page["overall_star_rating"]))
+        {
+            $doc->setOverallStarRating($page["overall_star_rating"]);
+        }
+        else
+        {
+            $doc->setOverallStarRating(0.0);
+        }
+
+        if (isset($page["rating_count"]))
+        {
+            $doc->setRatingCount($page["rating_count"]);
+        }
+        else
+        {
+            $doc->setRatingCount(0);
+        }
+
+        $doc->setFbPage($this->getFbDM()->createPageRef($this->pageMongoId));
+        $doc->setUpdateTime(DateUtility::getCurrentMongoDate());
+        $doc->setBatchTime($this->batchTime);
+
+        $this->getFbDM()->writeToDB($doc);
+    }
 
     /**
      * @param string $pageFbId
@@ -28,29 +185,26 @@ class CGPageCrawler extends CGFbCrawler
      */
     public function crawlNewPage($pageFbId, $category, $city, $country, $crawlTime)
     {
-        $requestEndPoint = '/' . $pageFbId;
-        $requestEndPoint .= CGPageCrawler::PAGE_FIELDS;
+        $requestEndPoint = $this->getPageEndpoint($pageFbId);
         $headerMsg = "get error while crawling page:" . $pageFbId;
         $response = $this->tryRequest($requestEndPoint, $headerMsg);
         if ($response == null)
         {
-            return CGPageCrawler::FAIL;
+            return CGFbCrawler::FAIL;
         }
         $pageMainContent = $response->getDecodedBody();
-        $pageMainContent["fbID"] = $pageMainContent["id"];
-        unset($pageMainContent["id"]);
-
-        $page = new FacebookPage();
-        $page->setFbResponse($pageMainContent);
+        $page = FacebookPage::constructByFbArray($pageMainContent);
         $page->setMnemono(array(
             "category" => $category,
             "location" => array("city" => $city, "country" => $country),
             "crawlTime" => $crawlTime,
         ));
 
-        $this->getFbDM()->writeToDB($page);
-
-        return CGPageCrawler::SUCCESS;
+        $res = $this->getFbDM()->writeToDB($page);
+        $this->pageMongoId = $res->getInsertedId();
+        $this->createPageTimestamp($pageMainContent);
+        $this->syncPage($pageFbId, true);
+        return CGFbCrawler::SUCCESS;
     }
 
     /**
@@ -61,28 +215,22 @@ class CGPageCrawler extends CGFbCrawler
      * @param array $crawlTime
      * @return string
      */
-    public function reCrawlData(\MongoDB\BSON\ObjectID $id, $category, $city, $country, $crawlTime)
+    public function reCrawlData(\MongoDB\BSON\ObjectID $id,
+                                $category,
+                                $city,
+                                $country,
+                                $crawlTime)
     {
-        $repo = $this->getFbPageRepo();
-        $raw = $repo->findOneById($id);
-        if ($raw === null)
-        {
-            throw new \UnexpectedValueException();
-        }
-        $fbPage = new FacebookPage($raw);
-
-        $requestEndPoint = '/' . $fbPage->getFbID() ;
-        $requestEndPoint .= CGPageCrawler::PAGE_FIELDS;
+        $this->pageMongoId = $id;
+        $fbPage = FacebookPage::constructByMongoArray($this->findPageByMongoId($id));
+        $requestEndPoint = $this->getPageEndpoint($fbPage->getFbID());
         $headerMsg = "get error while crawling page:" . $fbPage->getFbID();
         $response = $this->tryRequest($requestEndPoint, $headerMsg);
         if ($response == null)
         {
-            return CGPageCrawler::FAIL;
+            return CGFbCrawler::FAIL;
         }
         $pageMainContent = $response->getDecodedBody();
-        $pageMainContent["fbID"] = $pageMainContent["id"];
-        unset($pageMainContent["id"]);
-
         $fbPage->setException(false);
         $fbPage->setError(null);
         $fbPage->setFbResponse($pageMainContent);
@@ -91,8 +239,18 @@ class CGPageCrawler extends CGFbCrawler
             "location" => array("city" => $city, "country" => $country),
             "crawlTime" => $crawlTime,
         ));
-        $this->getFbDM()->writeToDB($fbPage);
-        return CGPageCrawler::SUCCESS;
+        $oldPageArray = $this->getFbDM()->upsertDB($fbPage, array("fbID" => $fbPage->getFbID()));
+        $oldPage = FacebookPage::constructByMongoArray($oldPageArray);
+        if (true === $_ENV['PAGE_SNAPSHOT_FORCED_SAVE'])
+        {
+            $this->createPageTimestamp($pageMainContent);
+        }
+        else if ($oldPage->isDiffMetricFrom($fbPage))
+        {
+            $this->createPageTimestamp($pageMainContent);
+        }
+        $this->syncPage($fbPage->getFbID(), false);
+        return CGFbCrawler::SUCCESS;
     }
 
     /**
@@ -112,36 +270,80 @@ class CGPageCrawler extends CGFbCrawler
     }
 
     /**
-     * @param FacebookResponseException $e
-     * @param array $page the page record fetch from mongoDB;
+     * @param \Exception $e
+     * @param string $pageFbId
      */
-    private function handleErrorPage(FacebookResponseException $e, $page)
+    private function handleError(\Exception $e, $pageFbId)
     {
-        //TODO move error handling to FeedCrawler
-        echo $e->getRawResponse() . "\n";
-        $errorMsg = json_decode($e->getResponse()->getDecodedBody());
-        $code = $errorMsg['error']['code'];
-        $hit = preg_match("/Page ID (.+) was migrated to page ID (.+)\\./", $errorMsg->error->message, $matches);
-        if ($code == 21 && $hit > 0)
-        {
-            $newID = $matches[2];
-            $this->handleMigration($page, $newID);
-        }
-    }
+        $pageRaw = $this->getFbPageRepo()->findOneByFbId($pageFbId);
+        $errPage = new FacebookExceptionPage($pageRaw);
+        $errPage->setException(true);
+        $errPage->setExceptionTime(DateUtility::getCurrentMongoDate());
+        $errPage->setId(null);
 
-    private function handleMigration($oldPage, $newID)
-    {
-        if ($this->getDBPageValue($newID) == null)
+        if ($e instanceof FacebookResponseException)
         {
-            $category = $oldPage["mnemono"]["category"];
-            $city = $oldPage["mnemono"]["location"]["city"];
-            $country = $oldPage["mnemono"]["location"]["country"];
-            $crawlTime = $oldPage["mnemono"]["crawlTime"];
-            $this->crawlNewPage($newID, $category, $city, $country, $crawlTime);
+            // TODO create test case for it, confirm exception type
+            $errorResponse = $e->getResponseData();
+            $code = $errorResponse["error"]["code"];
+            $hit = preg_match("/Page ID (.+) was migrated to page ID (.+)\\./", $errorResponse["error"]["message"], $matches);
+
+            $oldPage = new FacebookPage($pageRaw);
+            if ($code == 21 && $hit > 0)
+            {
+                $newID = $matches[2];
+                $this->migratePage($oldPage, $newID);
+                $this->markAsException($oldPage, $errorResponse["error"]);
+            } else if ($code == 100)
+            {
+                $this->markAsException($oldPage, $errorResponse["error"]);
+            }
+            $errPage->setError($errorResponse["error"]);
         } else
         {
-            // Let it go
+            $errPage->setError(array("message" => $e->getMessage(), "trace" => $e->getTraceAsString()));
         }
+        $this->getFbDM()->writeToDB($errPage);
+    }
+
+    /**
+     * @param FacebookPage $oldPage
+     * @param array $error
+     */
+    private function markAsException(FacebookPage $oldPage, $error)
+    {
+        $oldPage->setError($error);
+        $oldPage->setException(true);
+        $this->getFbDM()->writeToDB($oldPage);
+    }
+
+    /**
+     * @param FacebookPage $oldPage
+     * @param string $newPageFbId
+     * @return string
+     */
+    private function migratePage(FacebookPage $oldPage, $newPageFbId)
+    {
+        if ($this->getFbPageRepo()->findOneByFbId($newPageFbId) === null)
+        {
+            $requestEndPoint = $this->getPageEndpoint($newPageFbId);
+            $headerMsg = "get error while migrating page:" . $newPageFbId;
+            $response = $this->tryRequest($requestEndPoint, $headerMsg);
+            if ($response == null)
+            {
+                return CGFbCrawler::FAIL;
+            }
+
+            $mnemono = $oldPage->getMnemono();
+            $page = FacebookPage::constructByFbArray($response->getDecodedBody());
+            $page->setMnemono($mnemono);
+            $this->getFbDM()->writeToDB($page);
+
+            $workload = json_encode(array("fbId" => $newPageFbId));
+            $this->queueClient
+                 ->doBackground($_ENV['QUEUE_CREATE_BIZ'], $workload);
+        }
+        return CGFbCrawler::SUCCESS;
     }
 
     /**
@@ -170,4 +372,18 @@ class CGPageCrawler extends CGFbCrawler
     }
 
 
+    private function syncPage($fbId, $createdFlag = true)
+    {
+        $workload = json_encode(array("fbId" => $fbId));
+
+        if ($createdFlag)
+        {
+            $this->queueClient
+                 ->doBackground($_ENV['QUEUE_CREATE_BIZ'], $workload);
+        } else
+        {
+            $this->queueClient
+                 ->doBackground($_ENV['QUEUE_UPDATE_BIZ'], $workload);
+        }
+    }
 }

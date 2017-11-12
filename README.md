@@ -8,8 +8,19 @@ it a background process to crawl fb public page data
 - composer.phar
 
 ### update php library
-- composer.phar install
 
+In production environment, no dev package is needed, run
+
+    composer install --no-dev
+
+
+In development/testing environment, run
+
+    composer install
+
+
+## Create environment file `.env`
+- create `.env` from `.env.example` in project directory, and edit it. See more about [environment file](/resources/doc/env.md).
 
 ## Process
 0. add page, config crawling frequency, category (skip this step if you have page in db)
@@ -21,7 +32,11 @@ it a background process to crawl fb public page data
 ### add page
 
     /* php upsertFbPage.php -f INPUT_FILE_WITH_CONFIG --appId YOUR_APP_ID --appSecret YOUR_APP_SECRET */
-    > php upsertFbPage.php -f fbId.sample.txt --appId xxxxxxx --appSecret xxxxxxxxxxxxxx
+    > php upsertFbPage.php -f fbId.sample.txt --appId 717078611708065 --appSecret cfcb7c75936b2c44caba648cb4d20e69
+
+### stop crawling page by moving it into exception collection
+    /* php movePageToException.php --id mongoId --message YOUR_EXCEPTION_MESSAGE */
+    > php movePageToException.php --id 58ecac2be13823254c4476e4 --message testException
 
 ### routine job - gearman client
 
@@ -39,13 +54,13 @@ run job each hour. it will create job for each page which marked should be crawl
 ### crawler
 start crawler in background.
 
-    > php /PATH_TO_PROJECT/crawlPageFeedWorker.php --appId xxxxxxx --appSecret xxxxxxxxxxxxxx
+    > php /PATH_TO_PROJECT/crawlPageFeedWorker.php --appId 717078611708065 --appSecret cfcb7c75936b2c44caba648cb4d20e69
 
 or 
 
 start the worker by supervisor (set supervisor conf)
 
-    command=php crawlPageFeedWorker.php --appId xxxxxxx --appSecret xxxxxxxxxxxxxx
+    command=php crawlPageFeedWorker.php --appId 717078611708065 --appSecret cfcb7c75936b2c44caba648cb4d20e69
     numprocs=2
     directory=/PATH_TO_PROJECT/
     autostart=true
@@ -57,11 +72,12 @@ start the worker by supervisor (set supervisor conf)
     stderr_logfile=/home/webmaster/backend/crawler/fbCrawler/%(program_name)s_%(process_num)02d.err
     stderr_logfile_maxbytes=1MB
 
-### run report
-run report to show records of N day ago
-
-    /* php /PATH_TO_PROJECT/runTimestampSeries.php N_DAY_AGO OUTPUT_FILE_NAME.csv COUNTRY_CODE */
-    > php /PATH_TO_PROJECT/runTimestampSeries.php 7 fbReport.csv mo
 
 ### QA checklist
-[checklist](/resources/doc)
+[checklist](/resources/doc/qa.md)
+
+### Redeploy checklist
+[redeploy](/resources/doc/redeploy.md)
+
+### Tests
+[Tests](/resources/doc/tests.md)

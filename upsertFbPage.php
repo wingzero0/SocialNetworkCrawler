@@ -11,13 +11,18 @@
  * each line contains one fbID
  *
  * sample command:
- * php upsertFbPage.php fbId.sample.txt
+ * php upsertFbPage.php -f fbId.sample.txt --appId xxx --appSecret yyy
  */
 
+require_once(__DIR__ . '/config.php');
+setDefaultConfig();
 require_once(__DIR__ . '/CodingGuys/autoload.php');
 require_once(__DIR__ . '/vendor/autoload.php');
 
 use CodingGuys\CGPageCrawler;
+use CodingGuys\FacebookSdk;
+use CodingGuys\QueueClient;
+use CodingGuys\Utility\DateUtility;
 
 $options = getopt("f:", array("appId:", "appSecret:"));
 
@@ -25,29 +30,35 @@ checkOptions($options);
 
 $fp = fopen($options["f"], 'r');
 
-$pageCrawler = new CGPageCrawler($options["appId"], $options["appSecret"]);
-
+$appId = $options['appId'];
+$appSecret = $options['appSecret'];
+$fbConfig = [
+    'app_id' => $appId,
+    'app_secret' => $appSecret,
+    'default_graph_version' => $_ENV['FB_DEFAULT_GRAPH_VERSION'],
+    'default_access_token' => $appId . '|' . $appSecret,
+];
+$batchTime = DateUtility::getCurrentMongoDate();
+// TODO create unit test for this php, remove crawl time (in function and input file) if it is unnecessary
 while ($line = fgets($fp))
 {
     list($category, $city, $country, $fbId, $crawlTime) = parseData($line);
 
+    $pageCrawler = new CGPageCrawler(
+        new FacebookSdk($fbConfig),
+        new QueueClient($_ENV['GEARMAN_HOST'], $_ENV['GEARMAN_PORT']),
+        $fbId,
+        $batchTime
+    );
     $mongoId = $pageCrawler->getFbMongoId($fbId);
     if ($mongoId)
     {
         $ret = $pageCrawler->reCrawlData($mongoId, $category, $city, $country, $crawlTime);
-        echo "crawler status" . $ret . "\n";
-        if ($ret == CGPageCrawler::SUCCESS)
-        {
-            syncPage($fbId, false);
-        }
+        echo "crawler status " . $ret . "\n";
     } else
     {
         $ret = $pageCrawler->crawlNewPage($fbId, $category, $city, $country, $crawlTime);
-        echo "crawler status" . $ret . "\n";
-        if ($ret == CGPageCrawler::SUCCESS)
-        {
-            syncPage($fbId, true);
-        }
+        echo "crawler status " . $ret . "\n";
     }
 }
 fclose($fp);
@@ -107,19 +118,4 @@ function trimAndReplaceEmptyAsNull($inputStr)
         return null;
     }
     return $str;
-}
-
-function syncPage($fbId, $createdFlag = true)
-{
-    $client = new \GearmanClient();
-    $client->addServer();
-    $workload = json_encode(array("fbId" => $fbId));
-
-    if ($createdFlag)
-    {
-        $job_handle = $client->doBackground("MnemonoBackgroundServiceBundleServicesSyncFbPageService~createBiz", $workload);
-    } else
-    {
-        $job_handle = $client->doBackground("MnemonoBackgroundServiceBundleServicesSyncFbPageService~updateBiz", $workload);
-    }
 }

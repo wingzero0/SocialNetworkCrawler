@@ -23,32 +23,42 @@ class FacebookFeed extends BaseObj
     private $updatedTime;
     private $shares;
     private $isExpired;
-    private $likes;
     private $comments;
     private $attachments;
     private $fbPage;
     private $fbResponse;
     private $story;
+    private $reactionsLike;
+    private $reactionsLove;
+    private $reactionsWow;
+    private $reactionsHaha;
+    private $reactionsSad;
+    private $reactionsAngry;
 
     const TARGET_COLLECTION = "FacebookFeed";
 
-    const KEY_ID = "_id";
-    const KEY_FB_ID = "fbID";
-    const KEY_FROM = "from";
-    const KEY_MESSAGE = "message";
-    const KEY_PICTURE = "picture";
-    const KEY_LINK = "link";
-    const KEY_TYPE = "type";
-    const KEY_STATUS_TYPE = "status_type";
-    const KEY_CREATED_TIME = "created_time";
-    const KEY_UPDATED_TIME = "updated_time";
-    const KEY_SHARES = "shares";
-    const KEY_IS_EXPIRED = "is_expired";
-    const KEY_LIKES = "likes";
-    const KEY_COMMENTS = "comments";
-    const KEY_ATTACHMENTS = "attachments";
-    const KEY_FB_PAGE = "fbPage";
-    const KEY_STORY = "story";
+    const DB_KEY_ID = "_id";
+    const DB_KEY_FB_ID = "fbID";
+    const DB_KEY_FROM = "from";
+    const DB_KEY_MESSAGE = "message";
+    const DB_KEY_PICTURE = "picture";
+    const DB_KEY_LINK = "link";
+    const DB_KEY_TYPE = "type";
+    const DB_KEY_STATUS_TYPE = "status_type";
+    const DB_KEY_CREATED_TIME = "created_time";
+    const DB_KEY_UPDATED_TIME = "updated_time";
+    const DB_KEY_SHARES = "shares";
+    const DB_KEY_IS_EXPIRED = "is_expired";
+    const DB_KEY_COMMENTS = "comments";
+    const DB_KEY_ATTACHMENTS = "attachments";
+    const DB_KEY_FB_PAGE = "fbPage";
+    const DB_KEY_STORY = "story";
+    const DB_KEY_REACTIONS_LIKE = "reactions_like";
+    const DB_KEY_REACTIONS_LOVE = "reactions_love";
+    const DB_KEY_REACTIONS_WOW = "reactions_wow";
+    const DB_KEY_REACTIONS_HAHA = "reactions_haha";
+    const DB_KEY_REACTIONS_SAD = "reactions_sad";
+    const DB_KEY_REACTIONS_ANGRY = "reactions_angry";
 
     const FIELD_ID = "id";
     const FIELD_FB_ID = "fbId";
@@ -62,31 +72,96 @@ class FacebookFeed extends BaseObj
     const FIELD_UPDATED_TIME = "updatedTime";
     const FIELD_SHARES = "shares";
     const FIELD_IS_EXPIRED = "isExpired";
-    const FIELD_LIKES = "likes";
     const FIELD_COMMENTS = "comments";
     const FIELD_ATTACHMENTS = "attachments";
     const FIELD_FB_PAGE = "fbPage";
     const FIELD_STORY = "story";
+    const FIELD_REACTIONS_LIKE = "reactionsLike";
+    const FIELD_REACTIONS_LOVE = "reactionsLove";
+    const FIELD_REACTIONS_WOW = "reactionsWow";
+    const FIELD_REACTIONS_HAHA = "reactionsHaha";
+    const FIELD_REACTIONS_SAD = "reactionsSad";
+    const FIELD_REACTIONS_ANGRY = "reactionsAngry";
 
     private static $dbMapping = array(
-        FacebookFeed::FIELD_ID => FacebookFeed::KEY_ID,
-        FacebookFeed::FIELD_FB_ID => FacebookFeed::KEY_FB_ID,
-        FacebookFeed::FIELD_FROM => FacebookFeed::KEY_FROM,
-        FacebookFeed::FIELD_MESSAGE => FacebookFeed::KEY_MESSAGE,
-        FacebookFeed::FIELD_PICTURE => FacebookFeed::KEY_PICTURE,
-        FacebookFeed::FIELD_LINK => FacebookFeed::KEY_LINK,
-        FacebookFeed::FIELD_TYPE => FacebookFeed::KEY_TYPE,
-        FacebookFeed::FIELD_STATUS_TYPE => FacebookFeed::KEY_STATUS_TYPE,
-        FacebookFeed::FIELD_CREATED_TIME => FacebookFeed::KEY_CREATED_TIME,
-        FacebookFeed::FIELD_UPDATED_TIME => FacebookFeed::KEY_UPDATED_TIME,
-        FacebookFeed::FIELD_SHARES => FacebookFeed::KEY_SHARES,
-        FacebookFeed::FIELD_IS_EXPIRED => FacebookFeed::KEY_IS_EXPIRED,
-        FacebookFeed::FIELD_LIKES => FacebookFeed::KEY_LIKES,
-        FacebookFeed::FIELD_COMMENTS => FacebookFeed::KEY_COMMENTS,
-        FacebookFeed::FIELD_ATTACHMENTS => FacebookFeed::KEY_ATTACHMENTS,
-        FacebookFeed::FIELD_FB_PAGE => FacebookFeed::KEY_FB_PAGE,
-        FacebookFeed::FIELD_STORY => FacebookFeed::KEY_STORY,
+        self::FIELD_ID => self::DB_KEY_ID,
+        self::FIELD_FB_ID => self::DB_KEY_FB_ID,
+        self::FIELD_FROM => self::DB_KEY_FROM,
+        self::FIELD_MESSAGE => self::DB_KEY_MESSAGE,
+        self::FIELD_PICTURE => self::DB_KEY_PICTURE,
+        self::FIELD_LINK => self::DB_KEY_LINK,
+        self::FIELD_TYPE => self::DB_KEY_TYPE,
+        self::FIELD_STATUS_TYPE => self::DB_KEY_STATUS_TYPE,
+        self::FIELD_CREATED_TIME => self::DB_KEY_CREATED_TIME,
+        self::FIELD_UPDATED_TIME => self::DB_KEY_UPDATED_TIME,
+        self::FIELD_SHARES => self::DB_KEY_SHARES,
+        self::FIELD_IS_EXPIRED => self::DB_KEY_IS_EXPIRED,
+        self::FIELD_COMMENTS => self::DB_KEY_COMMENTS,
+        self::FIELD_ATTACHMENTS => self::DB_KEY_ATTACHMENTS,
+        self::FIELD_FB_PAGE => self::DB_KEY_FB_PAGE,
+        self::FIELD_STORY => self::DB_KEY_STORY,
+        self::FIELD_REACTIONS_LIKE => self::DB_KEY_REACTIONS_LIKE,
+        self::FIELD_REACTIONS_LOVE => self::DB_KEY_REACTIONS_LOVE,
+        self::FIELD_REACTIONS_WOW => self::DB_KEY_REACTIONS_WOW,
+        self::FIELD_REACTIONS_HAHA => self::DB_KEY_REACTIONS_HAHA,
+        self::FIELD_REACTIONS_SAD => self::DB_KEY_REACTIONS_SAD,
+        self::FIELD_REACTIONS_ANGRY => self::DB_KEY_REACTIONS_ANGRY,
     );
+
+    /**
+     * @param array $fbArray
+     * @param array $fbPage dbRef
+     * @return FacebookFeed
+     */
+    public static function constructByFbArray($fbArray, $fbPage = null){
+        $feed = new FacebookFeed();
+        $fbArray[self::DB_KEY_FB_ID] = $fbArray["id"];
+        unset($fbArray["id"]);
+        $feed->setFbResponse($fbArray);
+        $feed->setFbPage($fbPage);
+        return $feed;
+    }
+
+    /**
+     * @param array $mongoArray
+     * @return FacebookFeed
+     */
+    public static function constructByMongoArray($mongoArray){
+        $feed = new FacebookFeed($mongoArray);
+        return $feed;
+    }
+
+    protected function init()
+    {
+        foreach (self::$dbMapping as $field => $dbCol)
+        {
+            try
+            {
+                $val = $this->getFromRaw($dbCol);
+                $this->{"set" . ucfirst($field)}($val);
+            } catch (KeyNotExistsException $e)
+            {
+                $this->{"set" . ucfirst($field)}(null);
+            }
+        }
+        $this->setFbResponse(array());
+    }
+
+    /**
+     * @return array|null
+     * @throws \Exception
+     */
+    public function toArray()
+    {
+        $arr = $this->getMongoRawData();
+        $arr = array_merge($arr, $this->getFbResponse());
+        foreach (self::$dbMapping as $field => $dbCol)
+        {
+            $arr[$dbCol] = $this->{"get" . ucfirst($field)}();
+        }
+        $arr = array_filter($arr, array($this, 'filterNonNullValue'));
+        return $arr;
+    }
 
     public function getShortLink()
     {
@@ -137,6 +212,102 @@ class FacebookFeed extends BaseObj
     }
 
     /**
+     * @return array
+     */
+    public function getReactionsLike()
+    {
+        return $this->reactionsLike;
+    }
+
+    /**
+     * @param array $reactionsLike
+     */
+    public function setReactionsLike($reactionsLike)
+    {
+        $this->reactionsLike = $reactionsLike;
+    }
+
+    /**
+     * @return array
+     */
+    public function getReactionsLove()
+    {
+        return $this->reactionsLove;
+    }
+
+    /**
+     * @param array $reactionsLove
+     */
+    public function setReactionsLove($reactionsLove)
+    {
+        $this->reactionsLove = $reactionsLove;
+    }
+
+    /**
+     * @return array
+     */
+    public function getReactionsWow()
+    {
+        return $this->reactionsWow;
+    }
+
+    /**
+     * @param array $reactionsWow
+     */
+    public function setReactionsWow($reactionsWow)
+    {
+        $this->reactionsWow = $reactionsWow;
+    }
+
+    /**
+     * @return array
+     */
+    public function getReactionsHaha()
+    {
+        return $this->reactionsHaha;
+    }
+
+    /**
+     * @param array $reactionsHaha
+     */
+    public function setReactionsHaha($reactionsHaha)
+    {
+        $this->reactionsHaha = $reactionsHaha;
+    }
+
+    /**
+     * @return array
+     */
+    public function getReactionsSad()
+    {
+        return $this->reactionsSad;
+    }
+
+    /**
+     * @param array $reactionsSad
+     */
+    public function setReactionsSad($reactionsSad)
+    {
+        $this->reactionsSad = $reactionsSad;
+    }
+
+    /**
+     * @return array
+     */
+    public function getReactionsAngry()
+    {
+        return $this->reactionsAngry;
+    }
+
+    /**
+     * @param array $reactionsAngry
+     */
+    public function setReactionsAngry($reactionsAngry)
+    {
+        $this->reactionsAngry = $reactionsAngry;
+    }
+
+    /**
      * @return string
      */
     public function getStory()
@@ -150,38 +321,6 @@ class FacebookFeed extends BaseObj
     public function setStory($story)
     {
         $this->story = $story;
-    }
-
-    protected function init()
-    {
-        foreach (FacebookFeed::$dbMapping as $field => $dbCol)
-        {
-            try
-            {
-                $val = $this->getFromRaw($dbCol);
-                $this->{"set" . ucfirst($field)}($val);
-            } catch (KeyNotExistsException $e)
-            {
-                $this->{"set" . ucfirst($field)}(null);
-            }
-        }
-        $this->setFbResponse(array());
-    }
-
-    /**
-     * @return array|null
-     * @throws \Exception
-     */
-    public function toArray()
-    {
-        $arr = $this->getMongoRawData();
-        $arr = array_merge($arr, $this->getFbResponse());
-        foreach (FacebookFeed::$dbMapping as $field => $dbCol)
-        {
-            $arr[$dbCol] = $this->{"get" . ucfirst($field)}();
-        }
-        $arr = array_filter($arr, array($this, 'filterNonNullValue'));
-        return $arr;
     }
 
     /**
@@ -360,7 +499,7 @@ class FacebookFeed extends BaseObj
         $this->fbResponse = $fbResponse;
         if (!empty($fbResponse))
         {
-            foreach (FacebookFeed::$dbMapping as $field => $fbCol)
+            foreach (self::$dbMapping as $field => $fbCol)
             {
                 if (isset($fbResponse[$fbCol]))
                 {
@@ -402,21 +541,7 @@ class FacebookFeed extends BaseObj
         $this->isExpired = $isExpired;
     }
 
-    /**
-     * @return array
-     */
-    public function getLikes()
-    {
-        return $this->likes;
-    }
 
-    /**
-     * @param array $likes
-     */
-    public function setLikes($likes)
-    {
-        $this->likes = $likes;
-    }
 
     /**
      * @return array
@@ -468,6 +593,96 @@ class FacebookFeed extends BaseObj
 
     public function getCollectionName()
     {
-        return FacebookFeed::TARGET_COLLECTION;
+        return self::TARGET_COLLECTION;
+    }
+
+    /**
+     * @param FacebookFeed $obj
+     * @return bool
+     */
+    public function isDiffMetricFrom(FacebookFeed $obj)
+    {
+        $selfTotal = $this->getMetricTotal($this->getReactionsLike());
+        $objTotal = $obj->getMetricTotal($obj->getReactionsLike());
+        if ($selfTotal !== $objTotal)
+        {
+            return true;
+        }
+
+        $selfTotal = $this->getMetricTotal($this->getReactionsLove());
+        $objTotal = $obj->getMetricTotal($obj->getReactionsLove());
+        if ($selfTotal !== $objTotal)
+        {
+            return true;
+        }
+
+        $selfTotal = $this->getMetricTotal($this->getReactionsWow());
+        $objTotal = $obj->getMetricTotal($obj->getReactionsWow());
+        if ($selfTotal !== $objTotal)
+        {
+            return true;
+        }
+
+        $selfTotal = $this->getMetricTotal($this->getReactionsHaha());
+        $objTotal = $obj->getMetricTotal($obj->getReactionsHaha());
+        if ($selfTotal !== $objTotal)
+        {
+            return true;
+        }
+
+        $selfTotal = $this->getMetricTotal($this->getReactionsSad());
+        $objTotal = $obj->getMetricTotal($obj->getReactionsSad());
+        if ($selfTotal !== $objTotal)
+        {
+            return true;
+        }
+
+        $selfTotal = $this->getMetricTotal($this->getReactionsAngry());
+        $objTotal = $obj->getMetricTotal($obj->getReactionsAngry());
+        if ($selfTotal !== $objTotal)
+        {
+            return true;
+        }
+
+        $selfTotal = $this->getMetricTotal($this->getComments());
+        $objTotal = $obj->getMetricTotal($obj->getComments());
+        if ($selfTotal !== $objTotal)
+        {
+            return true;
+        }
+
+        $selfTotal = $this->getMetricTotal($this->getShares());
+        $objTotal = $obj->getMetricTotal($obj->getShares());
+        if ($selfTotal !== $objTotal)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * @param object|array $metric
+     * @return int $total
+     */
+    private function getMetricTotal($metric)
+    {
+        $total = 0;
+        if (is_object($metric))
+        {
+            $metric = json_decode(json_encode($metric), true);
+        }
+        if (is_array($metric))
+        {
+            if (isset($metric['summary']) &&
+                isset($metric['summary']['total_count']))
+            {
+                $total = $metric['summary']['total_count'];
+            } else if (isset($metric['count']))
+            {
+                $total = $metric['count'];
+            }
+        }
+        return $total;
     }
 }

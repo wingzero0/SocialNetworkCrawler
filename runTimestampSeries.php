@@ -5,7 +5,8 @@
  * Time: 20:21
  */
 
-require_once(__DIR__ . '/facebook-php-sdk-v4/autoload.php');
+require_once(__DIR__ . '/config.php');
+setDefaultConfig();
 require_once(__DIR__ . '/CodingGuys/autoload.php');
 require_once(__DIR__ . '/vendor/autoload.php');
 
@@ -42,4 +43,3 @@ $startDate->sub(new \DateInterval('P' . $windowSize . 'D'));
 
 $obj = new FbTimestampReport($startDate, $endDate, $filename);
 $obj->timestampSeriesCount($city);
-

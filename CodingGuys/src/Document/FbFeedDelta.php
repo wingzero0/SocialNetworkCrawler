@@ -8,7 +8,6 @@
 namespace CodingGuys\Document;
 
 use CodingGuys\Exception\KeyNotExistsException;
-use MongoDB\Exception\UnexpectedValueException;
 
 class FbFeedDelta extends BaseObj
 {
